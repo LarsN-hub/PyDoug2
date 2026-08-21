@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pydoug-standalone"
+version = "0.1.0"
+description = "Standalone launcher for PyDoug app (PyInstaller entry point)"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "pydoug-core",
+    "pydoug-napari",
+    "pyinstaller",
+    "third-party-license-file-generator"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pydoug_standalone"]

@@ -1,0 +1,29 @@
+[tool.ruff]
+line-length = 88
+src = [
+    "packages/pydoug-core/src",
+    "packages/pydoug-napari/src",
+    "packages/pydoug-standalone/src"
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP"
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "packages/pydoug-core/tests",
+    "packages/pydoug-napari/tests",
+    "packages/pydoug-standalone/tests",
+]
+
+[tool.coverage.run]
+source = [
+    "packages/pydoug-core/src",
+    "packages/pydoug-napari/src",
+    "packages/pydoug-standalone/src",
+]

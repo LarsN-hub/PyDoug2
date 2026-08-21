@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - run: pip install -e "packages/pydoug-core[testing]"
+      - run: pytest packages/pydoug-core/tests --cov=packages/pydoug-core/src --cov-report=term-missing
+
+  napari-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: "pip"
+      - uses: pyvista/setup-headless-display-action@v3
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3
+      - run: |
+          pip install -e packages/pydoug-core
+          pip install -e "packages/pydoug-napari[testing]"
+      - run: pytest packages/pydoug-napari/tests --cov=packages/pydoug-napari/src --cov-report=term-missing
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: pre-commit/action@v3.0.1

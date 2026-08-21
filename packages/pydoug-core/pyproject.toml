@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pydoug-core"
+version = "0.1.0"
+description = "Core I/O, image processing and analysis, and batch logic and script for PyDoug"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    {name = "Douglas Lars Nelson", email = "PyDoug@referable.anonaddy.com"}
+]
+keywords = [
+    "image processing",
+    "image segmentation",
+    "microscopy",
+    "tomography",
+    "scientific imaging"
+]
+dependencies = [
+    "algotom",
+    "cmasher",
+    "h5py",
+    "ImageIO",
+    "matplotlib",
+    "numba",
+    "numpy",
+    "pandas",
+    "pillow",
+    "porespy",
+    "scikit-image",
+    "scipy"
+]
+
+[project.optional-dependencies]
+testing = [
+    "pytest",
+    "pytest-cov"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pydoug_core"]
