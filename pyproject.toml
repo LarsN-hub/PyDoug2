@@ -20,6 +20,9 @@ testpaths = [
     "packages/pydoug-napari/tests",
     "packages/pydoug-standalone/tests",
 ]
+filterwarnings = [
+    "ignore:.*json_encoders.*is deprecated.*:DeprecationWarning:pydantic._internal._generate_schema",
+]
 
 [tool.coverage.run]
 source = [
