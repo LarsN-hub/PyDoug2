@@ -22,11 +22,12 @@ testpaths = [
 ]
 filterwarnings = [
     "ignore:.*json_encoders.*is deprecated.*:DeprecationWarning:pydantic._internal._generate_schema",
+    "ignore:.*writing zero-size array to nonconformant TIFF.*:UserWarning:tifffile.tifffile",
 ]
 
 [tool.coverage.run]
 source = [
-    "packages/pydoug-core/src",
-    "packages/pydoug-napari/src",
-    "packages/pydoug-standalone/src",
+    "packages/pydoug-core",
+    "packages/pydoug-napari",
+    "packages/pydoug-standalone",
 ]

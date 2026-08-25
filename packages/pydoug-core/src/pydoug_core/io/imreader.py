@@ -2,19 +2,24 @@
 Reading image files.
 """
 
+import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import h5py
 import imageio.v3 as iio
 import numpy as np
+import psutil
 
-__all__ = ["hdf_expand_tree", "imread"]
+from pydoug_core import util
+
+__all__ = ["imread", "seqread"]
 
 
-def hdf_expand_tree(
+def _hdf_expand_tree(
     path: None | Path | str = None,
     *,
-    hdfile: h5py.File | None = None,
+    hdfile: h5py.File | h5py.Group | None = None,
     treelist: list[str] | None = None,
     break_on_dset: bool = False,
     dsetfound: bool = False,
@@ -59,31 +64,31 @@ def hdf_expand_tree(
         contents: list[str] = list(hdfile.keys())
         hdfname: str = str(hdfile.name)
         if hdfname == "/":
-            tab_count: int = 0
+            tabcount: int = 0
         else:
-            tab_count: int = hdfname.count("/")
+            tabcount: int = hdfname.count("/")
         for item in contents:
             name: str = str(hdfile[item].name)
             label: str = name[name.rfind("/") + 1 :]
-            current_item = hdfile[item]
-            if isinstance(current_item, h5py.Group):
+            currentitem = hdfile[item]
+            if isinstance(currentitem, h5py.Group):
                 if printtree:
-                    print((tab_count * " ") + "- " + label)
-                treelist, dsetfound = hdf_expand_tree(
-                    hdfile=h5py.File(hdfile[item]),
+                    print((tabcount * " ") + "- " + label)
+                treelist, dsetfound = _hdf_expand_tree(
+                    hdfile=currentitem,
                     treelist=treelist,
                     break_on_dset=break_on_dset,
                     dsetfound=dsetfound,
                     printtree=printtree,
                 )
-            elif isinstance(current_item, h5py.Dataset):
+            elif isinstance(currentitem, h5py.Dataset):
                 dsetfound = True
-                if len(current_item.shape):
-                    label += " [shape: " + str(current_item.shape) + "]"
+                if len(currentitem.shape):
+                    label += " [shape: " + str(currentitem.shape) + "]"
                     if isinstance(treelist, list):
-                        treelist.append(str(current_item.name))
+                        treelist.append(str(currentitem.name))
                 if printtree:
-                    print((tab_count * "  ") + "- " + label)
+                    print((tabcount * "  ") + "- " + label)
             if dsetfound and break_on_dset:
                 return treelist, dsetfound
     if isinstance(treelist, list) and len(treelist) == 0:
@@ -92,7 +97,7 @@ def hdf_expand_tree(
         return treelist, dsetfound
 
 
-def hdf_largest_dataset(hdfile: h5py.File | Path | str) -> None | str:
+def _hdf_largest_dataset(hdfile: h5py.File | Path | str) -> None | str:
     """
     Automatically locate the largest dataset within an hdf file tree.
 
@@ -110,7 +115,7 @@ def hdf_largest_dataset(hdfile: h5py.File | Path | str) -> None | str:
 
     if not isinstance(hdfile, h5py.File):
         hdfile = h5py.File(hdfile)
-    treelist, _ = hdf_expand_tree(hdfile=hdfile)
+    treelist, _ = _hdf_expand_tree(hdfile=hdfile)
     prevbytes: int = 0
     currentlargest = None
     if isinstance(treelist, list):
@@ -140,30 +145,162 @@ def imread(path: None | Path | str) -> None | np.ndarray:
 
     if not path:
         return None
+
+    path = Path(path)
+    if path.suffix in [".h5", ".hdf", ".hdf5", ".he5"]:
+        try:
+            hdfile: h5py.File = h5py.File(path)
+            imarray: np.ndarray = np.array(hdfile[_hdf_largest_dataset(hdfile)])
+            hdfile.close()
+            return imarray
+        except FileNotFoundError:
+            print(f"File does not exist: {path}")
+            return None
+        except Exception as e:
+            print(f"Error reading hdf data from {path}: {e}")
+            return None
     else:
-        path = Path(path)
-        if path.suffix in [".h5", ".hdf", ".hdf5", ".he5"]:
-            try:
-                hdfile: h5py.File = h5py.File(path)
-                imarray: np.ndarray = np.array(hdfile[hdf_largest_dataset(hdfile)])
-                hdfile.close()
-                return imarray
-            except FileNotFoundError:
-                print(f"File does not exist: {path}")
+        try:
+            imarray: np.ndarray = iio.imread(path)
+            if imarray.shape == (0,):
                 return None
-            except Exception as e:
-                print(f"Error reading hdf data from {path}: {e}")
+            return imarray
+        except FileNotFoundError:
+            print(f"File does not exist: {path}")
+            return None
+        except OSError:
+            print(f"Unsupported file type: {path}")
+            return None
+        except Exception as e:
+            print(f"Error reading data from {path}: {e}")
+            return None
+
+
+def _auto_worker_count(samplearray: np.ndarray, numfiles: int) -> int:
+    """
+    Pick a conservative worker count based on CPU and available memory.
+
+    Parameters
+    ----------
+    samplearray: np.ndarray
+        A sample array to be imported.
+    numfiles: int
+        The total number of files being imported.
+
+    Returns
+    -------
+    numworkers: int
+        The number of workers estimated.
+    """
+
+    cpu_count: int = os.cpu_count() or 1
+    available_bytes: int = psutil.virtual_memory().available
+    bytes_per_file: int = samplearray.nbytes
+    memory_capped_workers: int = max(1, int((available_bytes * 0.25) // bytes_per_file))
+    return max(1, min(cpu_count, memory_capped_workers, numfiles))
+
+
+def seqread(path: None | Path | str, numworkers: int | None = 1) -> None | np.ndarray:
+    """
+    Read a sequence of image files into a numpy array.
+
+    Parameters
+    ----------
+    path: None | Path | str
+        Path to the directory containing the image sequence.
+    numworkers: int | None
+        Number of threads to use for parallel file reading.
+            - 1 (default): fully sequential, no threading.
+            - >1: use this many worker threads.
+            - None: auto-detect a safe worker count.
+
+    Returns
+    -------
+    None | np.ndarray
+        The image data as a numpy array, or None if the path is not provided.
+    """
+
+    if not path:
+        return None
+
+    path = Path(path)
+    try:
+        filenames: list[str] = sorted(os.listdir(path))
+        if not filenames:
+            return None
+    except FileNotFoundError:
+        print(f"Directory does not exist: {path}")
+        return None
+    except Exception as e:
+        print(f"Error reading data from {path}: {e}")
+        return None
+
+    rgb: bool = False
+    xyshape: tuple[int, int] | None = None
+    numslices: int = 0
+
+    if numworkers is None or numworkers > 1:
+        for name in filenames:
+            firstarray: np.ndarray | None = imread(path / name)
+            if firstarray is not None:
+                if util.isrgb(firstarray):
+                    rgb = True
+                    xyshape = firstarray.shape[-3:-1]
+                else:
+                    rgb = False
+                    xyshape = firstarray.shape[-2:]
+                if numworkers is None:
+                    numworkers = _auto_worker_count(firstarray, len(filenames))
+                continue
+        with ThreadPoolExecutor(max_workers=numworkers) as executor:
+            readresults = list(
+                executor.map(lambda name: imread(path / name), filenames)
+            )
+            arrays: list[np.ndarray] = []
+            numslices: int = 0
+            for array in readresults:
+                if array is not None:
+                    arrays.append(array)
+                    numslices += array.shape[0] if util.is3d(array) else 1
+
+    else:
+        arrays: list[np.ndarray] = []
+        for name in filenames:
+            currentarray: np.ndarray | None = imread(path / name)
+            if currentarray is None:
+                continue
+            if util.isrgb(currentarray):
+                rgb = True
+            if util.isrgb(currentarray):
+                currentxy = currentarray.shape[-3:-1]
+            else:
+                currentxy = currentarray.shape[-2:]
+            if xyshape is None:
+                xyshape = currentxy
+            elif currentxy != xyshape:
+                print(
+                    f"Inconsistent XY dimensions in sequence: {name} has {currentxy}, "
+                    f"expected {xyshape}"
+                )
                 return None
-        else:
-            try:
-                imarray: np.ndarray = iio.imread(path)
-                return imarray
-            except FileNotFoundError:
-                print(f"File does not exist: {path}")
-                return None
-            except OSError:
-                print(f"Unsupported file type: {path}")
-                return None
-            except Exception as e:
-                print(f"Error reading data from {path}: {e}")
-                return None
+            numslices += currentarray.shape[0] if util.is3d(currentarray) else 1
+            arrays.append(currentarray)
+
+    if not arrays or not xyshape:
+        return None
+
+    finaldtype = np.result_type(*(a.dtype for a in arrays))
+    finalshape = (numslices, *xyshape, 3) if rgb else (numslices, *xyshape)
+    imarray = np.empty(finalshape, dtype=finaldtype)
+
+    offset = 0
+    for currentarray in arrays:
+        if rgb and not util.isrgb(currentarray):
+            currentarray = util.gray2rgb(currentarray)
+        if not util.is3d(currentarray):
+            currentarray = np.expand_dims(currentarray, 0)
+        n = currentarray.shape[0]
+        imarray[offset : offset + n] = currentarray
+        offset += n
+
+    return imarray

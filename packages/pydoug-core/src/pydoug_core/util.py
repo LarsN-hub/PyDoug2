@@ -69,3 +69,25 @@ def isrgb(imarray: np.ndarray | None = None, imshape: None | tuple = None) -> bo
             return True
         else:
             return False
+
+
+def gray2rgb(imarray: np.ndarray) -> np.ndarray:
+    """
+    Make a grayscale image array an RGB image array.
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The grayscale image array.
+
+    Returns
+    -------
+    rgbarray: np.ndarray
+        The RGB image version of imarray.
+        If isrgb(imarray) is True, returns the original array.
+    """
+
+    if isrgb(imarray):
+        return imarray
+    else:
+        return np.repeat(np.expand_dims(imarray, imarray.ndim), 3, imarray.ndim)
