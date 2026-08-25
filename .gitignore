@@ -1,0 +1,5 @@
+.coverage
+packages/pydoug-core/src/pydoug_core/__pycache__/
+packages/pydoug-core/src/pydoug_core/io/__pycache__/
+packages/pydoug-core/tests/__pycache__/
+packages/pydoug-core/tests/test_io/__pycache__/
