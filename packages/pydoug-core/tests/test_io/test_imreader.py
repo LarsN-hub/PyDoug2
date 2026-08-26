@@ -1,5 +1,5 @@
 """
-Tests for PyDoug's io.reader module.
+Tests for PyDoug io.reader module.
 """
 
 import os
@@ -84,7 +84,7 @@ def test_imread_unsupported_format(sample_unsupported_format) -> None:
 
 
 def test_imread_unexpected_error(tmp_path, monkeypatch) -> None:
-    def _raise_unexpected(path):
+    def _raise_unexpected(*args, **kwargs):
         raise ValueError("Simulated value error.")
 
     monkeypatch.setattr(iio, "imread", _raise_unexpected)
@@ -133,7 +133,7 @@ def test_seqread_returns(
 
 
 def test_seqread_unexpected_error(tmp_path, monkeypatch):
-    def _raise_unexpected(path):
+    def _raise_unexpected(*args, **kwargs):
         raise PermissionError("simulated permission failure")
 
     monkeypatch.setattr(os, "listdir", _raise_unexpected)

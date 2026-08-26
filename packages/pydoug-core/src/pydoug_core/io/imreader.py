@@ -9,9 +9,9 @@ from pathlib import Path
 import h5py
 import imageio.v3 as iio
 import numpy as np
-import psutil
 
 from pydoug_core import util
+from pydoug_core.io import io_util
 
 __all__ = ["imread", "seqread"]
 
@@ -176,30 +176,6 @@ def imread(path: None | Path | str) -> None | np.ndarray:
             return None
 
 
-def _auto_worker_count(samplearray: np.ndarray, numfiles: int) -> int:
-    """
-    Pick a conservative worker count based on CPU and available memory.
-
-    Parameters
-    ----------
-    samplearray: np.ndarray
-        A sample array to be imported.
-    numfiles: int
-        The total number of files being imported.
-
-    Returns
-    -------
-    numworkers: int
-        The number of workers estimated.
-    """
-
-    cpu_count: int = os.cpu_count() or 1
-    available_bytes: int = psutil.virtual_memory().available
-    bytes_per_file: int = samplearray.nbytes
-    memory_capped_workers: int = max(1, int((available_bytes * 0.25) // bytes_per_file))
-    return max(1, min(cpu_count, memory_capped_workers, numfiles))
-
-
 def seqread(path: None | Path | str, numworkers: int | None = 1) -> None | np.ndarray:
     """
     Read a sequence of image files into a numpy array.
@@ -250,7 +226,7 @@ def seqread(path: None | Path | str, numworkers: int | None = 1) -> None | np.nd
                     rgb = False
                     xyshape = firstarray.shape[-2:]
                 if numworkers is None:
-                    numworkers = _auto_worker_count(firstarray, len(filenames))
+                    numworkers = io_util._auto_worker_count(firstarray, len(filenames))
                 continue
         with ThreadPoolExecutor(max_workers=numworkers) as executor:
             readresults = list(
