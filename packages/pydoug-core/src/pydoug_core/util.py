@@ -4,6 +4,8 @@ Miscellaneous utility functions for PyDoug core package.
 
 import numpy as np
 
+__all__ = ["is3d", "isrgb", "gray2rgb"]
+
 
 def is3d(imarray: np.ndarray | None = None, *, imshape: None | tuple = None) -> bool:
     """
