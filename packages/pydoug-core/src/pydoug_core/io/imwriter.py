@@ -13,7 +13,7 @@ import numpy as np
 from pydoug_core import util
 from pydoug_core.io import io_util
 
-__all__ = ["imwrite"]
+__all__ = ["imwrite", "seqwrite"]
 
 
 def _write(imarray: np.ndarray, path: Path, ext: str) -> None:
