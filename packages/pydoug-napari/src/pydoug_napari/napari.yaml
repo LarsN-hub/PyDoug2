@@ -1,4 +1,14 @@
 name: pydoug-napari
 display_name: PyDoug
 contributions:
-  commands: []
+  commands:
+    - id: pydoug-napari.get_reader
+      title: Read image data
+      python_name: pydoug_napari._reader:napari_get_reader
+
+  readers:
+    - command: pydoug-napari.get_reader
+      accepts_directories: true
+      filename_patterns: [
+        "*.tif", "*.tiff", "*.png", "*.h5", "*.hdf", "*.hdf5", "*.he5"
+      ]
