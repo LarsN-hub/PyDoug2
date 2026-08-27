@@ -5,6 +5,9 @@ contributions:
     - id: pydoug-napari.get_reader
       title: Read image data
       python_name: pydoug_napari._reader:napari_get_reader
+    - id: pydoug-napari.write_image
+      title: Write image data
+      python_name: pydoug_napari._writer:write_image
 
   readers:
     - command: pydoug-napari.get_reader
@@ -12,3 +15,8 @@ contributions:
       filename_patterns: [
         "*.tif", "*.tiff", "*.png", "*.h5", "*.hdf", "*.hdf5", "*.he5"
       ]
+
+  writers:
+  - command: pydoug-napari.write_image
+    layer_types: ["image", "labels"]
+    filename_extensions: [".tif", ".tiff", ".png", ".h5", ".hdf", ".hdf5", ".he5"]
