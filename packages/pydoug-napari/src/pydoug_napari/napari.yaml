@@ -1,4 +1,37 @@
 name: pydoug-napari
 display_name: PyDoug
 contributions:
-  commands: []
+  commands:
+    - id: pydoug-napari.get_reader
+      title: Read image data
+      python_name: pydoug_napari._reader:napari_get_reader
+    - id: pydoug-napari.write_image
+      title: Write image data
+      python_name: pydoug_napari._writer:write_image
+    - id: pydoug-napari.write_labels
+      title: Write labels data
+      python_name: pydoug_napari._writer:write_image
+    - id: pydoug-napari.write_image_sequence
+      title: Write image as file sequence
+      python_name: pydoug_napari._writer:write_image_sequence
+
+  readers:
+    - command: pydoug-napari.get_reader
+      accepts_directories: true
+      filename_patterns: [
+        "*.tif", "*.tiff", "*.png", "*.h5", "*.hdf", "*.hdf5", "*.he5"
+      ]
+
+  writers:
+  - command: pydoug-napari.write_image
+    display_name: image file
+    layer_types: ["image"]
+    filename_extensions: [".tif", ".tiff", ".png", ".h5", ".hdf", ".hdf5", ".he5"]
+  - command: pydoug-napari.write_labels
+    display_name: image file
+    layer_types: ["labels"]
+    filename_extensions: [".tif", ".tiff", ".png", ".h5", ".hdf", ".hdf5", ".he5"]
+  - command: pydoug-napari.write_image_sequence
+    display_name: image sequence
+    layer_types: ["image"]
+    filename_extensions: [".seq"]
