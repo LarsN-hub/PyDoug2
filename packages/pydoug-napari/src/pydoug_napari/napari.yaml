@@ -8,6 +8,12 @@ contributions:
     - id: pydoug-napari.write_image
       title: Write image data
       python_name: pydoug_napari._writer:write_image
+    - id: pydoug-napari.write_labels
+      title: Write labels data
+      python_name: pydoug_napari._writer:write_image
+    - id: pydoug-napari.write_image_sequence
+      title: Write image as file sequence
+      python_name: pydoug_napari._writer:write_image_sequence
 
   readers:
     - command: pydoug-napari.get_reader
@@ -18,5 +24,14 @@ contributions:
 
   writers:
   - command: pydoug-napari.write_image
-    layer_types: ["image", "labels"]
+    display_name: image file
+    layer_types: ["image"]
     filename_extensions: [".tif", ".tiff", ".png", ".h5", ".hdf", ".hdf5", ".he5"]
+  - command: pydoug-napari.write_labels
+    display_name: image file
+    layer_types: ["labels"]
+    filename_extensions: [".tif", ".tiff", ".png", ".h5", ".hdf", ".hdf5", ".he5"]
+  - command: pydoug-napari.write_image_sequence
+    display_name: image sequence
+    layer_types: ["image"]
+    filename_extensions: [".seq"]

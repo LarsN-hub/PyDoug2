@@ -65,10 +65,10 @@ def imwrite(
     try:
         _write(imarray, path, ext)
     except FileExistsError:
-        print("File already exists: {path}")
+        print(f"File already exists: {path}")
         return None
     except FileNotFoundError:
-        print("Parent directory does not exist: {path[:-len(f'{name}.{ext}')]}")
+        print(f"Parent directory does not exist: {path.stem}")
         return None
     except Exception as e:
         print(f"Error writing data to {path}: {e}")
@@ -101,10 +101,10 @@ def seqwrite(
     try:
         os.mkdir(path)
     except FileExistsError:
-        print("Directory already exists: {path}")
+        print(f"Directory already exists: {path}")
         return None
     except FileNotFoundError:
-        print("Parent directory does not exist: {path[:-len(name)]}")
+        print(f"Parent directory does not exist: {path.stem}")
         return None
     except Exception as e:
         print(f"Error creating directory {path}: {e}")
