@@ -2,6 +2,8 @@
 Tests for PyDoug's trans module.
 """
 
+import math
+
 import numpy as np
 
 from pydoug_core import trans
@@ -83,3 +85,62 @@ def test_rotate_returns(sample_arrays) -> None:
     assert result5.shape[0] == sample_arrays["3dgray"].shape[0]
     result6: np.ndarray = trans.rotate(sample_arrays["3drgb"], 50, resize=True)
     assert result6.shape[0] == sample_arrays["3drgb"].shape[0]
+
+
+def test_rescale_returns(sample_arrays) -> None:
+
+    result1: np.ndarray = trans.rescale(sample_arrays["2dgray"])
+    assert np.all(result1 == sample_arrays["2dgray"])
+    result2: np.ndarray = trans.rescale(sample_arrays["2dgray"], 0.5)
+    result3: np.ndarray = trans.rescale(
+        sample_arrays["3dgray"], 1.5, preserve_dtype=False
+    )
+    assert result2.dtype == sample_arrays["2dgray"].dtype
+    assert result2.shape[0] <= math.ceil(sample_arrays["2dgray"].shape[0] * 0.5)
+    assert result2.shape[1] <= math.ceil(sample_arrays["2dgray"].shape[1] * 0.5)
+    assert result3.dtype == np.dtype(np.float64)
+    assert result3.shape[0] >= math.floor(sample_arrays["3dgray"].shape[0] * 1.5)
+    assert result3.shape[1] >= math.floor(sample_arrays["3dgray"].shape[1] * 1.5)
+    assert result3.shape[2] >= math.floor(sample_arrays["3dgray"].shape[2] * 1.5)
+    result4: np.ndarray = trans.rescale(sample_arrays["3drgb"], 0.5)
+    assert result4.shape[0] <= math.ceil(sample_arrays["3drgb"].shape[0] * 0.5)
+    assert result4.shape[1] <= math.ceil(sample_arrays["3drgb"].shape[1] * 0.5)
+    assert result4.shape[2] <= math.ceil(sample_arrays["3drgb"].shape[2] * 0.5)
+    assert result4.shape[3] == sample_arrays["3drgb"].shape[3]
+    result5: np.ndarray = trans.rescale(
+        sample_arrays["2dgray"] >= 128, 0.5, segmented_data=True
+    )
+    assert result5.dtype == np.dtype(np.bool)
+    result6: np.ndarray = trans.rescale(sample_arrays["2dgray"] >= 128, 0.5)
+    assert result6.dtype == np.dtype(np.bool)
+
+
+def test_resize_returns(sample_arrays) -> None:
+
+    result0: np.ndarray = trans.resize(sample_arrays["2dgray"], 20, 50)
+    result1: np.ndarray = trans.resize(sample_arrays["3dgray"])
+    result2: np.ndarray = trans.resize(sample_arrays["3dgray"], 10, 10)
+    result3: np.ndarray = trans.resize(sample_arrays["3dgray"], 10, 10, 5)
+    result4: np.ndarray = trans.resize(sample_arrays["3dgray"], 12, 12, 5)
+    result5: np.ndarray = trans.resize(sample_arrays["3dgray"], 12, 12, 6)
+    result6: np.ndarray = trans.resize(sample_arrays["3drgb"], 12, 12, 6)
+    result7: np.ndarray = trans.resize(sample_arrays["3dgray"], 8, 8, 4)
+    result8: np.ndarray = trans.resize(
+        sample_arrays["3dgray"], 8, 8, 4, preserve_dtype=False
+    )
+    result9: np.ndarray = trans.resize(sample_arrays["3dgray"] >= 128, 8, 8, 4)
+    result10: np.ndarray = trans.resize(
+        sample_arrays["3dgray"] >= 128, 8, 8, 4, segmented_data=True
+    )
+    assert result0.shape == (50, 20)
+    assert np.all(result1 == sample_arrays["3dgray"])
+    assert np.all(result2 == sample_arrays["3dgray"])
+    assert np.all(result3 == sample_arrays["3dgray"])
+    assert result4.shape == (5, 12, 12)
+    assert result5.shape == (6, 12, 12)
+    assert result6.shape == (6, 12, 12, 3)
+    assert result7.shape == (4, 8, 8)
+    assert result8.shape == (4, 8, 8)
+    assert result8.dtype == np.dtype(np.float64)
+    assert result9.dtype == np.dtype(np.bool)
+    assert result10.dtype == np.dtype(np.bool)
