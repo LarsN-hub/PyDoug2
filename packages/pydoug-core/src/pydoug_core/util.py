@@ -3,6 +3,7 @@ Miscellaneous utility functions for PyDoug core package.
 """
 
 import numpy as np
+from skimage.color import rgb2gray as skrgb2gray
 
 __all__ = ["is3d", "isrgb", "gray2rgb"]
 
@@ -93,6 +94,16 @@ def gray2rgb(imarray: np.ndarray) -> np.ndarray:
         return imarray
     else:
         return np.repeat(np.expand_dims(imarray, imarray.ndim), 3, imarray.ndim)
+
+
+def rgb2gray(imarray: np.ndarray) -> np.ndarray:
+    """
+    Make an RGB image array a grayscale image array.
+    """
+
+    if isrgb(imarray):
+        return skrgb2gray(imarray)
+    return imarray
 
 
 def chan_axis(imarray: np.ndarray) -> int | None:

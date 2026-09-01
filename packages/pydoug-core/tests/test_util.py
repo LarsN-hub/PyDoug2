@@ -47,6 +47,12 @@ def test_gray2rgb_returns(
     assert np.all(util.gray2rgb(sample_3drgb_array) == sample_3drgb_array)
 
 
+def test_rgb2gray_returns(sample_arrays) -> None:
+
+    assert util.rgb2gray(sample_arrays["2drgb"]).shape == sample_arrays["2dgray"].shape
+    assert util.rgb2gray(sample_arrays["3drgb"]).shape == sample_arrays["3dgray"].shape
+
+
 def test_chan_axis_returns(sample_arrays) -> None:
 
     assert util.chan_axis(sample_arrays["2dgray"]) is None

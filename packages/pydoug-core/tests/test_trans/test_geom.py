@@ -1,5 +1,5 @@
 """
-Tests for PyDoug's trans module.
+Tests for PyDoug's trans.geom module.
 """
 
 import math
