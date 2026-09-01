@@ -1,5 +1,5 @@
 """
-Image transformations.
+Geometric transformations of images.
 """
 
 from typing import cast

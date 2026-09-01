@@ -111,10 +111,7 @@ def chan_axis(imarray: np.ndarray) -> int | None:
     """
 
     if isrgb(imarray):
-        if is3d(imarray):
-            return 3
-        else:
-            return 2
+        return imarray.ndim - 1
     else:
         return None
 
