@@ -106,6 +106,28 @@ def rotate(
     if clockwise:
         angle *= -1
 
-    return transform.rotate(imarray, angle, resize, preserve_range=True).astype(
-        outdtype, copy=False
-    )
+    def _3drot(imarray: np.ndarray, angle: float, resize: bool) -> np.ndarray:
+        return np.moveaxis(
+            transform.rotate(
+                np.moveaxis(imarray, 0, 2), angle, resize, preserve_range=True
+            ),
+            2,
+            0,
+        )
+
+    if util.is3d(imarray):
+        if util.isrgb(imarray):
+            return np.stack(
+                (
+                    _3drot(imarray[:, :, :, 0], angle, resize),
+                    _3drot(imarray[:, :, :, 1], angle, resize),
+                    _3drot(imarray[:, :, :, 2], angle, resize),
+                ),
+                axis=3,
+            )
+        else:
+            return _3drot(imarray, angle, resize).astype(outdtype, copy=False)
+    else:
+        return transform.rotate(imarray, angle, resize, preserve_range=True).astype(
+            outdtype, copy=False
+        )
