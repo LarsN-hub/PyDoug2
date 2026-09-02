@@ -45,3 +45,68 @@ def test_gray2rgb_returns(
     assert util.isrgb(util.gray2rgb(sample_3dgray_array))
     assert np.all(util.gray2rgb(sample_2drgb_array) == sample_2drgb_array)
     assert np.all(util.gray2rgb(sample_3drgb_array) == sample_3drgb_array)
+
+
+def test_rgb2gray_returns(sample_arrays) -> None:
+
+    assert util.rgb2gray(sample_arrays["2drgb"]).shape == sample_arrays["2dgray"].shape
+    assert util.rgb2gray(sample_arrays["3drgb"]).shape == sample_arrays["3dgray"].shape
+
+
+def test_chan_axis_returns(sample_arrays) -> None:
+
+    assert util.chan_axis(sample_arrays["2dgray"]) is None
+    assert util.chan_axis(sample_arrays["3dgray"]) is None
+    assert util.chan_axis(sample_arrays["2drgb"]) == 2
+    assert util.chan_axis(sample_arrays["3drgb"]) == 3
+
+
+def test_output_dtype_returns(sample_2dgray_array) -> None:
+
+    assert util.output_dtype(sample_2dgray_array) == sample_2dgray_array.dtype
+    assert util.output_dtype(sample_2dgray_array, preserve_dtype=False) == np.dtype(
+        np.float64
+    )
+    assert (
+        util.output_dtype(sample_2dgray_array, np.dtype(np.bool))
+        == sample_2dgray_array.dtype
+    )
+    assert util.output_dtype(sample_2dgray_array, np.dtype(np.bool), False) == np.dtype(
+        np.bool
+    )
+
+
+def test_axlengths_returns(sample_arrays) -> None:
+
+    assert (
+        util.axlengths(sample_arrays["2dgray"])["x"] == sample_arrays["2dgray"].shape[1]
+    )
+    assert (
+        util.axlengths(sample_arrays["2dgray"])["y"] == sample_arrays["2dgray"].shape[0]
+    )
+    assert util.axlengths(sample_arrays["2dgray"])["z"] is None
+    assert (
+        util.axlengths(sample_arrays["2drgb"])["x"] == sample_arrays["2drgb"].shape[1]
+    )
+    assert (
+        util.axlengths(sample_arrays["2drgb"])["y"] == sample_arrays["2drgb"].shape[0]
+    )
+    assert util.axlengths(sample_arrays["2drgb"])["z"] is None
+    assert (
+        util.axlengths(sample_arrays["3dgray"])["x"] == sample_arrays["3dgray"].shape[2]
+    )
+    assert (
+        util.axlengths(sample_arrays["3dgray"])["y"] == sample_arrays["3dgray"].shape[1]
+    )
+    assert (
+        util.axlengths(sample_arrays["3dgray"])["z"] == sample_arrays["3dgray"].shape[0]
+    )
+    assert (
+        util.axlengths(sample_arrays["3drgb"])["x"] == sample_arrays["3drgb"].shape[2]
+    )
+    assert (
+        util.axlengths(sample_arrays["3drgb"])["y"] == sample_arrays["3drgb"].shape[1]
+    )
+    assert (
+        util.axlengths(sample_arrays["3drgb"])["z"] == sample_arrays["3drgb"].shape[0]
+    )
