@@ -9,6 +9,8 @@ from skimage import transform
 
 from pydoug_core import util
 
+__all__ = ["mirror", "reslice", "rotate", "rescale", "resize"]
+
 
 def mirror(imarray: np.ndarray, axis: int = 0) -> np.ndarray:
     """

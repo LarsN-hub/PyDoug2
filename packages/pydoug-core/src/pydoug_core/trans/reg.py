@@ -10,6 +10,8 @@ from skimage.transform import warp_polar
 
 from pydoug_core import util
 
+__all__ = ["register"]
+
 
 def register(srcarray: np.ndarray, destarray: np.ndarray, filter: bool = True):
     """

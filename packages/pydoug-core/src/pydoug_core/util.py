@@ -5,7 +5,15 @@ Miscellaneous utility functions for PyDoug core package.
 import numpy as np
 from skimage.color import rgb2gray as skrgb2gray
 
-__all__ = ["is3d", "isrgb", "gray2rgb"]
+__all__ = [
+    "is3d",
+    "isrgb",
+    "gray2rgb",
+    "rgb2gray",
+    "chan_axis",
+    "output_dtype",
+    "axlengths",
+]
 
 
 def is3d(imarray: np.ndarray | None = None, *, imshape: None | tuple = None) -> bool:

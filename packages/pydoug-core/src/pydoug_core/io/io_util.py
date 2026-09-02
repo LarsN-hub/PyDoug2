@@ -7,8 +7,6 @@ import os
 import numpy as np
 import psutil
 
-__all__ = []
-
 
 def _auto_worker_count(samplearray: np.ndarray, numfiles: int) -> int:
     """
