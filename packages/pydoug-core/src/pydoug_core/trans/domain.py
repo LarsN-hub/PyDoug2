@@ -7,10 +7,12 @@ from scipy import fft as ft
 from skimage import transform
 
 from pydoug_core import util
+from pydoug_core.registry import register_operation
 
 __all__ = ["radon", "invradon", "fft", "invfft"]
 
 
+@register_operation(category="transformations", display_name="Radon")
 def radon(imarray: np.ndarray) -> np.ndarray:
     """
     Transform a spatial domain image into the projection domain.
@@ -40,6 +42,7 @@ def radon(imarray: np.ndarray) -> np.ndarray:
         return transform.radon(imarray, circle=False)
 
 
+@register_operation(category="transformations", display_name="Inverse Radon")
 def invradon(imarray: np.ndarray) -> np.ndarray:
     """
     Transform a projection domain image into the spatial domain.
@@ -69,6 +72,7 @@ def invradon(imarray: np.ndarray) -> np.ndarray:
         return transform.iradon(imarray, circle=False)
 
 
+@register_operation(category="transformations", display_name="FFT")
 def fft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
     """
     Transform a spatial domain image into the frequency domain.
@@ -102,6 +106,7 @@ def fft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
     return np.abs(ft.fftshift(ft.fft2(imarray)))
 
 
+@register_operation(category="transformations", display_name="Inverse FFT")
 def invfft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
     """
     Transform a frequency domain image into the spatial domain.
@@ -136,6 +141,7 @@ def invfft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
     return np.abs(ft.ifftshift(ft.ifft2(imarray)))
 
 
+@register_operation(category="transformations", display_name="Hough")
 def hough(
     imarray: np.ndarray,
     mode: str = "line",

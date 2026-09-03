@@ -8,10 +8,12 @@ import numpy as np
 from skimage import transform
 
 from pydoug_core import util
+from pydoug_core.registry import register_operation
 
 __all__ = ["mirror", "reslice", "rotate", "rescale", "resize"]
 
 
+@register_operation(category="transformations", display_name="Mirror")
 def mirror(imarray: np.ndarray, axis: int = 0) -> np.ndarray:
     """
     Mirror an image array across an axis.
@@ -35,6 +37,7 @@ def mirror(imarray: np.ndarray, axis: int = 0) -> np.ndarray:
     return np.flip(imarray, axis)
 
 
+@register_operation(category="transformations", display_name="Reslice")
 def reslice(imarray: np.ndarray, orientation: str = "top") -> np.ndarray:
     """
     Reslice a 3D image array.
@@ -69,6 +72,7 @@ def reslice(imarray: np.ndarray, orientation: str = "top") -> np.ndarray:
         return imarray
 
 
+@register_operation(category="transformations", display_name="Rotate")
 def rotate(
     imarray: np.ndarray,
     angle: float = 0,
@@ -135,6 +139,7 @@ def rotate(
         )
 
 
+@register_operation(category="transformations", display_name="Rescale")
 def rescale(
     imarray: np.ndarray,
     scale: float = 1,
@@ -188,6 +193,7 @@ def rescale(
     ).astype(outdtype, copy=False)
 
 
+@register_operation(category="transformations", display_name="Resize")
 def resize(
     imarray: np.ndarray,
     xshape: int | None = None,
