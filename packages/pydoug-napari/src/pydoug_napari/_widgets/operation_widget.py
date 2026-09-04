@@ -66,5 +66,13 @@ def make_operation_widget(
         ]
         + params_only
     )
+    widget: FunctionGui = magicgui(
+        _dispatch, call_button=f"Run {operation_spec.display_name}"
+    )
 
-    return magicgui(_dispatch, call_button=f"Run {operation_spec.display_name}")
+    viewer.layers.events.inserted.connect(widget.layer.reset_choices)
+    viewer.layers.events.removed.connect(widget.layer.reset_choices)
+    viewer.layers.events.reordered.connect(widget.layer.reset_choices)
+    viewer.layers.events.renamed.connect(widget.layer.reset_choices)
+
+    return widget

@@ -73,7 +73,7 @@ def invradon(imarray: np.ndarray) -> np.ndarray:
 
 
 @register_operation(category="transformations", display_name="FFT")
-def fft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
+def fft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     """
     Transform a spatial domain image into the frequency domain.
 
@@ -81,7 +81,7 @@ def fft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
     ----------
     imarray: np.ndarray
         The image array to be transformed.
-    slicewise3d: bool
+    Slicewise: bool
         Whether to calcualte the fft of a 3D array as 2D slicewise or 3D total.
         Default is False (calculates 3D fft of 3D array).
 
@@ -93,7 +93,7 @@ def fft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
 
     imarray = util.rgb2gray(imarray)
     if util.is3d(imarray):
-        if slicewise3d:
+        if Slicewise:
             firstfft: np.ndarray = np.abs(ft.fftshift(ft.fft2(imarray[0])))
             fftarray: np.ndarray = np.empty(
                 (imarray.shape[0], firstfft.shape[0], firstfft.shape[1]), firstfft.dtype
@@ -107,7 +107,7 @@ def fft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
 
 
 @register_operation(category="transformations", display_name="Inverse FFT")
-def invfft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
+def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     """
     Transform a frequency domain image into the spatial domain.
 
@@ -115,7 +115,7 @@ def invfft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
     ----------
     imarray: np.ndarray
         The image array to be transformed.
-    slicewise3d: bool
+    Slicewise: bool
         Whether to calcualte the inverse fft of a 3D array as 2D slicewise or 3D total.
         Default is False (calculates 3D inverse fft of 3D array).
 
@@ -127,7 +127,7 @@ def invfft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
 
     imarray = util.rgb2gray(imarray)
     if util.is3d(imarray):
-        if slicewise3d:
+        if Slicewise:
             firstifft: np.ndarray = np.abs(ft.ifftshift(ft.ifft2(imarray[0])))
             ifftarray: np.ndarray = np.empty(
                 (imarray.shape[0], firstifft.shape[0], firstifft.shape[1]),
@@ -144,9 +144,9 @@ def invfft(imarray: np.ndarray, slicewise3d: bool = False) -> np.ndarray:
 @register_operation(category="transformations", display_name="Hough")
 def hough(
     imarray: np.ndarray,
-    mode: str = "line",
-    radii: np.ndarray | None = None,
-    fullout: bool = False,
+    Mode: str = "line",
+    Radii: np.ndarray | None = None,
+    Full_Output: bool = False,
 ) -> np.ndarray | tuple:
     """
     Transform an image from the spatial domain to the accumulator domain.
@@ -155,11 +155,11 @@ def hough(
     ----------
     imarray: np.ndarray
         The image array to be transformed.
-    mode: str
+    Mode: str
         The mode to accumulate votes. Default is "line" but can also be "circle".
-    radii: np.ndarray | None
+    Radii: np.ndarray | None
         The radii to be tested if mode is "circle". Auto-filled if None.
-    fullout: bool
+    Full_Output: bool
         Whether or not to provide the full output of the hough transform functions
         from skimage. Default is False (returns just the transformed array).
 
@@ -180,11 +180,11 @@ def hough(
     """
 
     imarray = util.rgb2gray(imarray)
-    if mode == "circle":
-        if not np.any(radii):
-            radii = np.arange(min(5, min(imarray.shape) / 2), min(imarray.shape) / 2, 2)
+    if Mode == "circle":
+        if not np.any(Radii):
+            Radii = np.arange(min(5, min(imarray.shape) / 2), min(imarray.shape) / 2, 2)
         if util.is3d(imarray):
-            firstarray = transform.hough_circle(imarray[0], radii)
+            firstarray = transform.hough_circle(imarray[0], Radii)
             harray: np.ndarray = np.empty(
                 (
                     firstarray.shape[0],
@@ -196,9 +196,9 @@ def hough(
             )
             harray[:, :, :, 0] = firstarray
             for index in range(1, imarray.shape[0]):
-                harray[:, :, :, index] = transform.hough_circle(imarray[index], radii)
+                harray[:, :, :, index] = transform.hough_circle(imarray[index], Radii)
             return harray
-        return transform.hough_circle(imarray, radii)
+        return transform.hough_circle(imarray, Radii)
     else:
         if util.is3d(imarray):
             firstarray, firstangles, firstdist = transform.hough_line(imarray[0])
@@ -213,9 +213,9 @@ def hough(
                 harray[index], curangles, curdist = transform.hough_line(imarray[index])
                 angles.append(curangles)
                 dist.append(curdist)
-            if not fullout:
+            if not Full_Output:
                 return harray
             return (harray, angles, dist)
-        if not fullout:
+        if not Full_Output:
             return transform.hough_line(imarray)[0]
         return transform.hough_line(imarray)

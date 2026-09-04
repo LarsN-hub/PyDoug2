@@ -5,6 +5,7 @@ Main widget for PyDoug's napari plugin.
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 
+import pydoug_core  # noqa: F401 — imported for its registration side effect
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import list_operations
 from pydoug_napari._widgets.batch_widget import make_batch_widget
@@ -26,6 +27,7 @@ class MainWidget(QTabWidget):
         self.recorder = Recorder()
 
         categories: list[str] = sorted({spec.category for spec in list_operations()})
+
         for category in categories:
             self.addTab(self._build_category_tab(category, viewer), category.title())
 

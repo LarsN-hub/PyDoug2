@@ -9,6 +9,6 @@ from pydoug_napari._widgets import main_widget
 
 def test_make_main_widget(make_napari_viewer) -> None:
 
-    viewer: Viewer = make_napari_viewer
+    viewer: Viewer = make_napari_viewer()
     widget: main_widget.MainWidget = main_widget.MainWidget(viewer)
     assert widget.count() >= 1

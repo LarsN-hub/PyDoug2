@@ -7,6 +7,8 @@ from pathlib import Path
 from magicgui import magicgui
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
+from pydoug_core import util
+
 
 def make_batch_widget(recorder) -> QWidget:
     """
@@ -23,36 +25,41 @@ def make_batch_widget(recorder) -> QWidget:
         The batch processing container widget.
     """
 
-    @magicgui(call_button="Save Recording")
-    def save_widget(filename: Path = Path("recording.json")) -> None:
+    @magicgui(Save_Folder={"mode": "d"}, call_button="Save Workflow")
+    def save_widget(
+        Save_Folder: Path = Path(""), File_Name: str | Path = "workflow"
+    ) -> None:
         """
-        Save the current parameters log.
+        Save the current workflow.
 
         Parameters
         ----------
-        filename: Path
-            The file path where the parameters should be saved.
+        Save_Folder: Path
+            The folder where the workflow file should be saved.
+        File_Name: str
+            The name of the workflow file.
         """
 
-        recorder.save(filename)
+        tidiedpath: Path = util.tidypath(Save_Folder / File_Name, "json")
+        recorder.save(tidiedpath)
 
-    @magicgui(call_button="Load Recording")
-    def load_widget(filename: Path = Path("recording.json")) -> None:
+    @magicgui(call_button="Load Workflow")
+    def load_widget(File_Path: Path = Path("")) -> None:
         """
-        Load parameters for batch processing.
+        Load workflow for batch processing.
 
         Parameters
         ----------
-        filename: Path
+        File_Path: Path
             The path to the parameters file.
         """
 
-        recorder.load(filename)
+        recorder.load(File_Path)
 
-    @magicgui(call_button="Clear Recording")
+    @magicgui(call_button="Clear Workflow")
     def clear_widget() -> None:
         """
-        Clear the currently recorded steps.
+        Clear the current workflow.
         """
 
         recorder.steps.clear()

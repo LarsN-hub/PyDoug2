@@ -6,31 +6,46 @@ import math
 
 import numpy as np
 
+from pydoug_core import util
 from pydoug_core.trans import geom
 
 
 def test_mirror_returns(sample_arrays) -> None:
 
-    result0: np.ndarray = geom.mirror(sample_arrays["2dgray"], 2)
+    result0: np.ndarray = geom.mirror(
+        sample_arrays["2dgray"], util.axint2str(sample_arrays["2dgray"], 2)
+    )
     assert np.all(result0 == sample_arrays["2dgray"])
-    result1: np.ndarray = geom.mirror(sample_arrays["2dgray"])
+    result1: np.ndarray = geom.mirror(sample_arrays["2dgray"], "y")
     result2: np.ndarray = geom.mirror(sample_arrays["3dgray"])
-    result3: np.ndarray = geom.mirror(sample_arrays["2drgb"])
+    result3: np.ndarray = geom.mirror(sample_arrays["2drgb"], "y")
     result4: np.ndarray = geom.mirror(sample_arrays["3drgb"])
     assert np.all(result1[0, :] == sample_arrays["2dgray"][-1, :])
     assert np.all(result2[0] == sample_arrays["3dgray"][-1])
     assert np.all(result3[0, :] == sample_arrays["2drgb"][-1, :])
     assert np.all(result4[0] == sample_arrays["3drgb"][-1])
-    result5: np.ndarray = geom.mirror(sample_arrays["2dgray"], 1)
-    result6: np.ndarray = geom.mirror(sample_arrays["3dgray"], 1)
-    result7: np.ndarray = geom.mirror(sample_arrays["2drgb"], 1)
-    result8: np.ndarray = geom.mirror(sample_arrays["3drgb"], 1)
+    result5: np.ndarray = geom.mirror(
+        sample_arrays["2dgray"], util.axint2str(sample_arrays["2dgray"], 1)
+    )
+    result6: np.ndarray = geom.mirror(
+        sample_arrays["3dgray"], util.axint2str(sample_arrays["3dgray"], 1)
+    )
+    result7: np.ndarray = geom.mirror(
+        sample_arrays["2drgb"], util.axint2str(sample_arrays["2drgb"], 1)
+    )
+    result8: np.ndarray = geom.mirror(
+        sample_arrays["3drgb"], util.axint2str(sample_arrays["3drgb"], 1)
+    )
     assert np.all(result5[:, 0] == sample_arrays["2dgray"][:, -1])
     assert np.all(result6[:, 0, :] == sample_arrays["3dgray"][:, -1, :])
     assert np.all(result7[:, 0] == sample_arrays["2drgb"][:, -1])
     assert np.all(result8[:, 0, :] == sample_arrays["3drgb"][:, -1, :])
-    result9: np.ndarray = geom.mirror(sample_arrays["3dgray"], 2)
-    result10: np.ndarray = geom.mirror(sample_arrays["3drgb"], 2)
+    result9: np.ndarray = geom.mirror(
+        sample_arrays["3dgray"], util.axint2str(sample_arrays["3dgray"], 2)
+    )
+    result10: np.ndarray = geom.mirror(
+        sample_arrays["3drgb"], util.axint2str(sample_arrays["3drgb"], 2)
+    )
     assert np.all(result9[:, :, 0] == sample_arrays["3dgray"][:, :, -1])
     assert np.all(result10[:, :, 0] == sample_arrays["3drgb"][:, :, -1])
 
@@ -74,14 +89,14 @@ def test_rotate_returns(sample_arrays) -> None:
     result2: np.ndarray = geom.rotate(mirarray, 10, True)
     assert np.all(result1 == np.flipud(result2))
     assert result1.dtype == sample_arrays["2dgray"].dtype
-    result3: np.ndarray = geom.rotate(sample_arrays["2dgray"], 20, resize=True)
+    result3: np.ndarray = geom.rotate(sample_arrays["2dgray"], 20, Resize=True)
     assert result3.shape[0] > sample_arrays["2dgray"].shape[0]
     assert result3.shape[1] > sample_arrays["2dgray"].shape[1]
-    result4: np.ndarray = geom.rotate(sample_arrays["2dgray"], 30, preserve_dtype=False)
+    result4: np.ndarray = geom.rotate(sample_arrays["2dgray"], 30, Preserve_Dtype=False)
     assert result4.dtype == np.dtype(np.float64)
-    result5: np.ndarray = geom.rotate(sample_arrays["3dgray"], 50, resize=True)
+    result5: np.ndarray = geom.rotate(sample_arrays["3dgray"], 50, Resize=True)
     assert result5.shape[0] == sample_arrays["3dgray"].shape[0]
-    result6: np.ndarray = geom.rotate(sample_arrays["3drgb"], 50, resize=True)
+    result6: np.ndarray = geom.rotate(sample_arrays["3drgb"], 50, Resize=True)
     assert result6.shape[0] == sample_arrays["3drgb"].shape[0]
 
 
@@ -91,7 +106,7 @@ def test_rescale_returns(sample_arrays) -> None:
     assert np.all(result1 == sample_arrays["2dgray"])
     result2: np.ndarray = geom.rescale(sample_arrays["2dgray"], 0.5)
     result3: np.ndarray = geom.rescale(
-        sample_arrays["3dgray"], 1.5, preserve_dtype=False
+        sample_arrays["3dgray"], 1.5, Preserve_Dtype=False
     )
     assert result2.dtype == sample_arrays["2dgray"].dtype
     assert result2.shape[0] <= math.ceil(sample_arrays["2dgray"].shape[0] * 0.5)
@@ -106,7 +121,7 @@ def test_rescale_returns(sample_arrays) -> None:
     assert result4.shape[2] <= math.ceil(sample_arrays["3drgb"].shape[2] * 0.5)
     assert result4.shape[3] == sample_arrays["3drgb"].shape[3]
     result5: np.ndarray = geom.rescale(
-        sample_arrays["2dgray"] >= 128, 0.5, segmented_data=True
+        sample_arrays["2dgray"] >= 128, 0.5, Segmented_Data=True
     )
     assert result5.dtype == np.dtype(np.bool)
     result6: np.ndarray = geom.rescale(sample_arrays["2dgray"] >= 128, 0.5)
@@ -124,11 +139,11 @@ def test_resize_returns(sample_arrays) -> None:
     result6: np.ndarray = geom.resize(sample_arrays["3drgb"], 12, 12, 6)
     result7: np.ndarray = geom.resize(sample_arrays["3dgray"], 8, 8, 4)
     result8: np.ndarray = geom.resize(
-        sample_arrays["3dgray"], 8, 8, 4, preserve_dtype=False
+        sample_arrays["3dgray"], 8, 8, 4, Preserve_Dtype=False
     )
     result9: np.ndarray = geom.resize(sample_arrays["3dgray"] >= 128, 8, 8, 4)
     result10: np.ndarray = geom.resize(
-        sample_arrays["3dgray"] >= 128, 8, 8, 4, segmented_data=True
+        sample_arrays["3dgray"] >= 128, 8, 8, 4, Segmented_Data=True
     )
     assert result0.shape == (50, 20)
     assert np.all(result1 == sample_arrays["3dgray"])

@@ -14,7 +14,7 @@ def test_recorder(tmp_path, sample_3dgray_array) -> None:
 
     result1: recorder.Recorder = recorder.Recorder()
     result1.record("mirror", {})
-    result1.record("reslice", {"orientation": "left"})
+    result1.record("reslice", {"Orientation": "left"})
     result1.save(Path(tmp_path / "test_params.json"))
     result2: recorder.Recorder = recorder.Recorder()
     result2.load(Path(tmp_path / "test_params.json"))
