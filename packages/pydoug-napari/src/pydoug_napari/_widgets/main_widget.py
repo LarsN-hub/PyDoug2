@@ -11,48 +11,46 @@ from pydoug_napari._widgets.batch_widget import make_batch_widget
 from pydoug_napari._widgets.operation_widget import make_operation_widget
 
 
-def make_main_widget(viewer: Viewer) -> QTabWidget:
+class MainWidget(QTabWidget):
     """
-    Factory for the napari plugin's single top-level dock widget.
+    Top-level dock widget containing the shared recorder and all widget tabs.
 
-    Parameters
+    Attributes
     ----------
-    viewer: Viewer
-        The napari viewer object.
-    """
-    recorder: Recorder = Recorder()
-    tabs: QTabWidget = QTabWidget()
-
-    categories: list[str] = sorted({spec.category for spec in list_operations()})
-    for category in categories:
-        tabs.addTab(_build_category_tab(category, viewer, recorder), category.title())
-
-    tabs.addTab(make_batch_widget(recorder), "Batch")
-    return tabs
-
-
-def _build_category_tab(category: str, viewer: Viewer, recorder: Recorder) -> QWidget:
-    """
-    Build a tab for a given category of widgets in the registry.
-
-    Parameters
-    ----------
-    category: str
-        The operation category.
-    viewer: Viewer
-        The napari viewer object.
     recorder: Recorder
-        The parameters logging object.
-
-    Returns
-    -------
-    container: Qwidget
-        The container widget for all operations in the category.
+        The parameters recording object.
     """
 
-    container: QWidget = QWidget()
-    layout: QVBoxLayout = QVBoxLayout()
-    for spec in list_operations(category=category):
-        layout.addWidget(make_operation_widget(spec, viewer, recorder).native)
-    container.setLayout(layout)
-    return container
+    def __init__(self, viewer: Viewer, parent=None):
+        super().__init__(parent)
+        self.recorder = Recorder()
+
+        categories: list[str] = sorted({spec.category for spec in list_operations()})
+        for category in categories:
+            self.addTab(self._build_category_tab(category, viewer), category.title())
+
+        self.addTab(make_batch_widget(self.recorder), "Batch")
+
+    def _build_category_tab(self, category: str, viewer: Viewer):
+        """
+        Build a tab for a given category of widgets in the registry.
+
+        Parameters
+        ----------
+        category: str
+            The operation category.
+        viewer: Viewer
+            The napari viewer object.
+
+        Returns
+        -------
+        container: Qwidget
+            The container widget for all operations in the category.
+        """
+
+        container = QWidget()
+        layout = QVBoxLayout()
+        for spec in list_operations(category=category):
+            layout.addWidget(make_operation_widget(spec, viewer, self.recorder).native)
+        container.setLayout(layout)
+        return container

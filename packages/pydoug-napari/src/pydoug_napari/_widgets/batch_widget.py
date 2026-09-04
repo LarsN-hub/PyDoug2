@@ -62,4 +62,7 @@ def make_batch_widget(recorder) -> QWidget:
     for w in (save_widget, load_widget, clear_widget):
         layout.addWidget(w.native)
     container.setLayout(layout)
+    container.save_widget = save_widget  # type: ignore[attr-defined]
+    container.load_widget = load_widget  # type: ignore[attr-defined]
+    container.clear_widget = clear_widget  # type: ignore[attr-defined]
     return container

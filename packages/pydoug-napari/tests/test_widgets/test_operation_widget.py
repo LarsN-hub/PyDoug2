@@ -5,6 +5,9 @@ Tests for PyDoug's napari plugin operation_widget module.
 
 import numpy as np
 import pytest
+from magicgui.widgets import FunctionGui
+from napari.layers import Image, Layer
+from napari.viewer import Viewer
 from qtpy.QtCore import Qt
 
 from pydoug_core.batch.recorder import Recorder
@@ -35,17 +38,19 @@ def test_operation_widget_runs_and_records(
     make_napari_viewer, half_spec, qtbot, sample_3dgray_array
 ) -> None:
 
-    viewer = make_napari_viewer()
-    recorder = Recorder()
-    layer = viewer.add_image(sample_3dgray_array, name="test_layer")
-    widget = make_operation_widget(half_spec, viewer, recorder)
+    viewer: Viewer = make_napari_viewer()
+    recorder: Recorder = Recorder()
+    layer: Image | list[Image] = viewer.add_image(
+        sample_3dgray_array, name="test_layer"
+    )
+    widget: FunctionGui = make_operation_widget(half_spec, viewer, recorder)
     qtbot.addWidget(widget.native)
     widget.layer.value = layer
     widget.factor.value = 0.5
     assert widget.call_button is not None
     qtbot.mouseClick(widget.call_button.native, Qt.MouseButton.LeftButton)
     assert len(viewer.layers) == 2
-    output_layer = viewer.layers[-1]
+    output_layer: Layer = viewer.layers[-1]
     np.testing.assert_array_equal(
         output_layer.data,
         np.round(sample_3dgray_array * 0.5).astype(sample_3dgray_array.dtype),
