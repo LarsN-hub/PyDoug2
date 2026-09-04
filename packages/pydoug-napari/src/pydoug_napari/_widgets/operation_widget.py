@@ -1,11 +1,11 @@
 """
-napari plugin for PyDoug's core functions as widgets.
+Convert PyDoug core functions into napari widgets.
 """
 
 import inspect
-from collections.abc import Callable
 
 from magicgui import magicgui
+from magicgui.widgets import FunctionGui
 from napari.layers import Image
 from napari.viewer import Viewer
 
@@ -13,9 +13,12 @@ from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
 
 
-def make_operation_widget(operation_spec: OperationSpec, viewer: Viewer) -> Callable:
+def make_operation_widget(
+    operation_spec: OperationSpec, viewer: Viewer, recorder: Recorder
+) -> FunctionGui:
     """
-    Automatically generate widgets from the PyDoug core registry.
+    Automatically generate widgets from the PyDoug core registry and allow their use
+    to be recorded in the parameters log.
 
     Parameters
     ----------
@@ -23,6 +26,8 @@ def make_operation_widget(operation_spec: OperationSpec, viewer: Viewer) -> Call
         The operation and its specifications.
     viewer: Viewer
         The napari viewer object.
+    recorder: Recorder
+        The recorder object for the parameters log.
 
     Returns
     -------
@@ -46,15 +51,14 @@ def make_operation_widget(operation_spec: OperationSpec, viewer: Viewer) -> Call
         """
 
         result = operation_spec.func(layer.data, **params)
-        Recorder.record(operation_spec.name, params)
+        recorder.record(operation_spec.name, params)
         viewer.add_image(result, name=f"{layer.name}_{operation_spec.name}")
 
     params_only = [
-        p
-        for name, p in operation_spec.signature.parameters.items()
-        if name != next(iter(operation_spec.signature.parameters))
+        p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
+        for p in list(operation_spec.signature.parameters.values())[1:]
     ]
-    _dispatch.__signature__ = inspect.Signature(
+    _dispatch.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
         [
             inspect.Parameter(
                 "layer", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Image
