@@ -147,7 +147,12 @@ def rotate(
         )
 
 
-@register_operation(category="transformations", display_name="Rescale")
+@register_operation(
+    category="transformations",
+    display_name="Rescale",
+    widget_options={"Scale": {"step": 0.001}},
+    native_options={"Scale": {"setDecimals": 3}},
+)
 def rescale(
     imarray: np.ndarray,
     Scale: float = 1,
@@ -201,7 +206,15 @@ def rescale(
     ).astype(outdtype, copy=False)
 
 
-@register_operation(category="transformations", display_name="Resize")
+@register_operation(
+    category="transformations",
+    display_name="Resize",
+    widget_options={
+        "X_Length": {"max": 10000},
+        "Y_Length": {"max": 10000},
+        "Z_Length": {"max": 10000},
+    },
+)
 def resize(
     imarray: np.ndarray,
     X_Length: int | None = None,

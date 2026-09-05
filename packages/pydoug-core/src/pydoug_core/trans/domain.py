@@ -141,7 +141,7 @@ def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     return np.abs(ft.ifftshift(ft.ifft2(imarray)))
 
 
-@register_operation(category="transformations", display_name="Hough")
+# @register_operation(category="transformations", display_name="Hough")
 def hough(
     imarray: np.ndarray,
     Mode: str = "line",

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from numpy import ndarray
+from psygnal import Signal
 
 from pydoug_core.registry import get_operation
 
@@ -22,10 +23,13 @@ class RecordedStep:
         The name of the operation
     params: dict
         The dictionary of parameters and their values used in the operation.
+    layer_ref: None | object
+        The layer object created during the recorded step.
     """
 
     operation_name: str
     params: dict
+    layer_ref: None | object = None
 
 
 class Recorder:
@@ -38,10 +42,14 @@ class Recorder:
         List of recorded steps.
     """
 
+    steps_changed: Signal = Signal()
+
     def __init__(self):
         self.steps: list[RecordedStep] = []
 
-    def record(self, operation_name: str, params: dict) -> None:
+    def record(
+        self, operation_name: str, params: dict, layer_ref: None | object = None
+    ) -> None:
         """
         Record a step in the parameters log.
 
@@ -51,9 +59,37 @@ class Recorder:
             The name of the operation.
         params: dict
             The dictionary of the operation's parameters.
+        layer_ref: None | object
+            The layer object created during the recorded step.
         """
 
-        self.steps.append(RecordedStep(operation_name, params))
+        self.steps.append(RecordedStep(operation_name, params, layer_ref))
+        self.steps_changed.emit()
+
+    def remove_steps_by_layer(self, layer) -> None:
+        """
+        Remove any recorded step whose output layer is "layer".
+
+        Parameters
+        ----------
+        layer: napari.layers.Layer
+            The napari layer being removed.
+        """
+
+        new_steps: list[RecordedStep] = [
+            s for s in self.steps if s.layer_ref is not layer
+        ]
+        if len(new_steps) != len(self.steps):
+            self.steps = new_steps
+            self.steps_changed.emit()
+
+    def clear(self) -> None:
+        """
+        Clear the recorded steps.
+        """
+
+        self.steps = []
+        self.steps_changed.emit()
 
     def save(self, path: Path) -> None:
         """
@@ -80,6 +116,7 @@ class Recorder:
 
         data = json.loads(Path(path).read_text())
         self.steps = [RecordedStep(d["operation"], d["params"]) for d in data]
+        self.steps_changed.emit()
 
     def replay(self, imarray: ndarray) -> ndarray:
         """

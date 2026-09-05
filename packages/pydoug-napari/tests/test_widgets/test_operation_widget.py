@@ -18,7 +18,8 @@ from pydoug_napari._widgets.operation_widget import make_operation_widget
 
 def _half(imarray: np.ndarray, factor: float = 0.5) -> np.ndarray:
 
-    return np.round(imarray * factor).astype(imarray.dtype)
+    return np.round(imarray * factor).astype(imarray.dtype)  # pragma: no cover
+    # covered in a separate Qt threading event
 
 
 @pytest.fixture
@@ -52,7 +53,7 @@ def test_operation_widget_runs_and_records(
     subwidget.factor.value = 0.5
     assert subwidget.call_button is not None
     qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
-    assert len(viewer.layers) == 2
+    qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
     output_layer: Layer = viewer.layers[-1]
     np.testing.assert_array_equal(
         output_layer.data,

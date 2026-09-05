@@ -26,9 +26,7 @@ def make_batch_widget(recorder) -> ScrollableContainer:
     """
 
     @magicgui(Save_Folder={"mode": "d"}, call_button="Save Workflow")
-    def save_widget(
-        Save_Folder: Path = Path(""), File_Name: str | Path = "workflow"
-    ) -> None:
+    def save_widget(Save_Folder: Path = Path(""), File_Name: str = "workflow") -> None:
         """
         Save the current workflow.
 
@@ -62,13 +60,14 @@ def make_batch_widget(recorder) -> ScrollableContainer:
         Clear the current workflow.
         """
 
-        recorder.steps.clear()
+        recorder.clear()
+
+    def _get_collapsible_widget(widget) -> CollapsibleContainer:
+        return CollapsibleContainer(widgets=[widget], labels=False)
 
     widget_list: list[CollapsibleContainer] = []
     for index, w in enumerate([save_widget, load_widget, clear_widget]):
-        current_w: CollapsibleContainer = CollapsibleContainer(
-            widgets=[w], labels=False
-        )
+        current_w: CollapsibleContainer = _get_collapsible_widget(w)
         current_w.text = ["Save Workflow", "Load Workflow", "Clear Workflow"][index]
         widget_list.append(current_w)
     container: ScrollableContainer = ScrollableContainer(

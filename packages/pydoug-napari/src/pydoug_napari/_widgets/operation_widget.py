@@ -8,6 +8,7 @@ from magicclass.widgets import CollapsibleContainer
 from magicgui import magicgui
 from magicgui.widgets import FunctionGui
 from napari.layers import Image
+from napari.qt.threading import thread_worker
 from napari.viewer import Viewer
 
 from pydoug_core.batch.recorder import Recorder
@@ -52,9 +53,33 @@ def make_operation_widget(
             The keyword arguments are passed to "Recorder.record()."
         """
 
-        result = operation_spec.func(layer.data, **params)
-        recorder.record(operation_spec.name, params)
-        viewer.add_image(result, name=f"{operation_spec.display_name}")
+        @thread_worker
+        def _run():
+            """
+            Run the operation widget's function and return its results.
+            """
+
+            return operation_spec.func(layer.data, **params)  # pragma: no cover
+            # covered in a separate Qt threading event
+
+        def _on_done(result):
+            """
+            Calls back on main Qt thread to return result after operation is performed.
+
+            Parameters
+            ----------
+            result
+                The result of the operation.
+            """
+
+            result_layer: Image | list[Image] = viewer.add_image(
+                result, name=f"{operation_spec.display_name}"
+            )
+            recorder.record(operation_spec.name, params, layer_ref=result_layer)
+
+        worker = _run()  # type: ignore[call-arg]
+        worker.returned.connect(_on_done)
+        worker.start()
 
     params_only = [
         p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
@@ -72,7 +97,12 @@ def make_operation_widget(
         _dispatch,
         call_button=f"Run {operation_spec.display_name}",
         layer={"label": "Layer"},
+        **operation_spec.widget_options,
     )
+    for field_name, native_calls in operation_spec.native_options.items():
+        field_widget = getattr(widget, field_name)
+        for method_name, arg in native_calls.items():
+            getattr(field_widget.native, method_name)(arg)
     connect_layer_autoselect(viewer, widget, "layer")
     container: CollapsibleContainer = CollapsibleContainer(
         widgets=[widget], labels=False

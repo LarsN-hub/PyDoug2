@@ -22,6 +22,10 @@ class OperationSpec:
         The category of the function/operation.
     display_name: str
         The name to be displayed for the operation.
+    widget_options: dict
+        Options to modify default widget parameters.
+    native_options: dict[str, dict]
+        Options to modify the default widget's native parameters.
     signature: inspect.Signature
         The function's signature.
     """
@@ -30,6 +34,8 @@ class OperationSpec:
     func: Callable
     category: str
     display_name: str
+    widget_options: dict = field(default_factory=dict)
+    native_options: dict[str, dict] = field(default_factory=dict)
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -39,7 +45,12 @@ class OperationSpec:
 _REGISTRY: dict[str, OperationSpec] = {}
 
 
-def register_operation(category: str, display_name: None | str = None) -> Callable:
+def register_operation(
+    category: str,
+    display_name: None | str = None,
+    widget_options: dict | None = None,
+    native_options: dict[str, dict] | None = None,
+) -> Callable:
     """
     Provide a decorator to register a function as an operation.
 
@@ -50,6 +61,10 @@ def register_operation(category: str, display_name: None | str = None) -> Callab
     display_name: None | str = None
         The display name of the operation (optional).
         Automatically generated if not provided.
+    widget_options: dict | None
+        (Optional) Dictionary of default widget parameter settings.
+    native_options: dict[str, dict] | None
+        (Optional) Dictionary of default widget native parameter settings.
 
     Returns
     -------
@@ -77,6 +92,8 @@ def register_operation(category: str, display_name: None | str = None) -> Callab
             func=func,
             category=category,
             display_name=display_name or func.__name__.replace("_", " ").title(),
+            widget_options=widget_options or {},
+            native_options=native_options or {},
         )
         return func
 

@@ -31,3 +31,4 @@ source = [
     "packages/pydoug-napari",
     "packages/pydoug-standalone",
 ]
+concurrency = ["thread"]
