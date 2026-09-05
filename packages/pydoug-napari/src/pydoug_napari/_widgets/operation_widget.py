@@ -4,6 +4,7 @@ Convert PyDoug core functions into napari widgets.
 
 import inspect
 
+from magicclass.widgets import CollapsibleContainer
 from magicgui import magicgui
 from magicgui.widgets import FunctionGui
 from napari.layers import Image
@@ -11,11 +12,12 @@ from napari.viewer import Viewer
 
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
+from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
 
 
 def make_operation_widget(
     operation_spec: OperationSpec, viewer: Viewer, recorder: Recorder
-) -> FunctionGui:
+) -> CollapsibleContainer:
     """
     Automatically generate widgets from the PyDoug core registry and allow their use
     to be recorded in the parameters log.
@@ -52,7 +54,7 @@ def make_operation_widget(
 
         result = operation_spec.func(layer.data, **params)
         recorder.record(operation_spec.name, params)
-        viewer.add_image(result, name=f"{layer.name}_{operation_spec.name}")
+        viewer.add_image(result, name=f"{operation_spec.display_name}")
 
     params_only = [
         p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
@@ -67,12 +69,14 @@ def make_operation_widget(
         + params_only
     )
     widget: FunctionGui = magicgui(
-        _dispatch, call_button=f"Run {operation_spec.display_name}"
+        _dispatch,
+        call_button=f"Run {operation_spec.display_name}",
+        layer={"label": "Layer"},
     )
+    connect_layer_autoselect(viewer, widget, "layer")
+    container: CollapsibleContainer = CollapsibleContainer(
+        widgets=[widget], labels=False
+    )
+    container.text = operation_spec.display_name
 
-    viewer.layers.events.inserted.connect(widget.layer.reset_choices)
-    viewer.layers.events.removed.connect(widget.layer.reset_choices)
-    viewer.layers.events.reordered.connect(widget.layer.reset_choices)
-    viewer.layers.events.renamed.connect(widget.layer.reset_choices)
-
-    return widget
+    return container

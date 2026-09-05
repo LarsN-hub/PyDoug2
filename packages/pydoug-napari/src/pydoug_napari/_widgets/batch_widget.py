@@ -4,13 +4,13 @@ Batch processing widget for PyDoug's napari plugin.
 
 from pathlib import Path
 
+from magicclass.widgets import CollapsibleContainer, ScrollableContainer
 from magicgui import magicgui
-from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from pydoug_core import util
 
 
-def make_batch_widget(recorder) -> QWidget:
+def make_batch_widget(recorder) -> ScrollableContainer:
     """
     Create the batch widget container.
 
@@ -64,12 +64,15 @@ def make_batch_widget(recorder) -> QWidget:
 
         recorder.steps.clear()
 
-    container: QWidget = QWidget()
-    layout: QVBoxLayout = QVBoxLayout()
-    for w in (save_widget, load_widget, clear_widget):
-        layout.addWidget(w.native)
-    container.setLayout(layout)
-    container.save_widget = save_widget  # type: ignore[attr-defined]
-    container.load_widget = load_widget  # type: ignore[attr-defined]
-    container.clear_widget = clear_widget  # type: ignore[attr-defined]
+    widget_list: list[CollapsibleContainer] = []
+    for index, w in enumerate([save_widget, load_widget, clear_widget]):
+        current_w: CollapsibleContainer = CollapsibleContainer(
+            widgets=[w], labels=False
+        )
+        current_w.text = ["Save Workflow", "Load Workflow", "Clear Workflow"][index]
+        widget_list.append(current_w)
+    container: ScrollableContainer = ScrollableContainer(
+        widgets=widget_list, labels=False
+    )
+
     return container

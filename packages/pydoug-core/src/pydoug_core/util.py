@@ -3,6 +3,7 @@ Miscellaneous utility functions for PyDoug core package.
 """
 
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from skimage.color import rgb2gray as skrgb2gray
@@ -208,7 +209,7 @@ def axstr2int(imarray: np.ndarray, axis: str = "x") -> int:
     return 2
 
 
-def axint2str(imarray: np.ndarray, axis: int = 0) -> str:
+def axint2str(imarray: np.ndarray, axis: int = 0) -> Literal["X", "Y", "Z", "C"]:
     """
     Convert an axis string label to integer label.
 
@@ -221,7 +222,7 @@ def axint2str(imarray: np.ndarray, axis: int = 0) -> str:
 
     Returns
     -------
-    axstr: str
+    axstr: Literal["X", "Y", "Z", "C"]
         The axis string label.
     """
 

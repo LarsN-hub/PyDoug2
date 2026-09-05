@@ -2,7 +2,7 @@
 Geometric transformations of images.
 """
 
-from typing import cast
+from typing import Literal, cast
 
 import numpy as np
 from skimage import transform
@@ -14,7 +14,9 @@ __all__ = ["mirror", "reslice", "rotate", "rescale", "resize"]
 
 
 @register_operation(category="transformations", display_name="Mirror")
-def mirror(imarray: np.ndarray, Axis: str = "Z") -> np.ndarray:
+def mirror(
+    imarray: np.ndarray, Direction: Literal["X", "Y", "Z", "C"] = "Z"
+) -> np.ndarray:
     """
     Mirror an image array across an axis.
 
@@ -22,8 +24,8 @@ def mirror(imarray: np.ndarray, Axis: str = "Z") -> np.ndarray:
     ----------
     imarray: np.ndarray
         The image array to mirror.
-    Axis: str
-        The axis to mirror across.
+    Direction: Literal["X", "Y", "Z", "C"]
+        The direction to mirror along.
 
     Returns
     -------
@@ -31,7 +33,7 @@ def mirror(imarray: np.ndarray, Axis: str = "Z") -> np.ndarray:
         The mirrored image array.
     """
 
-    axis: int = util.axstr2int(imarray, Axis)
+    axis: int = util.axstr2int(imarray, Direction)
     if not util.is3d(imarray) and axis >= 2:
         return imarray
 
@@ -39,7 +41,10 @@ def mirror(imarray: np.ndarray, Axis: str = "Z") -> np.ndarray:
 
 
 @register_operation(category="transformations", display_name="Reslice")
-def reslice(imarray: np.ndarray, Orientation: str = "top") -> np.ndarray:
+def reslice(
+    imarray: np.ndarray,
+    Orientation: Literal["Top", "Bottom", "Left", "Right", "Back"] = "Top",
+) -> np.ndarray:
     """
     Reslice a 3D image array.
 
@@ -47,7 +52,7 @@ def reslice(imarray: np.ndarray, Orientation: str = "top") -> np.ndarray:
     ----------
     imarray: np.ndarray
         The image array to reslice.
-    Orientation: str
+    Orientation: Literal["Top", "Bottom", "Left", "Right", "Back"]
         The orientation of the array after reslicing.
 
     Returns
@@ -59,15 +64,15 @@ def reslice(imarray: np.ndarray, Orientation: str = "top") -> np.ndarray:
     if not util.is3d(imarray):
         return imarray
 
-    if Orientation == "top":
+    if Orientation == "Top":
         return mirror(np.moveaxis(imarray, 1, 0), util.axint2str(imarray, 1))
-    elif Orientation == "bottom":
+    elif Orientation == "Bottom":
         return mirror(np.moveaxis(imarray, 1, 0), util.axint2str(imarray, 0))
-    elif Orientation == "left":
+    elif Orientation == "Left":
         return mirror(np.swapaxes(imarray, 2, 0), util.axint2str(imarray, 2))
-    elif Orientation == "right":
+    elif Orientation == "Right":
         return mirror(np.swapaxes(imarray, 2, 0), util.axint2str(imarray, 0))
-    elif Orientation == "back":
+    elif Orientation == "Back":
         return mirror(
             mirror(imarray, util.axint2str(imarray, 0)), util.axint2str(imarray, 2)
         )
@@ -92,7 +97,7 @@ def rotate(
         The image array to be rotated.
     Angle: float
         The angle to rotate by.
-    clockwise: bool
+    Clockwise: bool
         Whether or not to rotate clockwise. Default is False (counter clockwise).
     Resize: bool
         Whether or not to resize the array to accomodate the rotation.
@@ -146,7 +151,7 @@ def rotate(
 def rescale(
     imarray: np.ndarray,
     Scale: float = 1,
-    Order: int = 1,
+    Order: Literal[0, 1, 2, 3, 4, 5] = 1,
     Segmented_Data: bool = False,
     Preserve_Dtype: bool = True,
 ) -> np.ndarray:
@@ -159,7 +164,7 @@ def rescale(
         The image array to be rescaled.
     Scale: float
         The factor to rescale the image by.
-    Order: int
+    Order: Literal[0, 1, 2, 3, 4, 5] = 1
         The order (0-5) to use for interpolation. If segmented_data is False,
         order will be forced to 0. Default is the bilinear (1).
     Segmented_Data: bool
@@ -202,7 +207,7 @@ def resize(
     X_Length: int | None = None,
     Y_Length: int | None = None,
     Z_Length: int | None = None,
-    Order: int = 1,
+    Order: Literal[0, 1, 2, 3, 4, 5] = 1,
     Segmented_Data: bool = False,
     Preserve_Dtype: bool = True,
 ) -> np.ndarray:
@@ -216,7 +221,7 @@ def resize(
     __Length: int | None
         The length of the output image array along each axis (__ = X_, Y_, or Z_). If
         not provided, the length of the input image array along that axis will be used.
-    Order: int
+    Order: Literal[0, 1, 2, 3, 4, 5] = 1
         The order (0-5) to use for interpolation. If Segmented_Data is False,
         order will be forced to 0. Default is the bilinear (1).
     Segmented_Data: bool
