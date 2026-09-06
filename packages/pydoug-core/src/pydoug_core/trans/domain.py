@@ -15,7 +15,9 @@ __all__ = ["radon", "invradon", "fft", "invfft"]
 @register_operation(category="transformations", display_name="Radon")
 def radon(imarray: np.ndarray) -> np.ndarray:
     """
-    Transform a spatial domain image into the projection domain.
+    Transform a spatial domain image into the projection domain (i.e., a sinogram) about
+    a 180 degree rotation. Convenience wrapper around scikit-image's transform.radon:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.radon
 
     Parameters
     ----------
@@ -45,7 +47,9 @@ def radon(imarray: np.ndarray) -> np.ndarray:
 @register_operation(category="transformations", display_name="Inverse Radon")
 def invradon(imarray: np.ndarray) -> np.ndarray:
     """
-    Transform a projection domain image into the spatial domain.
+    Reconstruct a projection domain image (i.e., a sinogram) into the spatial domain.
+    Convenience wrapper around scikit-image's transform.iradon:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.iradon
 
     Parameters
     ----------
@@ -75,7 +79,13 @@ def invradon(imarray: np.ndarray) -> np.ndarray:
 @register_operation(category="transformations", display_name="FFT")
 def fft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     """
-    Transform a spatial domain image into the frequency domain.
+    Transform a spatial domain image into the frequency domain. Convenience wrapper
+    around several functions from scipy's fft package (fft2, fftn, and fftshift). Note
+    Only returns the real component of the transform (using numpy's absolute):
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft2.html#scipy.fft.fft2
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fftn.html#scipy.fft.fftn
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fftshift.html#scipy.fft.fftshift
+    https://numpy.org/doc/stable/reference/generated/numpy.absolute.html
 
     Parameters
     ----------
@@ -109,7 +119,13 @@ def fft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
 @register_operation(category="transformations", display_name="Inverse FFT")
 def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     """
-    Transform a frequency domain image into the spatial domain.
+    Transform a frequency domain image into the spatial domain. Convenience wrapper
+    around several functions from scipy's fft package (ifft2, ifftn, and ifftshift).
+    Only returns the real component of the transform (using numpy's absolute):
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.ifft2.html#scipy.fft.ifft2
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.ifftn.html#scipy.fft.ifftn
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.ifftshift.html#scipy.fft.ifftshift
+    https://numpy.org/doc/stable/reference/generated/numpy.absolute.html
 
     Parameters
     ----------
@@ -149,7 +165,10 @@ def hough(
     Full_Output: bool = False,
 ) -> np.ndarray | tuple:
     """
-    Transform an image from the spatial domain to the accumulator domain.
+    Transform an image from the spatial domain to the accumulator domain. Convenience
+    wrapper around hough_circle and hough_line from scikit-image's transform package:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.hough_circle
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.hough_line
 
     Parameters
     ----------

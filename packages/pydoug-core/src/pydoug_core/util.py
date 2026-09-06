@@ -91,7 +91,9 @@ def isrgb(imarray: np.ndarray | None = None, imshape: None | tuple = None) -> bo
 @register_operation(category="utilities", display_name="Grayscale to RGB")
 def gray2rgb(imarray: np.ndarray) -> np.ndarray:
     """
-    Make a grayscale image array an RGB image array.
+    Make a grayscale image array an RGB image array. Duplicates the grayscale array
+    3x along a new axis to create the red, green, and blue layers with numpy's repeat:
+    https://numpy.org/doc/stable/reference/generated/numpy.repeat.html
 
     Parameters
     ----------
@@ -114,7 +116,9 @@ def gray2rgb(imarray: np.ndarray) -> np.ndarray:
 @register_operation(category="utilities", display_name="RGB to Grayscale")
 def rgb2gray(imarray: np.ndarray) -> np.ndarray:
     """
-    Make an RGB image array a grayscale image array.
+    Make an RGB image array a grayscale image array. Convenience wrapper around
+    scikit-image's color.rgb2gray:
+    https://scikit-image.org/docs/stable/api/skimage.color.html#skimage.color.rgb2gray
     """
 
     if isrgb(imarray):

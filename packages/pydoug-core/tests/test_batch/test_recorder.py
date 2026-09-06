@@ -10,17 +10,23 @@ from pydoug_core.batch import recorder
 from pydoug_core.trans.geom import mirror, reslice
 
 
-def test_recorder(tmp_path, sample_3dgray_array) -> None:
+def test_Recorder_record_save_load_remove_clear(tmp_path, sample_3dgray_array) -> None:
 
-    result1: recorder.Recorder = recorder.Recorder()
-    result1.record("mirror", {})
-    result1.record("reslice", {"Orientation": "left"})
-    result1.save(Path(tmp_path / "test_params.json"))
-    result2: recorder.Recorder = recorder.Recorder()
-    result2.load(Path(tmp_path / "test_params.json"))
-    result3: np.ndarray = result1.replay(sample_3dgray_array)
-    result4: np.ndarray = result2.replay(sample_3dgray_array)
-    assert result1.steps == result2.steps
-    assert np.all(result3 == result4)
-    assert result3.shape != sample_3dgray_array.shape
-    assert np.all(result3 == reslice(mirror(sample_3dgray_array), "left"))
+    record1: recorder.Recorder = recorder.Recorder()
+    record1.record("mirror", {})
+    record1.record("reslice", {"Orientation": "Left"})
+    record1.save(Path(tmp_path / "test_params.json"))
+    record2: recorder.Recorder = recorder.Recorder()
+    record2.load(Path(tmp_path / "test_params.json"))
+    result1: np.ndarray = record1.replay(sample_3dgray_array)
+    result2: np.ndarray = record2.replay(sample_3dgray_array)
+    assert record1.steps == record2.steps
+    assert np.all(result1 == result2)
+    assert result1.shape != sample_3dgray_array.shape
+    assert np.all(result1 == reslice(mirror(sample_3dgray_array), "Left"))
+    layer_ref1: object = object()
+    record1.record("mirror", {}, layer_ref1)
+    record1.remove_steps_by_layer(layer_ref1)
+    assert record1.steps == record2.steps
+    record1.clear()
+    assert record1.steps == []

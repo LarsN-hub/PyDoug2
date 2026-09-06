@@ -17,7 +17,7 @@ def test_register_operations() -> None:
     assert isinstance(result2, Callable)
 
 
-def test_get_operation() -> None:
+def test_get_operation_and_unregister() -> None:
 
     result1: registry.OperationSpec = registry.get_operation("reslice")
     assert isinstance(result1, registry.OperationSpec)
@@ -26,6 +26,8 @@ def test_get_operation() -> None:
     assert result1.category == "transformations"
     assert result1.func == geom.reslice
     assert result1.signature == inspect.signature(geom.reslice)
+    registry.unregister_operation("reslice")
+    assert "reslice" not in list(registry._REGISTRY.keys())
 
 
 def test_list_operations() -> None:

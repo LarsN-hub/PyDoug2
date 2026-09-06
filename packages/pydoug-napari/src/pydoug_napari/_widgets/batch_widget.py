@@ -69,6 +69,11 @@ def make_batch_widget(recorder) -> ScrollableContainer:
     for index, w in enumerate([save_widget, load_widget, clear_widget]):
         current_w: CollapsibleContainer = _get_collapsible_widget(w)
         current_w.text = ["Save Workflow", "Load Workflow", "Clear Workflow"][index]
+        current_w.native.setObjectName("Collapsible")
+        current_w.native.setStyleSheet(
+            "QWidget#Collapsible { border: 1px solid #888; border-radius: 4px; }"
+        )
+        current_w.native.setContentsMargins(2, 2, 2, 6)
         widget_list.append(current_w)
     container: ScrollableContainer = ScrollableContainer(
         widgets=widget_list, labels=False

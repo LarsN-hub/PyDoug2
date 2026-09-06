@@ -66,13 +66,13 @@ class Recorder:
         self.steps.append(RecordedStep(operation_name, params, layer_ref))
         self.steps_changed.emit()
 
-    def remove_steps_by_layer(self, layer) -> None:
+    def remove_steps_by_layer(self, layer: object) -> None:
         """
         Remove any recorded step whose output layer is "layer".
 
         Parameters
         ----------
-        layer: napari.layers.Layer
+        layer: object
             The napari layer being removed.
         """
 

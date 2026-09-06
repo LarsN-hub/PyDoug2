@@ -18,7 +18,8 @@ def mirror(
     imarray: np.ndarray, Direction: Literal["X", "Y", "Z", "C"] = "Z"
 ) -> np.ndarray:
     """
-    Mirror an image array across an axis.
+    Mirror an image array across an axis. Convenience wrapper around numpy's "flip":
+    https://numpy.org/doc/stable/reference/generated/numpy.flip.html
 
     Parameters
     ----------
@@ -46,7 +47,10 @@ def reslice(
     Orientation: Literal["Top", "Bottom", "Left", "Right", "Back"] = "Top",
 ) -> np.ndarray:
     """
-    Reslice a 3D image array.
+    Reslice a 3D image array. Convenience wrapper around numpy's "moveaxis" and
+    "swapaxes" functions:
+    https://numpy.org/doc/stable/reference/generated/numpy.moveaxis.html
+    https://numpy.org/doc/stable/reference/generated/numpy.swapaxes.html
 
     Parameters
     ----------
@@ -80,7 +84,11 @@ def reslice(
         return imarray
 
 
-@register_operation(category="transformations", display_name="Rotate")
+@register_operation(
+    category="transformations",
+    display_name="Rotate",
+    widget_options={"Angle": {"max": 360}},
+)
 def rotate(
     imarray: np.ndarray,
     Angle: float = 0,
@@ -89,7 +97,9 @@ def rotate(
     Preserve_Dtype: bool = True,
 ) -> np.ndarray:
     """
-    Rotate an image around its forward-facing central axis.
+    Rotate an image around its forward-facing central axis. Convenience wrapper around
+    scikit-image's transform.rotate:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.rotate
 
     Parameters
     ----------
@@ -150,7 +160,7 @@ def rotate(
 @register_operation(
     category="transformations",
     display_name="Rescale",
-    widget_options={"Scale": {"step": 0.001}},
+    widget_options={"Scale": {"step": 0.001, "min": 0.001}},
     native_options={"Scale": {"setDecimals": 3}},
 )
 def rescale(
@@ -161,7 +171,9 @@ def rescale(
     Preserve_Dtype: bool = True,
 ) -> np.ndarray:
     """
-    Rescale an image array by a scale factor.
+    Rescale an image array by a scale factor. Convenience wrapper around scikit-image's
+    transform.rescale function:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.rescale
 
     Parameters
     ----------
@@ -170,7 +182,7 @@ def rescale(
     Scale: float
         The factor to rescale the image by.
     Order: Literal[0, 1, 2, 3, 4, 5] = 1
-        The order (0-5) to use for interpolation. If segmented_data is False,
+        The order (0-5) to use for interpolation. If Segmented Data is False,
         order will be forced to 0. Default is the bilinear (1).
     Segmented_Data: bool
         Whether the input data is segmented (True) or continuous (False). If true,
@@ -225,17 +237,25 @@ def resize(
     Preserve_Dtype: bool = True,
 ) -> np.ndarray:
     """
-    Resize an image array to specified dimensions.
+    Resize an image array to specified dimensions. Convenience wrapper around
+    scikit-image's transform.resize function:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.resize
 
     Parameters
     ----------
     imarray: np.ndarray
         The image array to be resized.
-    __Length: int | None
-        The length of the output image array along each axis (__ = X_, Y_, or Z_). If
-        not provided, the length of the input image array along that axis will be used.
+    X_Length: int | None
+        The length of the output image array along the x-axis. If not provided, the
+        length of the input image array along the x-axis will be used.
+    Y_Length: int | None
+        The length of the output image array along the y-axis. If not provided, the
+        length of the input image array along the y-axis will be used.
+    Z_Length: int | None
+        The length of the output image array along the z-axis. If not provided, the
+        length of the input image array along the z-axis will be used.
     Order: Literal[0, 1, 2, 3, 4, 5] = 1
-        The order (0-5) to use for interpolation. If Segmented_Data is False,
+        The order (0-5) to use for interpolation. If Segmented Data is False,
         order will be forced to 0. Default is the bilinear (1).
     Segmented_Data: bool
         Whether the input data is segmented (True) or continuous (False). If true,
@@ -252,6 +272,9 @@ def resize(
     """
 
     axlengths: dict[str, int | None] = {"x": X_Length, "y": Y_Length, "z": Z_Length}
+    for key in list(axlengths.keys()):
+        if axlengths[key] == 0:
+            axlengths[key] = None
     if axlengths == util.axlengths(imarray):
         return imarray
     if X_Length is None and Y_Length is None and Z_Length is None:

@@ -100,6 +100,19 @@ def register_operation(
     return decorator
 
 
+def unregister_operation(name: str) -> None:
+    """
+    Given an operation's name, unregister it.
+
+    Parameters
+    ----------
+    name: str
+        The operation's name.
+    """
+
+    _REGISTRY.pop(name, None)
+
+
 def get_operation(name: str) -> OperationSpec:
     """
     Retrieve an operation with its name.
