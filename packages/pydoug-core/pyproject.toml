@@ -29,6 +29,7 @@ dependencies = [
     "pandas",
     "pillow",
     "porespy",
+    "psygnal",
     "scikit-image",
     "scipy"
 ]

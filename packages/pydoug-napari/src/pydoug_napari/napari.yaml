@@ -14,6 +14,9 @@ contributions:
     - id: pydoug-napari.write_image_sequence
       title: Write image as file sequence
       python_name: pydoug_napari._writer:write_image_sequence
+    - id: pydoug-napari.make_main_widget
+      title: Open PyDoug Toolbox
+      python_name: pydoug_napari._widgets.main_widget:MainWidget
 
   readers:
     - command: pydoug-napari.get_reader
@@ -35,3 +38,7 @@ contributions:
     display_name: image sequence
     layer_types: ["image"]
     filename_extensions: [".seq"]
+
+  widgets:
+  - command: pydoug-napari.make_main_widget
+    display_name: PyDoug Toolbox

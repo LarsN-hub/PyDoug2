@@ -62,9 +62,13 @@ def test_invfft(sample_arrays) -> None:
 def test_hough_line_returns(sample_arrays) -> None:
 
     result1: np.ndarray | tuple = domain.hough(sample_arrays["2dgray"])
-    result2: np.ndarray | tuple = domain.hough(sample_arrays["2dgray"], fullout=True)
+    result2: np.ndarray | tuple = domain.hough(
+        sample_arrays["2dgray"], Full_Output=True
+    )
     result3: np.ndarray | tuple = domain.hough(sample_arrays["3dgray"])
-    result4: np.ndarray | tuple = domain.hough(sample_arrays["3dgray"], fullout=True)
+    result4: np.ndarray | tuple = domain.hough(
+        sample_arrays["3dgray"], Full_Output=True
+    )
     result5: np.ndarray | tuple = domain.hough(sample_arrays["3drgb"])
     if isinstance(result1, np.ndarray):
         assert result1.shape != sample_arrays["2dgray"].shape
@@ -94,11 +98,11 @@ def test_hough_circle_returns(sample_arrays) -> None:
 
     result1: np.ndarray | tuple = domain.hough(sample_arrays["2dgray"], "circle")
     result2: np.ndarray | tuple = domain.hough(
-        sample_arrays["2dgray"], "circle", radii=np.arange(2, 4)
+        sample_arrays["2dgray"], "circle", Radii=np.arange(2, 4)
     )
     result3: np.ndarray | tuple = domain.hough(sample_arrays["3dgray"], "circle")
     result4: np.ndarray | tuple = domain.hough(
-        sample_arrays["3dgray"], "circle", radii=np.arange(2, 4)
+        sample_arrays["3dgray"], "circle", Radii=np.arange(2, 4)
     )
     result5: np.ndarray | tuple = domain.hough(sample_arrays["3drgb"], "circle")
     if isinstance(result1, np.ndarray):
