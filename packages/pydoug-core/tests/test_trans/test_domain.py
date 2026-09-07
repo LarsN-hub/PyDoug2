@@ -116,3 +116,12 @@ def test_hough_circle_returns(sample_arrays) -> None:
     if isinstance(result4, np.ndarray):
         assert result4.shape[0] == len(np.arange(2, 4))
         assert result4.shape[-1] == sample_arrays["3dgray"].shape[0]
+
+
+def test_euclidian_dt_returns(sample_arrays) -> None:
+
+    result1: np.ndarray = domain.euclidian_dt(sample_arrays["2dgray"])
+    result2: np.ndarray = domain.euclidian_dt(sample_arrays["2dgray"], 2)
+    result3: np.ndarray = domain.euclidian_dt(sample_arrays["2drgb"])
+    assert np.all(result1 * 2 == result2)
+    assert result3.shape == result1.shape
