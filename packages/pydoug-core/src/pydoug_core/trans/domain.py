@@ -4,6 +4,7 @@ Domain transformations of images.
 
 import numpy as np
 from scipy import fft as ft
+from scipy.ndimage import distance_transform_edt as edt
 from skimage import transform
 
 from pydoug_core import util
@@ -238,3 +239,34 @@ def hough(
         if not Full_Output:
             return transform.hough_line(imarray)[0]
         return transform.hough_line(imarray)
+
+
+@register_operation(
+    category="transformations",
+    display_name="Distance",
+    widget_options={"Pixel_Size": {"step": 0.0001, "min": 0.0001}},
+    native_options={"Pixel_Size": {"setDecimals": 4}},
+)
+def euclidian_dt(imarray: np.ndarray, Pixel_Size: float = 1) -> np.ndarray:
+    """
+    Transform a binary image into the distance domain by calculating the Euclidian
+    distance from each foreground point to the nearest background point. Convenience
+    wrapper around scipy's ndimage.distance_transform_edt:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be transformed.
+    Pixel_Size: float
+        The real-world length of a single pixel edge.
+
+    Returns
+    -------
+    edtarray: np.ndarray
+        The image array transformed into the distance domain.
+    """
+
+    if util.isrgb(imarray):
+        return edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
+    return edt(imarray, Pixel_Size)  # type: ignore
