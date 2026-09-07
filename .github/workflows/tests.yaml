@@ -37,7 +37,7 @@ jobs:
       - run: |
           pip install -e packages/pydoug-core
           pip install -e "packages/pydoug-napari[testing]"
-      - run: pytest packages/pydoug-napari/tests --cov=packages/pydoug-napari/src --cov-report=term-missing
+      - run: pytest QT_QPA_PLATFORM=offscreen packages/pydoug-napari/tests --cov=packages/pydoug-napari/src --cov-report=term-missing
 
   pre-commit:
     runs-on: ubuntu-latest
