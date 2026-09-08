@@ -3,13 +3,16 @@ Recorder for PyDoug operations used in napari widgets.
 """
 
 import json
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
+from weakref import WeakKeyDictionary
 
 from numpy import ndarray
 from psygnal import Signal
 
-from pydoug_core.registry import get_operation
+from pydoug_core.registry import OperationSpec, get_operation
 
 
 @dataclass
@@ -19,16 +22,22 @@ class RecordedStep:
 
     Attributes
     ----------
+    step_id: str
+        uuid reference to identify step.
     operation_name: str
         The name of the operation
     params: dict
         The dictionary of parameters and their values used in the operation.
+    input_refs: dict[str, str]
+        References to other steps as required for input parameters for an operation.
     layer_ref: None | object
         The layer object created during the recorded step.
     """
 
+    step_id: str
     operation_name: str
     params: dict
+    input_refs: dict[str, str] = field(default_factory=dict)
     layer_ref: None | object = None
 
 
@@ -40,16 +49,40 @@ class Recorder:
     ----------
     steps: list[RecordedStep]
         List of recorded steps.
+    _layer_to_step: WeakKeyDictionary
     """
 
     steps_changed: Signal = Signal()
 
     def __init__(self):
         self.steps: list[RecordedStep] = []
+        self._layer_to_step: WeakKeyDictionary = WeakKeyDictionary()
+
+    def step_id_for_layer(self, layer) -> None | str:
+        """
+        Return the step_id that produced `layer`, or None if it's not a tracked step
+        output (e.g., the originally loaded image).
+
+        Parameters
+        ----------
+        layer
+            The napari layer object.
+
+        Returns
+        -------
+        step_id: None | str
+            The uuid step_id reference or None if N/A.
+        """
+
+        return self._layer_to_step.get(layer)
 
     def record(
-        self, operation_name: str, params: dict, layer_ref: None | object = None
-    ) -> None:
+        self,
+        operation_name: str,
+        params: dict,
+        input_refs: dict[str, str],
+        layer_ref: None | object = None,
+    ) -> str:
         """
         Record a step in the parameters log.
 
@@ -59,12 +92,20 @@ class Recorder:
             The name of the operation.
         params: dict
             The dictionary of the operation's parameters.
+        input_refs: dict[str, str]
+            The dictionary of references to other steps as required.
         layer_ref: None | object
             The layer object created during the recorded step.
         """
 
-        self.steps.append(RecordedStep(operation_name, params, layer_ref))
+        step_id: str = uuid.uuid4().hex
+        self.steps.append(
+            RecordedStep(step_id, operation_name, params, input_refs, layer_ref)
+        )
+        if layer_ref is not None:
+            self._layer_to_step[layer_ref] = step_id
         self.steps_changed.emit()
+        return step_id
 
     def remove_steps_by_layer(self, layer: object) -> None:
         """
@@ -81,6 +122,7 @@ class Recorder:
         ]
         if len(new_steps) != len(self.steps):
             self.steps = new_steps
+            self._layer_to_step.pop(layer, None)
             self.steps_changed.emit()
 
     def clear(self) -> None:
@@ -89,6 +131,7 @@ class Recorder:
         """
 
         self.steps = []
+        self._layer_to_step.clear()
         self.steps_changed.emit()
 
     def save(self, path: Path) -> None:
@@ -101,7 +144,15 @@ class Recorder:
             The path to save the parameters log to.
         """
 
-        data = [{"operation": s.operation_name, "params": s.params} for s in self.steps]
+        data: list[dict] = [
+            {
+                "step_id": s.step_id,
+                "operation": s.operation_name,
+                "params": s.params,
+                "input_refs": s.input_refs,
+            }
+            for s in self.steps
+        ]
         Path(path).write_text(json.dumps(data, indent=2))
 
     def load(self, path: Path) -> None:
@@ -115,12 +166,18 @@ class Recorder:
         """
 
         data = json.loads(Path(path).read_text())
-        self.steps = [RecordedStep(d["operation"], d["params"]) for d in data]
+        self.steps: list[RecordedStep] = [
+            RecordedStep(
+                d["step_id"], d["operation"], d["params"], d.get("input_refs", {})
+            )
+            for d in data
+        ]
+        self._layer_to_step.clear()
         self.steps_changed.emit()
 
-    def replay(self, imarray: ndarray) -> ndarray:
+    def replay(self, imarray: ndarray):
         """
-        Apply a parameters log to an image.
+        Apply a recorded workflow to an image.
 
         Parameters
         ----------
@@ -128,7 +185,14 @@ class Recorder:
             The image array to apply parameters to.
         """
 
-        result = imarray
+        outputs: dict[str, object] = {}
+        result: Any = None
         for step in self.steps:
-            result = get_operation(step.operation_name).func(result, **step.params)
+            spec: OperationSpec = get_operation(step.operation_name)
+            ref: str = step.input_refs.get("layer", "primary")
+            arg: ndarray | object = (
+                imarray if ref == "primary" else outputs[ref.split(":", 1)[1]]
+            )
+            result = spec.func(arg, **step.params)
+            outputs[step.step_id] = result
         return result

@@ -3,6 +3,7 @@ Convert PyDoug core functions into napari widgets.
 """
 
 import inspect
+from typing import Any
 
 from docstring_parser import parse as parse_docstring
 from magicclass.widgets import CollapsibleContainer
@@ -63,7 +64,7 @@ def make_operation_widget(
             widget.call_button.text = "Running..."
 
         @thread_worker(ignore_errors=True)
-        def _run():
+        def _run() -> Any:
             """
             Run the operation widget's function and return its results.
             """
@@ -71,7 +72,7 @@ def make_operation_widget(
             return operation_spec.func(layer.data, **params)  # pragma: no cover
             # covered in a separate Qt threading event
 
-        def _reset_button():
+        def _reset_button() -> None:
             """
             Reset the widget's call button once the operation is complete.
             """
@@ -81,7 +82,7 @@ def make_operation_widget(
                 widget.call_button.native.setEnabled(True)
                 widget.call_button.text = f"Run {operation_spec.display_name}"
 
-        def _on_done(result):
+        def _on_done(result) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
 
@@ -95,9 +96,16 @@ def make_operation_widget(
             result_layer: Image | list[Image] = viewer.add_image(
                 result, name=f"{operation_spec.display_name}"
             )
-            recorder.record(operation_spec.name, params, layer_ref=result_layer)
+            step_id: None | str = recorder.step_id_for_layer(layer)
+            input_ref: str = f"step:{step_id}" if step_id else "primary"
+            recorder.record(
+                operation_spec.name,
+                params,
+                input_refs={"layer": input_ref},
+                layer_ref=result_layer,
+            )
 
-        def _on_error(exc: Exception):
+        def _on_error(exc: Exception) -> None:
             """
             Raise exception and reset call button when an error is encountered.
             """

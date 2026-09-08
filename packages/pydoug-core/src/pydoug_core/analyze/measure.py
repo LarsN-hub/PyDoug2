@@ -13,7 +13,11 @@ def stats(
     imarray: np.ndarray, maskarray: np.ndarray | None = None
 ) -> dict[str, float | int]:
     """
-    Calculate the grayscale statistics of an image array.
+    Calculate the grayscale statistics of an image array. Convenience wrapper around
+    functions in numpy's statistics section, except for mode which is calculated using
+    scipy's stats.mode function:
+    https://numpy.org/doc/stable/reference/routines.statistics.html
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mode.html#scipy.stats.mode
 
     Parameters
     ----------
