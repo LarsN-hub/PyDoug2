@@ -28,7 +28,9 @@ class MainWidget(QTabWidget):
         super().__init__(parent)
         self.recorder = Recorder()
         self.operation_widgets: dict[str, CollapsibleContainer] = {}
-        categories: list[str] = sorted({spec.category for spec in list_operations()})
+        categories: list[str] = self._specify_category_order(
+            [spec.category for spec in list_operations()]
+        )
         for category in categories:
             self.addTab(
                 self._build_category_tab(category, viewer).native, category.title()
@@ -76,3 +78,30 @@ class MainWidget(QTabWidget):
         """
 
         self.recorder.remove_steps_by_layer(event.value)
+
+    def _specify_category_order(self, categories: list[str]) -> list[str]:
+        """
+        Return a list of sorted categories.
+
+        Parameters
+        ----------
+        categories: list[str]
+            The unsorted list of categories.
+
+        Returns
+        -------
+        sorted_categories: list[str]
+            The sorted list of categories.
+        """
+
+        sorted_categories: list[str] = []
+        if "transformations" in categories:
+            sorted_categories.append("transformations")
+            categories.pop(categories.index("transformations"))
+        if "measurements" in categories:
+            sorted_categories.append("measurements")
+            categories.pop(categories.index("measurements"))
+        if "utilities" in categories:
+            sorted_categories.append("utilities")
+            categories.pop(categories.index("utilities"))
+        return sorted_categories + sorted(categories)
