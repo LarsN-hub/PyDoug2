@@ -1,4 +1,3 @@
-# packages/proj-napari/tests/test_widgets/test_operation_widget.py
 """
 Tests for PyDoug's napari plugin operation_widget module.
 """
@@ -133,3 +132,36 @@ def test_on_error_reraises_and_resets_button(
     assert "simulated failure" in str(value_errors[0][1])
     assert subwidget.call_button.enabled
     assert subwidget.call_button.text == f"Run {spec.display_name}"
+
+
+def test_layer_refs(
+    make_napari_viewer, qtbot, sample_3dgray_array, registered_half
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    record: Recorder = Recorder()
+    layer: Image | list[Image] = viewer.add_image(
+        sample_3dgray_array, name="test_layer"
+    )
+    spec: OperationSpec = get_operation(registered_half)
+    container: CollapsibleContainer = make_operation_widget(spec, viewer, record)
+    qtbot.addWidget(container.native)
+    subwidget: FunctionGui | None = container.get_widget("_dispatch")
+    assert subwidget is not None
+    assert subwidget.layer.value == layer
+    assert subwidget.call_button is not None
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
+    assert len(viewer.layers) == 2
+    assert record.steps[0].input_refs["layer"] == "primary"
+    assert subwidget.layer.value != layer
+    subwidget.layer.value = layer
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 3, timeout=5000)
+    assert len(viewer.layers) == 3
+    assert record.steps[1].input_refs["layer"] == "primary"
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 4, timeout=5000)
+    assert len(viewer.layers) == 4
+    assert record.steps[2].input_refs["layer"] != "primary"
+    assert record.steps[2].input_refs["layer"] == f"step:{record.steps[1].step_id}"

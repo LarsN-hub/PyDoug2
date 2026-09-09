@@ -15,7 +15,7 @@ from pydoug_napari._widgets import batch_widget
 def test_make_batch_widget(qtbot, tmp_path) -> None:
 
     record: Recorder = Recorder()
-    record.record("mirror", {})
+    record.record("mirror", {}, input_refs={"layer": "primary"})
     scroll_widget: ScrollableContainer = batch_widget.make_batch_widget(record)
     qtbot.addWidget(scroll_widget.native)
     save_widget: FunctionGui | None = scroll_widget[0].get_widget("save_widget")
@@ -43,7 +43,7 @@ def _find_collapsible(
 def test_clear_button_emits_steps_changed(qtbot):
 
     recorder: Recorder = Recorder()
-    recorder.record("rotate", {"angle": 90})
+    recorder.record("rotate", {"angle": 90}, input_refs={"layer": "primary"})
     received: list = []
     recorder.steps_changed.connect(lambda: received.append(True))
     widget: ScrollableContainer = batch_widget.make_batch_widget(recorder)

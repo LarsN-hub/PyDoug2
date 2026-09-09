@@ -21,7 +21,8 @@ def connect_layer_autoselect(viewer, widget, param_name: str = "layer") -> None:
 
     def _select_newest(event):
         """
-        Guard against selecting incorrect layer types.
+        Select the newest layer in the layers list while preventing incorrect layer
+        types selection.
 
         Parameters
         ----------
@@ -32,7 +33,22 @@ def connect_layer_autoselect(viewer, widget, param_name: str = "layer") -> None:
         if event.value in field.choices:
             field.value = event.value
 
+    def _select_last():
+        """
+        Select the last layer in the layers list.
+
+        Parameters
+        ----------
+        event: Event
+            The napari gui event.
+        """
+
+        if viewer.layers:
+            field.value = viewer.layers[-1]
+
     viewer.layers.events.inserted.connect(field.reset_choices)
     viewer.layers.events.removed.connect(field.reset_choices)
     viewer.layers.events.reordered.connect(field.reset_choices)
     viewer.layers.events.inserted.connect(_select_newest)
+    viewer.layers.events.removed.connect(_select_last)
+    viewer.layers.events.reordered.connect(_select_last)

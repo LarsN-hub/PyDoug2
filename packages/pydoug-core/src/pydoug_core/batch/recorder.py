@@ -30,15 +30,15 @@ class RecordedStep:
         The dictionary of parameters and their values used in the operation.
     input_refs: dict[str, str]
         References to other steps as required for input parameters for an operation.
-    layer_ref: None | object
-        The layer object created during the recorded step.
+    layer_ref: None | Any
+        The layer created during the recorded step.
     """
 
     step_id: str
     operation_name: str
     params: dict
     input_refs: dict[str, str] = field(default_factory=dict)
-    layer_ref: None | object = None
+    layer_ref: None | Any = None
 
 
 class Recorder:
@@ -81,7 +81,7 @@ class Recorder:
         operation_name: str,
         params: dict,
         input_refs: dict[str, str],
-        layer_ref: None | object = None,
+        layer_ref: None | Any = None,
     ) -> str:
         """
         Record a step in the parameters log.
@@ -94,8 +94,8 @@ class Recorder:
             The dictionary of the operation's parameters.
         input_refs: dict[str, str]
             The dictionary of references to other steps as required.
-        layer_ref: None | object
-            The layer object created during the recorded step.
+        layer_ref: None | Any
+            The layer created during the recorded step.
         """
 
         step_id: str = uuid.uuid4().hex

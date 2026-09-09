@@ -31,3 +31,4 @@ def test_make_main_widget(make_napari_viewer, qtbot, sample_3dgray_array) -> Non
     assert len(mainwidget.recorder.steps) == 2
     viewer.layers.remove(viewer.layers[-1])
     assert len(mainwidget.recorder.steps) == 1
+    assert subwidget.layer != layer
