@@ -4,7 +4,9 @@ Convert PyDoug core functions into napari widgets.
 
 import inspect
 from typing import Any
+from uuid import uuid4
 
+import numpy as np
 from docstring_parser import parse as parse_docstring
 from magicclass.widgets import CollapsibleContainer
 from magicgui import magicgui
@@ -41,6 +43,7 @@ def make_operation_widget(
     """
 
     is_running: dict[str, bool] = {"value": False}
+    mask_names: set[str] = set(operation_spec.mask_params)
 
     def _dispatch(layer: Image, **params) -> None:
         """
@@ -62,6 +65,28 @@ def make_operation_widget(
         if widget.call_button is not None:
             widget.call_button.native.setEnabled(False)
             widget.call_button.text = "Running..."
+
+        call_params: dict = {}
+        input_refs: dict[str, str] = {}
+        recorded_params: dict = {}
+        pending_masks: dict[str, np.ndarray] = {}
+        for name, value in params.items():
+            if name in mask_names:
+                mask_layer: Image = value
+                call_params[name] = mask_layer.data
+                step_id: str | None = recorder.step_id_for_layer(mask_layer)
+                if step_id is not None:
+                    input_refs[name] = f"step:{step_id}"
+                else:
+                    input_refs[name] = f"pending:{uuid4().hex[:8]}"
+                    if isinstance(mask_layer.data, np.ndarray):
+                        pending_masks[name] = np.copy(mask_layer.data)
+            else:
+                call_params[name] = value
+                recorded_params[name] = value
+
+        layer_step_id: str | None = recorder.step_id_for_layer(layer)
+        input_refs["layer"] = f"step:{layer_step_id}" if layer_step_id else "primary"
 
         @thread_worker(ignore_errors=True)
         def _run() -> Any:

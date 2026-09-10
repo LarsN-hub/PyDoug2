@@ -107,14 +107,36 @@ class Recorder:
         self.steps_changed.emit()
         return step_id
 
-    def remove_steps_by_layer(self, layer: object) -> None:
+    def remove_step(self, step_id: str) -> None:
         """
-        Remove any recorded step whose output layer is "layer".
+        Remove any recorded step.
 
         Parameters
         ----------
-        layer: object
-            The napari layer being removed.
+        setp_id: str
+            The step ID of the napari layer being removed.
+        """
+
+        new_steps: list[RecordedStep] = [
+            s for s in self.steps if s.step_id is not step_id
+        ]
+        if len(new_steps) != len(self.steps):
+            self.steps = new_steps
+            stale: list[Any] = [
+                layer for layer, sid in self._layer_to_step.items() if sid == step_id
+            ]
+            for layer in stale:
+                del self._layer_to_step[layer]
+            self.steps_changed.emit()
+
+    def remove_steps_by_layer(self, layer: Any) -> None:
+        """
+        Remove any recorded step whose output layer is `layer`.
+
+        Parameters
+        ----------
+        layer: Any
+            The layer of the step being removed.
         """
 
         new_steps: list[RecordedStep] = [
@@ -122,8 +144,40 @@ class Recorder:
         ]
         if len(new_steps) != len(self.steps):
             self.steps = new_steps
-            self._layer_to_step.pop(layer, None)
             self.steps_changed.emit()
+
+    def dependents_of(self, step_id: str) -> list[RecordedStep]:
+        """
+        Return every step that depends on step_id.
+
+        Parameters
+        ----------
+        setp_id: str
+            The step's ID.
+
+        Returns
+        -------
+        dependents_list: list[RecordedStep]
+            The list of steps that depend on the step with ID step_id.
+        """
+
+        dependent_ids: set[str] = set()
+        changed: bool = True
+        while changed:
+            changed = False
+            frontier: set[str] = {step_id} | dependent_ids
+            for step in self.steps:
+                if step.step_id in frontier:
+                    continue
+                referenced: set[str] = {
+                    ref.split(":", 1)[1]
+                    for ref in step.input_refs.values()
+                    if ref.startswith("step:")
+                }
+                if referenced & frontier:
+                    dependent_ids.add(step.step_id)
+                    changed = True
+        return [s for s in self.steps if s.step_id in dependent_ids]
 
     def clear(self) -> None:
         """

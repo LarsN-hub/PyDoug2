@@ -36,6 +36,7 @@ class OperationSpec:
     display_name: str
     widget_options: dict = field(default_factory=dict)
     native_options: dict[str, dict] = field(default_factory=dict)
+    mask_params: tuple[str, ...] = ()
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -50,6 +51,7 @@ def register_operation(
     display_name: None | str = None,
     widget_options: dict | None = None,
     native_options: dict[str, dict] | None = None,
+    mask_params: tuple[str, ...] = (),
 ) -> Callable:
     """
     Provide a decorator to register a function as an operation.
@@ -65,6 +67,8 @@ def register_operation(
         (Optional) Dictionary of default widget parameter settings.
     native_options: dict[str, dict] | None
         (Optional) Dictionary of default widget native parameter settings.
+    mask_params: tuple[str, ...]
+        (Optional) Tuple of mask parameters as needed for the operation.
 
     Returns
     -------
@@ -94,6 +98,7 @@ def register_operation(
             display_name=display_name or func.__name__.replace("_", " ").title(),
             widget_options=widget_options or {},
             native_options=native_options or {},
+            mask_params=tuple(mask_params),
         )
         return func
 
