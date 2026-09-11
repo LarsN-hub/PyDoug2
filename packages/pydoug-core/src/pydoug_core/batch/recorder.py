@@ -3,6 +3,7 @@ Recorder for PyDoug operations used in napari widgets.
 """
 
 import json
+import shutil
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -206,7 +207,7 @@ class Recorder:
 
     def save(self, path: Path) -> None:
         """
-        Save a parameters log as a json file.
+        Save a parameters log as a json file and masks folder.
 
         Parameters
         ----------
@@ -215,14 +216,29 @@ class Recorder:
         """
 
         path = Path(path)
-        masks_dir: Path = path.parent / f"{path.stem}_masks"
+        path.mkdir(parents=True, exist_ok=True)
+        masks_dir: Path = path / "masks"
         data: list[dict] = []
+
         for s in self.steps:
             refs: dict = dict(s.input_refs)
+
+            for name, ref in list(refs.items()):
+                if ref.startswith("file:") and self._workflow_dir is not None:
+                    src: Path = self._workflow_dir / ref.split(":", 1)[1]
+                    fname: str = Path(ref.split(":", 1)[1]).name
+                    masks_dir.mkdir(exist_ok=True)
+                    dest: Path = masks_dir / fname
+                    if src.resolve() != dest.resolve():
+                        shutil.copy2(src, dest)
+                    refs[name] = f"file:masks/{fname}"
+
             for name, arr in s.pending_masks.items():
                 masks_dir.mkdir(exist_ok=True)
+                fname = f"{s.step_id}_{name}.tiff"
                 imwriter.imwrite(arr, masks_dir, f"{s.step_id}_{name}", "tiff")
-                refs[name] = f"file:{masks_dir.name}/{s.step_id}_{name}.tiff"
+                refs[name] = f"file:masks/{fname}"
+
             s.input_refs = refs
             s.pending_masks = {}
             data.append(
@@ -233,8 +249,9 @@ class Recorder:
                     "input_refs": refs,
                 }
             )
-        path.write_text(json.dumps(data, indent=2))
-        self._workflow_dir = path.parent
+
+        (path / "workflow.json").write_text(json.dumps(data, indent=2))
+        self._workflow_dir = path
 
     def load(self, path: Path) -> None:
         """
@@ -247,7 +264,7 @@ class Recorder:
         """
 
         path = Path(path)
-        data: Any = json.loads(Path(path).read_text())
+        data: Any = json.loads((path / "workflow.json").read_text())
         self.steps: list[RecordedStep] = [
             RecordedStep(
                 d["step_id"], d["operation"], d["params"], d.get("input_refs", {})
@@ -255,7 +272,7 @@ class Recorder:
             for d in data
         ]
         self._layer_to_step.clear()
-        self._workflow_dir = path.parent
+        self._workflow_dir = path
         self.steps_changed.emit()
 
     def _resolve(

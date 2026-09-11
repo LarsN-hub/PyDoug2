@@ -25,34 +25,36 @@ def make_batch_widget(recorder) -> ScrollableContainer:
         The batch processing container widget.
     """
 
-    @magicgui(Save_Folder={"mode": "d"}, call_button="Save Workflow")
-    def save_widget(Save_Folder: Path = Path(""), File_Name: str = "workflow") -> None:
+    @magicgui(Parent_Folder={"mode": "d"}, call_button="Save Workflow")
+    def save_widget(
+        Parent_Folder: Path = Path(""), Workflow_Folder_Name: str = "Workflow"
+    ) -> None:
         """
         Save the current workflow.
 
         Parameters
         ----------
         Save_Folder: Path
-            The folder where the workflow file should be saved.
+            The folder where the workflow folder should be saved.
         File_Name: str
-            The name of the workflow file.
+            The name of the workflow folder.
         """
 
-        tidiedpath: Path = util.tidypath(Save_Folder / File_Name, "json")
+        tidiedpath: Path = util.tidypath(Parent_Folder / Workflow_Folder_Name, "dir")
         recorder.save(tidiedpath)
 
-    @magicgui(call_button="Load Workflow")
-    def load_widget(File_Path: Path = Path("")) -> None:
+    @magicgui(Workflow_Folder_Path={"mode": "d"}, call_button="Load Workflow")
+    def load_widget(Workflow_Folder_Path: Path = Path("")) -> None:
         """
         Load workflow for batch processing.
 
         Parameters
         ----------
         File_Path: Path
-            The path to the parameters file.
+            The path to the workflow folder.
         """
 
-        recorder.load(File_Path)
+        recorder.load(Workflow_Folder_Path)
 
     @magicgui(call_button="Clear Workflow")
     def clear_widget() -> None:

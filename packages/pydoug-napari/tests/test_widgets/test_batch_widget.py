@@ -21,12 +21,13 @@ def test_make_batch_widget(qtbot, tmp_path) -> None:
     save_widget: FunctionGui | None = scroll_widget[0].get_widget("save_widget")
     load_widget: FunctionGui | None = scroll_widget[1].get_widget("load_widget")
     clear_widget: FunctionGui | None = scroll_widget[2].get_widget("clear_widget")
-    save_widget.File_Name.value = tmp_path / "recording.json"  # type: ignore[attr-defined]
+    save_widget.Parent_Folder.value = tmp_path  # type: ignore[attr-defined]
+    save_widget.Workflow_Folder_Name.value = "recording"  # type: ignore[attr-defined]
     qtbot.mouseClick(save_widget.call_button.native, Qt.MouseButton.LeftButton)  # type: ignore[attr-defined]
-    assert Path(tmp_path / "recording.json").exists()
+    assert Path(tmp_path / "recording").exists()
     qtbot.mouseClick(clear_widget.call_button.native, Qt.MouseButton.LeftButton)  # type: ignore[attr-defined]
     assert len(record.steps) == 0
-    load_widget.File_Path.value = tmp_path / "recording.json"  # type: ignore[attr-defined]
+    load_widget.Workflow_Folder_Path.value = tmp_path / "recording"  # type: ignore[attr-defined]
     qtbot.mouseClick(load_widget.call_button.native, Qt.MouseButton.LeftButton)  # type: ignore[attr-defined]
     assert len(record.steps) == 1
 

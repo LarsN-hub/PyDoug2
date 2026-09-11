@@ -7,6 +7,8 @@ from scipy.stats import mode
 
 from pydoug_core.registry import register_operation
 
+__all__ = ["stats"]
+
 
 @register_operation(category="measurements", display_name="Stats")
 def stats(
