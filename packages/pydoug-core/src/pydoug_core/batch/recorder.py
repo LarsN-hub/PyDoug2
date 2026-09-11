@@ -12,6 +12,7 @@ from weakref import WeakKeyDictionary
 from numpy import ndarray
 from psygnal import Signal
 
+from pydoug_core.io import imreader, imwriter
 from pydoug_core.registry import OperationSpec, get_operation
 
 
@@ -32,6 +33,8 @@ class RecordedStep:
         References to other steps as required for input parameters for an operation.
     layer_ref: None | Any
         The layer created during the recorded step.
+    pending_masks: dict
+        Masks used in operations that may need to be saved for batch processing.
     """
 
     step_id: str
@@ -39,6 +42,7 @@ class RecordedStep:
     params: dict
     input_refs: dict[str, str] = field(default_factory=dict)
     layer_ref: None | Any = None
+    pending_masks: dict[str, ndarray] = field(default_factory=dict)
 
 
 class Recorder:
@@ -57,6 +61,7 @@ class Recorder:
     def __init__(self):
         self.steps: list[RecordedStep] = []
         self._layer_to_step: WeakKeyDictionary = WeakKeyDictionary()
+        self._workflow_dir: Path | None = None
 
     def step_id_for_layer(self, layer) -> None | str:
         """
@@ -82,6 +87,7 @@ class Recorder:
         params: dict,
         input_refs: dict[str, str],
         layer_ref: None | Any = None,
+        pending_masks: dict | None = None,
     ) -> str:
         """
         Record a step in the parameters log.
@@ -96,11 +102,20 @@ class Recorder:
             The dictionary of references to other steps as required.
         layer_ref: None | Any
             The layer created during the recorded step.
+        pending_masks: dict | None
+            Pending masks to be saved if required.
         """
 
         step_id: str = uuid.uuid4().hex
         self.steps.append(
-            RecordedStep(step_id, operation_name, params, input_refs, layer_ref)
+            RecordedStep(
+                step_id,
+                operation_name,
+                params,
+                input_refs,
+                layer_ref,
+                pending_masks or {},
+            )
         )
         if layer_ref is not None:
             self._layer_to_step[layer_ref] = step_id
@@ -144,6 +159,7 @@ class Recorder:
         ]
         if len(new_steps) != len(self.steps):
             self.steps = new_steps
+            self._layer_to_step.pop(layer, None)
             self.steps_changed.emit()
 
     def dependents_of(self, step_id: str) -> list[RecordedStep]:
@@ -195,19 +211,30 @@ class Recorder:
         Parameters
         ----------
         path: Path
-            The path to save the parameters log to.
+            The path to save the workflow to.
         """
 
-        data: list[dict] = [
-            {
-                "step_id": s.step_id,
-                "operation": s.operation_name,
-                "params": s.params,
-                "input_refs": s.input_refs,
-            }
-            for s in self.steps
-        ]
-        Path(path).write_text(json.dumps(data, indent=2))
+        path = Path(path)
+        masks_dir: Path = path.parent / f"{path.stem}_masks"
+        data: list[dict] = []
+        for s in self.steps:
+            refs: dict = dict(s.input_refs)
+            for name, arr in s.pending_masks.items():
+                masks_dir.mkdir(exist_ok=True)
+                imwriter.imwrite(arr, masks_dir, f"{s.step_id}_{name}", "tiff")
+                refs[name] = f"file:{masks_dir.name}/{s.step_id}_{name}.tiff"
+            s.input_refs = refs
+            s.pending_masks = {}
+            data.append(
+                {
+                    "step_id": s.step_id,
+                    "operation": s.operation_name,
+                    "params": s.params,
+                    "input_refs": refs,
+                }
+            )
+        path.write_text(json.dumps(data, indent=2))
+        self._workflow_dir = path.parent
 
     def load(self, path: Path) -> None:
         """
@@ -219,7 +246,8 @@ class Recorder:
             The path to the parameters log to be loaded.
         """
 
-        data = json.loads(Path(path).read_text())
+        path = Path(path)
+        data: Any = json.loads(Path(path).read_text())
         self.steps: list[RecordedStep] = [
             RecordedStep(
                 d["step_id"], d["operation"], d["params"], d.get("input_refs", {})
@@ -227,7 +255,53 @@ class Recorder:
             for d in data
         ]
         self._layer_to_step.clear()
+        self._workflow_dir = path.parent
         self.steps_changed.emit()
+
+    def _resolve(
+        self,
+        ref: str,
+        step: RecordedStep,
+        param_name: str,
+        primary: ndarray,
+        outputs: dict[str, ndarray],
+    ) -> ndarray | None:
+        """
+        Resolve input reference array.
+
+        Parameters
+        ----------
+        ref: str
+            The array's reference string.
+        step: RecordedStep
+            The array's recorded step.
+        param_name: str
+            The name of the array's parameter.
+        primary: np.ndarray
+            The primary array.
+        outputs: dict[str, object]
+            Other output arrays.
+
+        Returns
+        -------
+        resolution: np.ndarray | None
+            The resolved array.
+        """
+
+        if ref == "primary":
+            return primary
+        if ref.startswith("step:"):
+            return outputs[ref.split(":", 1)[1]]
+        if ref.startswith("pending:"):
+            return step.pending_masks[param_name]
+        if ref.startswith("file:"):
+            if self._workflow_dir is None:
+                raise ValueError(
+                    f"Cannot resolve '{ref}':"
+                    "no workflow directory is set (was load() called?)"
+                )
+            return imreader.imread(self._workflow_dir / ref.split(":", 1)[1])
+        raise ValueError(f"Unrecognized input reference: {ref!r}")
 
     def replay(self, imarray: ndarray):
         """
@@ -239,14 +313,19 @@ class Recorder:
             The image array to apply parameters to.
         """
 
-        outputs: dict[str, object] = {}
+        outputs: dict[str, ndarray] = {}
         result: Any = None
         for step in self.steps:
             spec: OperationSpec = get_operation(step.operation_name)
-            ref: str = step.input_refs.get("layer", "primary")
-            arg: ndarray | object = (
-                imarray if ref == "primary" else outputs[ref.split(":", 1)[1]]
+            primary_ref: str = step.input_refs.get("layer", "primary")
+            primary_arg: ndarray | None = self._resolve(
+                primary_ref, step, "layer", imarray, outputs
             )
-            result = spec.func(arg, **step.params)
+            other_kwargs = {
+                name: self._resolve(ref, step, name, imarray, outputs)
+                for name, ref in step.input_refs.items()
+                if name != "layer"
+            }
+            result = spec.func(primary_arg, **other_kwargs, **step.params)
             outputs[step.step_id] = result
         return result

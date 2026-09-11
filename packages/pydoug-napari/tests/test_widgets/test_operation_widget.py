@@ -165,3 +165,50 @@ def test_layer_refs(
     assert len(viewer.layers) == 4
     assert record.steps[2].input_refs["layer"] != "primary"
     assert record.steps[2].input_refs["layer"] == f"step:{record.steps[1].step_id}"
+
+
+def test_mask_parameter_behavior(
+    make_napari_viewer,
+    qtbot,
+    sample_3dgray_array,
+    sample_masks,
+    registered_mask,
+    registered_bool,
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    record: Recorder = Recorder()
+    imlayer: Image | list[Image] = viewer.add_image(
+        sample_3dgray_array, name="test_layer"
+    )
+    masklayer: Image | list[Image] = viewer.add_image(
+        sample_masks["3dgray"], name="test_mask"
+    )
+    spec1: OperationSpec = get_operation(registered_mask)
+    spec2: OperationSpec = get_operation(registered_bool)
+    assert spec1.mask_params is not None
+    container1: CollapsibleContainer = make_operation_widget(spec1, viewer, record)
+    container2: CollapsibleContainer = make_operation_widget(spec2, viewer, record)
+    qtbot.addWidget(container1.native)
+    qtbot.addWidget(container2.native)
+    subwidget1: FunctionGui | None = container1.get_widget("_dispatch")
+    subwidget2: FunctionGui | None = container2.get_widget("_dispatch")
+    assert subwidget1 is not None
+    assert subwidget1.layer.value == imlayer
+    assert subwidget1.call_button is not None
+    assert subwidget2 is not None
+    assert subwidget2.layer.value == imlayer
+    assert subwidget2.call_button is not None
+    subwidget1.maskarray.value = masklayer
+    qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 3, timeout=5000)
+    assert len(viewer.layers) == 3
+    subwidget2.layer.value = viewer.layers[-1]
+    qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 4, timeout=5000)
+    assert len(viewer.layers) == 4
+    subwidget1.layer.value = viewer.layers[0]
+    subwidget1.maskarray.value = viewer.layers[-1]
+    qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 5, timeout=5000)
+    assert len(viewer.layers) == 5

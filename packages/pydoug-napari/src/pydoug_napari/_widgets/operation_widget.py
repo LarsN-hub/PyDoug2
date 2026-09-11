@@ -42,8 +42,8 @@ def make_operation_widget(
         A magicgui widget.
     """
 
-    is_running: dict[str, bool] = {"value": False}
     mask_names: set[str] = set(operation_spec.mask_params)
+    is_running: dict[str, bool] = {"value": False}
 
     def _dispatch(layer: Image, **params) -> None:
         """
@@ -59,7 +59,7 @@ def make_operation_widget(
         """
 
         if is_running["value"]:
-            return  # ignore additional clicks if an operation is already running
+            return
 
         is_running["value"] = True
         if widget.call_button is not None:
@@ -67,9 +67,10 @@ def make_operation_widget(
             widget.call_button.text = "Running..."
 
         call_params: dict = {}
-        input_refs: dict[str, str] = {}
         recorded_params: dict = {}
+        input_refs: dict[str, str] = {}
         pending_masks: dict[str, np.ndarray] = {}
+
         for name, value in params.items():
             if name in mask_names:
                 mask_layer: Image = value
@@ -94,7 +95,7 @@ def make_operation_widget(
             Run the operation widget's function and return its results.
             """
 
-            return operation_spec.func(layer.data, **params)  # pragma: no cover
+            return operation_spec.func(layer.data, **call_params)  # pragma: no cover
             # covered in a separate Qt threading event
 
         def _reset_button() -> None:
@@ -107,27 +108,26 @@ def make_operation_widget(
                 widget.call_button.native.setEnabled(True)
                 widget.call_button.text = f"Run {operation_spec.display_name}"
 
-        def _on_done(result) -> None:
+        def _on_done(result: np.ndarray) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
 
             Parameters
             ----------
-            result
-                The result of the operation.
+            result: np.ndarray
+                The result layer of the operation.
             """
 
             _reset_button()
             result_layer: Image | list[Image] = viewer.add_image(
                 result, name=f"{operation_spec.display_name}"
             )
-            step_id: None | str = recorder.step_id_for_layer(layer)
-            input_ref: str = f"step:{step_id}" if step_id else "primary"
             recorder.record(
                 operation_spec.name,
-                params,
-                input_refs={"layer": input_ref},
+                recorded_params,
+                input_refs=input_refs,
                 layer_ref=result_layer,
+                pending_masks=pending_masks,
             )
 
         def _on_error(exc: Exception) -> None:
@@ -143,10 +143,13 @@ def make_operation_widget(
         worker.errored.connect(_on_error)
         worker.start()
 
-    params_only = [
-        p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
-        for p in list(operation_spec.signature.parameters.values())[1:]
-    ]
+    params_only: list = []
+    for p in list(operation_spec.signature.parameters.values())[1:]:
+        if p.name in mask_names:
+            p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY, annotation=Image)
+        else:
+            p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
+        params_only.append(p)
 
     _dispatch.__doc__ = operation_spec.func.__doc__
     _dispatch.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
@@ -169,7 +172,10 @@ def make_operation_widget(
         field_widget = getattr(widget, field_name)
         for method_name, arg in native_calls.items():
             getattr(field_widget.native, method_name)(arg)
-    connect_layer_autoselect(viewer, widget, "layer")
+
+    connect_layer_autoselect(viewer, widget, "layer", autoselect=True)
+    for mask_name in mask_names:
+        connect_layer_autoselect(viewer, widget, mask_name, autoselect=False)
 
     container: CollapsibleContainer = CollapsibleContainer(
         widgets=[widget], labels=False
