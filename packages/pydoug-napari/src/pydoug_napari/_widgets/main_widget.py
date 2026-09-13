@@ -150,6 +150,9 @@ class MainWidget(QTabWidget):
         if "mask" in categories:
             sorted_categories.append("mask")
             categories.remove("mask")
+        if "histogram" in categories:
+            sorted_categories.append("histogram")
+            categories.remove("histogram")
         if "measurements" in categories:
             sorted_categories.append("measurements")
             categories.remove("measurements")

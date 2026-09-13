@@ -73,6 +73,7 @@ def make_operation_widget(
 
         for name, value in params.items():
             if name in mask_names:
+                # if value is not None:
                 mask_layer: Image = value
                 call_params[name] = mask_layer.data
                 step_id: str | None = recorder.step_id_for_layer(mask_layer)
@@ -82,6 +83,9 @@ def make_operation_widget(
                     input_refs[name] = f"pending:{uuid4().hex[:8]}"
                     if isinstance(mask_layer.data, np.ndarray):
                         pending_masks[name] = np.copy(mask_layer.data)
+                # else:
+                # call_params[name] = value
+                # recorded_params[name] = value
             else:
                 call_params[name] = value
                 recorded_params[name] = value
