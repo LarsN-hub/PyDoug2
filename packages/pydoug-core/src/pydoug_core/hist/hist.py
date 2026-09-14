@@ -4,6 +4,7 @@ Plot and modify an image array's histogram.
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from pydoug_core import util
@@ -20,8 +21,7 @@ plt.rcParams["font.sans-serif"] = "Arial"
     category="histogram",
     display_name="Plot Histogram",
     mask_params=("Mask",),
-    output_kind="value",
-    display_result=lambda fig: fig.show(),
+    output_kind="plot",
 )
 def plot_histogram(
     imarray: np.ndarray,
@@ -59,7 +59,8 @@ def plot_histogram(
         values: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         values = np.copy(imarray)
-    fig, ax = plt.subplots(layout="constrained")
+    fig: Figure = Figure()
+    ax: Axes = fig.add_subplot()
     ax = plot_util.hist_ax(values, ax, Bin_Count, normalize=Normalize)
     ax.set_xlabel("Gray Value", fontsize=15)
     if Normalize:
@@ -67,4 +68,5 @@ def plot_histogram(
     else:
         ax.set_ylabel("Counts", fontsize=15)
     ax.tick_params("both", labelsize=13)
+    fig.set_layout_engine("constrained")
     return fig

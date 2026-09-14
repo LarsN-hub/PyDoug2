@@ -19,20 +19,28 @@ def test_make_main_widget(make_napari_viewer, qtbot, sample_3dgray_array) -> Non
     assert mainwidget.count() >= 1
     qtbot.addWidget(mainwidget)
     layer: Image | list[Image] = viewer.add_image(sample_3dgray_array, name="test")
-    op_widget: CollapsibleContainer = mainwidget.operation_widgets["mirror"]
-    subwidget: FunctionGui | None = op_widget.get_widget("_dispatch")
-    assert subwidget is not None
-    subwidget.layer.value = layer
-    assert subwidget.call_button is not None
-    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    op_widget1: CollapsibleContainer = mainwidget.operation_widgets["mirror"]
+    subwidget1: FunctionGui | None = op_widget1.get_widget("_dispatch")
+    op_widget2: CollapsibleContainer = mainwidget.operation_widgets["stats"]
+    subwidget2: FunctionGui | None = op_widget2.get_widget("_dispatch")
+    assert subwidget1 is not None
+    assert subwidget2 is not None
+    subwidget1.layer.value = layer
+    assert subwidget1.call_button is not None
+    qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(mainwidget.recorder.steps) == 1, timeout=5000)
     assert len(mainwidget.recorder.steps) == 1
-    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(mainwidget.recorder.steps) == 2, timeout=5000)
     assert len(mainwidget.recorder.steps) == 2
     viewer.layers.remove(viewer.layers[-1])
     assert len(mainwidget.recorder.steps) == 1
-    assert subwidget.layer != layer
+    assert subwidget1.layer != layer
+    subwidget2.layer.value = layer
+    assert subwidget2.call_button is not None
+    qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(mainwidget.recorder.steps) == 2, timeout=5000)
+    assert len(mainwidget.recorder.steps) == 2
 
 
 def test_cascade_delete_removes_dependent_steps(

@@ -19,11 +19,15 @@ from napari.viewer import Viewer
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
-from pydoug_napari._widgets._result_display import default_display_result
+from pydoug_napari._widgets.plot_display_widget import default_display_plot
+from pydoug_napari._widgets.results_log_widget import ResultsLog
 
 
 def make_operation_widget(
-    operation_spec: OperationSpec, viewer: Viewer, recorder: Recorder
+    operation_spec: OperationSpec,
+    viewer: Viewer,
+    recorder: Recorder,
+    results_log: ResultsLog,
 ) -> CollapsibleContainer:
     """
     Automatically generate widgets from the core registry and allow their use to be
@@ -36,7 +40,9 @@ def make_operation_widget(
     viewer: Viewer
         The napari viewer object.
     recorder: Recorder
-        The recorder object for the parameters log.
+        The recorder object for the workflow.
+    results_log: ResultsLog
+        The results log object for non-image results.
 
     Returns
     -------
@@ -72,10 +78,11 @@ def make_operation_widget(
         recorded_params: dict = {}
         input_refs: dict[str, str] = {}
         pending_masks: dict[str, np.ndarray] = {}
+        mask_enabled: bool = params.get("Apply_Mask", True)
 
         for name, value in params.items():
             if name in mask_names:
-                if value is not None:
+                if mask_enabled and value is not None:
                     mask_layer: Image = value
                     call_params[name] = mask_layer.data
                     step_id: str | None = recorder.step_id_for_layer(mask_layer)
@@ -86,8 +93,7 @@ def make_operation_widget(
                         if isinstance(mask_layer.data, np.ndarray):
                             pending_masks[name] = np.copy(mask_layer.data)
                 else:
-                    call_params[name] = value
-                    recorded_params[name] = value
+                    call_params[name] = None
             else:
                 call_params[name] = value
                 recorded_params[name] = value
@@ -115,18 +121,27 @@ def make_operation_widget(
                 widget.call_button.text = f"Run {operation_spec.display_name}"
 
         def _on_done(
-            result: dict[str, float | int] | Figure | float | int | np.ndarray | str,
+            result: dict[str, float | int | str]
+            | Figure
+            | float
+            | int
+            | np.ndarray
+            | str,
         ) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
 
             Parameters
             ----------
-            result: np.ndarray
+            result: dict[str, float | int | str] | Figure | float | int | np.ndarray
+            | str
                 The result layer of the operation.
+            results_log: ResultsLog
+                The results log object.
             """
 
             _reset_button()
+
             if operation_spec.output_kind == "image":
                 result_layer: Image | list[Image] = viewer.add_image(
                     result, name=f"{operation_spec.display_name}"
@@ -138,9 +153,22 @@ def make_operation_widget(
                     layer_ref=result_layer,
                     pending_masks=pending_masks,
                 )
+
+            elif operation_spec.output_kind == "plot":
+                (operation_spec.display_result or default_display_plot)(result)  # type: ignore
+                results_log.add(
+                    operation_spec.display_name, "Plot generated, see window"
+                )
+                recorder.record(
+                    operation_spec.name,
+                    recorded_params,
+                    input_refs=input_refs,
+                    layer_ref=None,
+                    pending_masks=pending_masks,
+                )
+
             else:
-                assert not isinstance(result, np.ndarray)
-                (operation_spec.display_result or default_display_result)(result)
+                results_log.add(operation_spec.display_name, result)  # type: ignore
                 recorder.record(
                     operation_spec.name,
                     recorded_params,

@@ -30,7 +30,7 @@ class OperationSpec:
         Options to modify the default widget's native parameters.
     mask_params: tuple[str, ...]
         Mask layer parameters as required.
-    output_kind: Literal["image", "value"]
+    output_kind: Literal["image", "plot", "value"]
         Whether the operation should output an image or a value.
     display_result: Callable[[Any], None] | None
         How to interactively display the result.
@@ -47,7 +47,7 @@ class OperationSpec:
     widget_options: dict = field(default_factory=dict)
     native_options: dict[str, dict] = field(default_factory=dict)
     mask_params: tuple[str, ...] = ()
-    output_kind: Literal["image", "value"] = "image"
+    output_kind: Literal["image", "plot", "value"] = "image"
     display_result: Callable[[Any], None] | None = None
     save_result: Callable[[Any, Path], None] | None = None
     signature: inspect.Signature = field(init=False)
@@ -65,7 +65,7 @@ def register_operation(
     widget_options: dict | None = None,
     native_options: dict[str, dict] | None = None,
     mask_params: tuple[str, ...] = (),
-    output_kind: Literal["image", "value"] = "image",
+    output_kind: Literal["image", "plot", "value"] = "image",
     display_result: Callable[[Any], None] | None = None,
     save_result: Callable[[Any, Path], None] | None = None,
 ) -> Callable:

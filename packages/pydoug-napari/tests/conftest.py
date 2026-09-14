@@ -4,13 +4,18 @@ Shared fixtures for pydoug-napari tests.
 
 import numpy as np
 import pytest
+from matplotlib.figure import Figure
+
+from pydoug_core.registry import register_operation, unregister_operation
 
 pytest_plugins: list[str] = ["pydoug_core.testing"]
 
 
 @pytest.fixture
 def registered_half():
-    from pydoug_core.registry import register_operation, unregister_operation
+    """
+    Fixture to create a registered "half" operation.
+    """
 
     @register_operation(category="testing", display_name="Half")
     def _half(imarray: np.ndarray, factor: float = 0.5) -> np.ndarray:
@@ -22,14 +27,20 @@ def registered_half():
 
 @pytest.fixture
 def registered_mask():
-    from pydoug_core.registry import register_operation, unregister_operation
+    """
+    Fixture to create a registered "mask" operation.
+    """
 
     @register_operation(
         category="testing", display_name="Mask", mask_params=("maskarray",)
     )
-    def _mask(imarray: np.ndarray, maskarray: np.ndarray) -> np.ndarray:
+    def _mask(
+        imarray: np.ndarray, maskarray: np.ndarray, Apply_Mask: bool = False
+    ) -> np.ndarray:
         output: np.ndarray = np.copy(imarray)  # pragma: no cover
-        output[np.logical_not(maskarray)] = 0  # pragma: no cover
+        if Apply_Mask:  # pragma: no cover
+            output[np.logical_not(maskarray)] = 0  # pragma: no cover
+            return output  # pragma: no cover
         return output  # pragma: no cover
 
     yield "_mask"
@@ -38,7 +49,9 @@ def registered_mask():
 
 @pytest.fixture
 def registered_bool():
-    from pydoug_core.registry import register_operation, unregister_operation
+    """
+    Fixture to create a registered "bool" operation.
+    """
 
     @register_operation(
         category="testing", display_name="Mask", mask_params=("maskarray",)
@@ -51,6 +64,34 @@ def registered_bool():
 
     yield "_mask"
     unregister_operation("_mask")
+
+
+@pytest.fixture
+def registered_calc():
+    """
+    Fixture to create a registered "calc" operation.
+    """
+
+    @register_operation(category="testing", display_name="Calc", output_kind="value")
+    def _calc(imarray: np.ndarray) -> np.float64:
+        return np.mean(imarray)  # pragma: no cover
+
+    yield "_calc"
+    unregister_operation("_calc")
+
+
+@pytest.fixture
+def registered_plot():
+    """
+    Fixture to create a registered "plot" operation.
+    """
+
+    @register_operation(category="testing", display_name="Plot", output_kind="plot")
+    def _plot(imarray: np.ndarray) -> Figure:
+        return Figure()  # pragma: no cover
+
+    yield "_plot"
+    unregister_operation("_plot")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)

@@ -9,7 +9,8 @@ from matplotlib.figure import Figure
 
 
 def default_save_result(
-    result: dict[str, float | int] | Figure | float | int | str, path_without_ext: Path
+    result: dict[str, float | int | str] | Figure | float | int | str,
+    path_without_ext: Path,
 ) -> None:
     """
     Export results from an operation, figures as .png, dictionaries as .json, and all
@@ -17,20 +18,15 @@ def default_save_result(
 
     Parameters
     ----------
-    result: dict[str, float | int] | Figure | float | int | str
+    result: dict[str, float | int | str] | Figure | float | int | str
         The results to save
     path_without_ext: Path
         The path (sans extension) where the results should be exported to.
     """
 
-    try:
-        from matplotlib.figure import Figure
-
-        if isinstance(result, Figure):
-            result.savefig(path_without_ext.with_suffix(".png"))
-            return
-    except ImportError:
-        pass
+    if isinstance(result, Figure):
+        result.savefig(path_without_ext.with_suffix(".png"))
+        return
     if isinstance(result, dict):
         path_without_ext.with_suffix(".json").write_text(json.dumps(result, indent=2))
     else:

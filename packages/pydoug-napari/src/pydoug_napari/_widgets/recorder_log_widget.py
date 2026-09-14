@@ -19,7 +19,6 @@ class RecordingLogWidget(QListWidget):
     """
 
     def __init__(self, recorder: Recorder) -> None:
-
         super().__init__()
         recorder.steps_changed.connect(self._refresh)
         self._recorder: Recorder = recorder

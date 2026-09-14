@@ -13,6 +13,7 @@ from pydoug_core.registry import list_operations
 from pydoug_napari._widgets.batch_widget import make_batch_widget
 from pydoug_napari._widgets.operation_widget import make_operation_widget
 from pydoug_napari._widgets.recorder_log_widget import RecordingLogWidget
+from pydoug_napari._widgets.results_log_widget import ResultsLog, ResultsLogWidget
 
 
 class MainWidget(QTabWidget):
@@ -21,8 +22,11 @@ class MainWidget(QTabWidget):
 
     Attributes
     ----------
+    viewer: Viewer
+        The napari viewer object.
     recorder: Recorder
         The parameters recording object.
+
     """
 
     def __init__(self, viewer: Viewer, parent=None):
@@ -31,6 +35,7 @@ class MainWidget(QTabWidget):
         self.recorder: Recorder = Recorder()
         self._cascading: bool = False
         self.operation_widgets: dict[str, CollapsibleContainer] = {}
+        self.results_log: ResultsLog = ResultsLog()
 
         categories: list[str] = self._specify_category_order(
             {spec.category for spec in list_operations()}
@@ -44,6 +49,10 @@ class MainWidget(QTabWidget):
 
         viewer.window.add_dock_widget(
             RecordingLogWidget(self.recorder), name="Workflow Log", area="bottom"
+        )
+
+        viewer.window.add_dock_widget(
+            ResultsLogWidget(self.results_log), name="Results Log", area="bottom"
         )
 
         viewer.layers.events.removed.connect(self._on_layer_removed)
@@ -68,7 +77,7 @@ class MainWidget(QTabWidget):
         containers: list[CollapsibleContainer] = []
         for spec in list_operations(category=category):
             op_widget: CollapsibleContainer = make_operation_widget(
-                spec, viewer, self.recorder
+                spec, viewer, self.recorder, self.results_log
             )
             self.operation_widgets[spec.name] = op_widget
             containers.append(op_widget)
