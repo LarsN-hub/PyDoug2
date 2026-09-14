@@ -12,12 +12,14 @@ def test_stats(sample_3dgray_array) -> None:
     result1: dict[str, float | int] = measure.stats(sample_3dgray_array)
     maskarray: np.ndarray = np.zeros(sample_3dgray_array.shape, np.bool)
     maskarray[3] = 1
-    result2: dict[str, float | int] = measure.stats(sample_3dgray_array, maskarray)
+    result2: dict[str, float | int] = measure.stats(
+        sample_3dgray_array, True, maskarray
+    )
     result3: dict[str, float | int] = measure.stats(
         np.astype(sample_3dgray_array, np.float64)
     )
     result4: dict[str, float | int] = measure.stats(maskarray)
-    result5: dict[str, float | int] = measure.stats(maskarray, maskarray)
+    result5: dict[str, float | int] = measure.stats(maskarray, True, maskarray)
 
     assert isinstance(result1["Mean"], float)
     assert isinstance(result1["Median"], float)

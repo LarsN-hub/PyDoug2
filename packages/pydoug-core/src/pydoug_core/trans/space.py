@@ -10,71 +10,38 @@ from skimage import transform
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["radon", "invradon", "fft", "invfft"]
+__all__ = ["radon", "invradon", "fft", "invfft", "euclidian_dt"]
 
 
-@register_operation(category="transformations", display_name="Radon")
-def radon(imarray: np.ndarray) -> np.ndarray:
+@register_operation(
+    category="transformations",
+    display_name="Distance",
+    widget_options={"Pixel_Size": {"step": 0.0001, "min": 0.0001}},
+    native_options={"Pixel_Size": {"setDecimals": 4}},
+)
+def euclidian_dt(imarray: np.ndarray, Pixel_Size: float = 1) -> np.ndarray:
     """
-    Transform a spatial domain image into the projection domain (i.e., a sinogram) about
-    a 180 degree rotation. Convenience wrapper around scikit-image's transform.radon:
-    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.radon
+    Transform a binary image into the distance domain by calculating the Euclidian
+    distance from each foreground point to the nearest background point. Convenience
+    wrapper around scipy's ndimage.distance_transform_edt:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html
 
     Parameters
     ----------
     imarray: np.ndarray
         The image array to be transformed.
+    Pixel_Size: float
+        The real-world length of a single pixel edge.
 
     Returns
     -------
-    radarray: np.ndarray
-        The image array transformed into the projection domain.
+    edtarray: np.ndarray
+        The image array transformed into the distance domain.
     """
 
-    imarray = util.rgb2gray(imarray)
-    if util.is3d(imarray):
-        firstrad: np.ndarray = transform.radon(imarray[0], circle=False)
-        radarray: np.ndarray = np.empty(
-            (imarray.shape[0], firstrad.shape[0], firstrad.shape[1]), firstrad.dtype
-        )
-        radarray[0] = firstrad
-        for index in range(1, imarray.shape[0]):
-            radarray[index] = transform.radon(imarray[index], circle=False)
-        return radarray
-    else:
-        return transform.radon(imarray, circle=False)
-
-
-@register_operation(category="transformations", display_name="Inverse Radon")
-def invradon(imarray: np.ndarray) -> np.ndarray:
-    """
-    Reconstruct a projection domain image (i.e., a sinogram) into the spatial domain.
-    Convenience wrapper around scikit-image's transform.iradon:
-    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.iradon
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image array to be transformed.
-
-    Returns
-    -------
-    iradarray: np.ndarray
-        The image array transformed into the spatial domain.
-    """
-
-    imarray = util.rgb2gray(imarray)
-    if util.is3d(imarray):
-        firstirad: np.ndarray = transform.iradon(imarray[0], circle=False)
-        iradarray: np.ndarray = np.empty(
-            (imarray.shape[0], firstirad.shape[0], firstirad.shape[1]), firstirad.dtype
-        )
-        iradarray[0] = firstirad
-        for index in range(1, imarray.shape[0]):
-            iradarray[index] = transform.iradon(imarray[index], circle=False)
-        return iradarray
-    else:
-        return transform.iradon(imarray, circle=False)
+    if util.isrgb(imarray):
+        return edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
+    return edt(imarray, Pixel_Size)  # type: ignore
 
 
 @register_operation(category="transformations", display_name="FFT")
@@ -158,6 +125,70 @@ def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     return np.abs(ft.ifftshift(ft.ifft2(imarray)))
 
 
+@register_operation(category="transformations", display_name="Radon")
+def radon(imarray: np.ndarray) -> np.ndarray:
+    """
+    Transform a spatial domain image into the projection domain (i.e., a sinogram) about
+    a 180 degree rotation. Convenience wrapper around scikit-image's transform.radon:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.radon
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be transformed.
+
+    Returns
+    -------
+    radarray: np.ndarray
+        The image array transformed into the projection domain.
+    """
+
+    imarray = util.rgb2gray(imarray)
+    if util.is3d(imarray):
+        firstrad: np.ndarray = transform.radon(imarray[0], circle=False)
+        radarray: np.ndarray = np.empty(
+            (imarray.shape[0], firstrad.shape[0], firstrad.shape[1]), firstrad.dtype
+        )
+        radarray[0] = firstrad
+        for index in range(1, imarray.shape[0]):
+            radarray[index] = transform.radon(imarray[index], circle=False)
+        return radarray
+    else:
+        return transform.radon(imarray, circle=False)
+
+
+@register_operation(category="transformations", display_name="Inverse Radon")
+def invradon(imarray: np.ndarray) -> np.ndarray:
+    """
+    Reconstruct a projection domain image (i.e., a sinogram) into the spatial domain.
+    Convenience wrapper around scikit-image's transform.iradon:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.iradon
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be transformed.
+
+    Returns
+    -------
+    iradarray: np.ndarray
+        The image array transformed into the spatial domain.
+    """
+
+    imarray = util.rgb2gray(imarray)
+    if util.is3d(imarray):
+        firstirad: np.ndarray = transform.iradon(imarray[0], circle=False)
+        iradarray: np.ndarray = np.empty(
+            (imarray.shape[0], firstirad.shape[0], firstirad.shape[1]), firstirad.dtype
+        )
+        iradarray[0] = firstirad
+        for index in range(1, imarray.shape[0]):
+            iradarray[index] = transform.iradon(imarray[index], circle=False)
+        return iradarray
+    else:
+        return transform.iradon(imarray, circle=False)
+
+
 # @register_operation(category="transformations", display_name="Hough")
 def hough(
     imarray: np.ndarray,
@@ -239,34 +270,3 @@ def hough(
         if not Full_Output:
             return transform.hough_line(imarray)[0]
         return transform.hough_line(imarray)
-
-
-@register_operation(
-    category="transformations",
-    display_name="Distance",
-    widget_options={"Pixel_Size": {"step": 0.0001, "min": 0.0001}},
-    native_options={"Pixel_Size": {"setDecimals": 4}},
-)
-def euclidian_dt(imarray: np.ndarray, Pixel_Size: float = 1) -> np.ndarray:
-    """
-    Transform a binary image into the distance domain by calculating the Euclidian
-    distance from each foreground point to the nearest background point. Convenience
-    wrapper around scipy's ndimage.distance_transform_edt:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image array to be transformed.
-    Pixel_Size: float
-        The real-world length of a single pixel edge.
-
-    Returns
-    -------
-    edtarray: np.ndarray
-        The image array transformed into the distance domain.
-    """
-
-    if util.isrgb(imarray):
-        return edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
-    return edt(imarray, Pixel_Size)  # type: ignore

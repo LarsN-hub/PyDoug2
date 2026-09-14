@@ -88,7 +88,7 @@ def isrgb(imarray: np.ndarray | None = None, imshape: None | tuple = None) -> bo
             return False
 
 
-@register_operation(category="utilities", display_name="Grayscale to RGB")
+@register_operation(category="color", display_name="Grayscale to RGB")
 def gray2rgb(imarray: np.ndarray) -> np.ndarray:
     """
     Make a grayscale image array an RGB image array. Duplicates the grayscale array
@@ -113,7 +113,7 @@ def gray2rgb(imarray: np.ndarray) -> np.ndarray:
         return np.repeat(np.expand_dims(imarray, imarray.ndim), 3, imarray.ndim)
 
 
-@register_operation(category="utilities", display_name="RGB to Grayscale")
+@register_operation(category="color", display_name="RGB to Grayscale")
 def rgb2gray(imarray: np.ndarray) -> np.ndarray:
     """
     Make an RGB image array a grayscale image array. Convenience wrapper around
@@ -306,3 +306,62 @@ def tidypath(filepath: Path, ext: str = "json") -> Path:
     if ext == "dir":
         return Path(strpath)
     return Path(strpath + f".{ext}")
+
+
+def prep_mask(imarray: np.ndarray, maskarray: np.ndarray) -> np.ndarray:
+    """
+    Ensure that a mask array and an image array have the same dimensions.
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be masked.
+    maskarray: np.ndarray
+        The mask array to be used.
+
+    Returns
+    -------
+    maskarray_corr: np.ndarray
+        The mask array with corrected dimensions.
+    """
+
+    if maskarray.ndim < imarray.ndim:
+        if isrgb(imarray):
+            if imarray.ndim == 3:
+                return np.astype(np.stack([maskarray] * imarray.shape[2], 2), np.bool)
+            if maskarray.ndim == 2:
+                return np.astype(
+                    np.stack(
+                        [np.stack([maskarray] * imarray.shape[3], 2)]
+                        * imarray.shape[0],
+                        0,
+                    ),
+                    np.bool,
+                )
+            if maskarray.shape == imarray.shape[1:]:
+                return np.astype(np.stack([maskarray] * imarray.shape[0], 0), np.bool)
+            return np.astype(np.stack([maskarray] * imarray.shape[3], 3), np.bool)
+        return np.astype(np.stack([maskarray] * imarray.shape[0], 0), np.bool)
+
+    if maskarray.ndim > imarray.ndim:
+        if isrgb(imarray):
+            return np.astype(maskarray[0], np.bool)
+        if maskarray.ndim == 4:
+            if imarray.ndim == 3:
+                return np.astype(maskarray[:, :, :, 0], np.bool)
+            return np.astype(maskarray[0, :, :, 0], np.bool)
+        if maskarray.shape[0:2] == imarray.shape:
+            return np.astype(maskarray[:, :, 0], np.bool)
+        return np.astype(maskarray[0, :, :], np.bool)
+
+    if maskarray.shape != imarray.shape:
+        if maskarray.ndim == 3:
+            if isrgb(imarray):
+                return np.astype(
+                    np.stack([maskarray[0]] * imarray.shape[2], 2), np.bool
+                )
+            return np.astype(
+                np.stack([maskarray[:, :, 0]] * imarray.shape[0], 0), np.bool
+            )
+
+    return np.astype(maskarray, np.bool)

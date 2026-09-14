@@ -15,18 +15,19 @@ from pydoug_napari._widgets import batch_widget
 def test_make_batch_widget(qtbot, tmp_path) -> None:
 
     record: Recorder = Recorder()
-    record.record("mirror", {})
+    record.record("mirror", {}, input_refs={"layer": "primary"})
     scroll_widget: ScrollableContainer = batch_widget.make_batch_widget(record)
     qtbot.addWidget(scroll_widget.native)
     save_widget: FunctionGui | None = scroll_widget[0].get_widget("save_widget")
     load_widget: FunctionGui | None = scroll_widget[1].get_widget("load_widget")
     clear_widget: FunctionGui | None = scroll_widget[2].get_widget("clear_widget")
-    save_widget.File_Name.value = tmp_path / "recording.json"  # type: ignore[attr-defined]
+    save_widget.Parent_Folder.value = tmp_path  # type: ignore[attr-defined]
+    save_widget.Workflow_Folder_Name.value = "recording"  # type: ignore[attr-defined]
     qtbot.mouseClick(save_widget.call_button.native, Qt.MouseButton.LeftButton)  # type: ignore[attr-defined]
-    assert Path(tmp_path / "recording.json").exists()
+    assert Path(tmp_path / "recording").exists()
     qtbot.mouseClick(clear_widget.call_button.native, Qt.MouseButton.LeftButton)  # type: ignore[attr-defined]
     assert len(record.steps) == 0
-    load_widget.File_Path.value = tmp_path / "recording.json"  # type: ignore[attr-defined]
+    load_widget.Workflow_Folder_Path.value = tmp_path / "recording"  # type: ignore[attr-defined]
     qtbot.mouseClick(load_widget.call_button.native, Qt.MouseButton.LeftButton)  # type: ignore[attr-defined]
     assert len(record.steps) == 1
 
@@ -43,7 +44,7 @@ def _find_collapsible(
 def test_clear_button_emits_steps_changed(qtbot):
 
     recorder: Recorder = Recorder()
-    recorder.record("rotate", {"angle": 90})
+    recorder.record("rotate", {"angle": 90}, input_refs={"layer": "primary"})
     received: list = []
     recorder.steps_changed.connect(lambda: received.append(True))
     widget: ScrollableContainer = batch_widget.make_batch_widget(recorder)

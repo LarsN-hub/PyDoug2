@@ -188,3 +188,67 @@ def test_tidypath_returns(tmp_path) -> None:
     assert result15 == tmp_path / "tidytest"
     assert result16 == tmp_path / "tidytest"
     assert result17 == tmp_path / "tidytest"
+
+
+def test_prep_mask(sample_arrays) -> None:
+
+    maskarray: np.ndarray = sample_arrays["3dgray"]
+    maskarray[maskarray < 128] = 0
+    maskarray[maskarray >= 128] = 255
+    maskarrayrgb = np.stack([maskarray] * 3, 3)
+    maskarraybool = np.astype(maskarray, np.bool)
+
+    result0: np.ndarray = util.prep_mask(sample_arrays["2dgray"], maskarraybool[0])
+    result1: np.ndarray = util.prep_mask(sample_arrays["2dgray"], maskarray[0])
+    result2: np.ndarray = util.prep_mask(sample_arrays["2dgray"], maskarray)
+    result3: np.ndarray = util.prep_mask(sample_arrays["2dgray"], maskarrayrgb[0])
+    result4: np.ndarray = util.prep_mask(sample_arrays["2dgray"], maskarrayrgb)
+    assert result0.dtype == np.dtype(np.bool)
+    assert result1.dtype == np.dtype(np.bool)
+    assert result2.dtype == np.dtype(np.bool)
+    assert result3.dtype == np.dtype(np.bool)
+    assert result4.dtype == np.dtype(np.bool)
+    assert result0.shape == sample_arrays["2dgray"].shape
+    assert result1.shape == sample_arrays["2dgray"].shape
+    assert result2.shape == sample_arrays["2dgray"].shape
+    assert result3.shape == sample_arrays["2dgray"].shape
+    assert result4.shape == sample_arrays["2dgray"].shape
+
+    result5: np.ndarray = util.prep_mask(sample_arrays["3dgray"], maskarray[0])
+    result6: np.ndarray = util.prep_mask(sample_arrays["3dgray"], maskarray)
+    result7: np.ndarray = util.prep_mask(sample_arrays["3dgray"], maskarrayrgb[0])
+    result8: np.ndarray = util.prep_mask(sample_arrays["3dgray"], maskarrayrgb)
+    assert result5.dtype == np.dtype(np.bool)
+    assert result6.dtype == np.dtype(np.bool)
+    assert result7.dtype == np.dtype(np.bool)
+    assert result8.dtype == np.dtype(np.bool)
+    assert result5.shape == sample_arrays["3dgray"].shape
+    assert result6.shape == sample_arrays["3dgray"].shape
+    assert result7.shape == sample_arrays["3dgray"].shape
+    assert result8.shape == sample_arrays["3dgray"].shape
+
+    result9: np.ndarray = util.prep_mask(sample_arrays["2drgb"], maskarray[0])
+    result10: np.ndarray = util.prep_mask(sample_arrays["2drgb"], maskarray)
+    result11: np.ndarray = util.prep_mask(sample_arrays["2drgb"], maskarrayrgb[0])
+    result12: np.ndarray = util.prep_mask(sample_arrays["2drgb"], maskarrayrgb)
+    assert result9.dtype == np.dtype(np.bool)
+    assert result10.dtype == np.dtype(np.bool)
+    assert result11.dtype == np.dtype(np.bool)
+    assert result12.dtype == np.dtype(np.bool)
+    assert result9.shape == sample_arrays["2drgb"].shape
+    assert result10.shape == sample_arrays["2drgb"].shape
+    assert result11.shape == sample_arrays["2drgb"].shape
+    assert result12.shape == sample_arrays["2drgb"].shape
+
+    result13: np.ndarray = util.prep_mask(sample_arrays["3drgb"], maskarray[0])
+    result14: np.ndarray = util.prep_mask(sample_arrays["3drgb"], maskarray)
+    result15: np.ndarray = util.prep_mask(sample_arrays["3drgb"], maskarrayrgb[0])
+    result16: np.ndarray = util.prep_mask(sample_arrays["3drgb"], maskarrayrgb)
+    assert result13.dtype == np.dtype(np.bool)
+    assert result14.dtype == np.dtype(np.bool)
+    assert result15.dtype == np.dtype(np.bool)
+    assert result16.dtype == np.dtype(np.bool)
+    assert result13.shape == sample_arrays["3drgb"].shape
+    assert result14.shape == sample_arrays["3drgb"].shape
+    assert result15.shape == sample_arrays["3drgb"].shape
+    assert result16.shape == sample_arrays["3drgb"].shape
