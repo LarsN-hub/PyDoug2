@@ -20,6 +20,8 @@ plt.rcParams["font.sans-serif"] = "Arial"
     category="histogram",
     display_name="Plot Histogram",
     mask_params=("Mask",),
+    output_kind="value",
+    display_result=lambda fig: fig.show(),
 )
 def plot_histogram(
     imarray: np.ndarray,
@@ -65,5 +67,4 @@ def plot_histogram(
     else:
         ax.set_ylabel("Counts", fontsize=15)
     ax.tick_params("both", labelsize=13)
-    plt.show(block=False)
     return fig

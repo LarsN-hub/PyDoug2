@@ -320,7 +320,7 @@ class Recorder:
             return imreader.imread(self._workflow_dir / ref.split(":", 1)[1])
         raise ValueError(f"Unrecognized input reference: {ref!r}")
 
-    def replay(self, imarray: ndarray):
+    def replay(self, imarray: ndarray) -> ndarray | dict | Any:
         """
         Apply a recorded workflow to an image.
 

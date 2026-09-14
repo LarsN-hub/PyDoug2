@@ -11,6 +11,7 @@ from docstring_parser import parse as parse_docstring
 from magicclass.widgets import CollapsibleContainer
 from magicgui import magicgui
 from magicgui.widgets import FunctionGui
+from matplotlib.figure import Figure
 from napari.layers import Image
 from napari.qt.threading import thread_worker
 from napari.viewer import Viewer
@@ -18,6 +19,7 @@ from napari.viewer import Viewer
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
+from pydoug_napari._widgets._result_display import default_display_result
 
 
 def make_operation_widget(
@@ -73,19 +75,19 @@ def make_operation_widget(
 
         for name, value in params.items():
             if name in mask_names:
-                # if value is not None:
-                mask_layer: Image = value
-                call_params[name] = mask_layer.data
-                step_id: str | None = recorder.step_id_for_layer(mask_layer)
-                if step_id is not None:
-                    input_refs[name] = f"step:{step_id}"
+                if value is not None:
+                    mask_layer: Image = value
+                    call_params[name] = mask_layer.data
+                    step_id: str | None = recorder.step_id_for_layer(mask_layer)
+                    if step_id is not None:
+                        input_refs[name] = f"step:{step_id}"
+                    else:
+                        input_refs[name] = f"pending:{uuid4().hex[:8]}"
+                        if isinstance(mask_layer.data, np.ndarray):
+                            pending_masks[name] = np.copy(mask_layer.data)
                 else:
-                    input_refs[name] = f"pending:{uuid4().hex[:8]}"
-                    if isinstance(mask_layer.data, np.ndarray):
-                        pending_masks[name] = np.copy(mask_layer.data)
-                # else:
-                # call_params[name] = value
-                # recorded_params[name] = value
+                    call_params[name] = value
+                    recorded_params[name] = value
             else:
                 call_params[name] = value
                 recorded_params[name] = value
@@ -112,7 +114,9 @@ def make_operation_widget(
                 widget.call_button.native.setEnabled(True)
                 widget.call_button.text = f"Run {operation_spec.display_name}"
 
-        def _on_done(result: np.ndarray) -> None:
+        def _on_done(
+            result: dict[str, float | int] | Figure | float | int | np.ndarray | str,
+        ) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
 
@@ -123,16 +127,27 @@ def make_operation_widget(
             """
 
             _reset_button()
-            result_layer: Image | list[Image] = viewer.add_image(
-                result, name=f"{operation_spec.display_name}"
-            )
-            recorder.record(
-                operation_spec.name,
-                recorded_params,
-                input_refs=input_refs,
-                layer_ref=result_layer,
-                pending_masks=pending_masks,
-            )
+            if operation_spec.output_kind == "image":
+                result_layer: Image | list[Image] = viewer.add_image(
+                    result, name=f"{operation_spec.display_name}"
+                )
+                recorder.record(
+                    operation_spec.name,
+                    recorded_params,
+                    input_refs=input_refs,
+                    layer_ref=result_layer,
+                    pending_masks=pending_masks,
+                )
+            else:
+                assert not isinstance(result, np.ndarray)
+                (operation_spec.display_result or default_display_result)(result)
+                recorder.record(
+                    operation_spec.name,
+                    recorded_params,
+                    input_refs=input_refs,
+                    layer_ref=None,
+                    pending_masks=pending_masks,
+                )
 
         def _on_error(exc: Exception) -> None:
             """

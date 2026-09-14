@@ -5,6 +5,8 @@ Registry framework for core functions.
 import inspect
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Literal
 
 
 @dataclass
@@ -26,6 +28,14 @@ class OperationSpec:
         Options to modify default widget parameters.
     native_options: dict[str, dict]
         Options to modify the default widget's native parameters.
+    mask_params: tuple[str, ...]
+        Mask layer parameters as required.
+    output_kind: Literal["image", "value"]
+        Whether the operation should output an image or a value.
+    display_result: Callable[[Any], None] | None
+        How to interactively display the result.
+    save_result: Callable[[Any, Path], None] | None
+        How to save a non-image result.
     signature: inspect.Signature
         The function's signature.
     """
@@ -37,6 +47,9 @@ class OperationSpec:
     widget_options: dict = field(default_factory=dict)
     native_options: dict[str, dict] = field(default_factory=dict)
     mask_params: tuple[str, ...] = ()
+    output_kind: Literal["image", "value"] = "image"
+    display_result: Callable[[Any], None] | None = None
+    save_result: Callable[[Any, Path], None] | None = None
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -52,6 +65,9 @@ def register_operation(
     widget_options: dict | None = None,
     native_options: dict[str, dict] | None = None,
     mask_params: tuple[str, ...] = (),
+    output_kind: Literal["image", "value"] = "image",
+    display_result: Callable[[Any], None] | None = None,
+    save_result: Callable[[Any, Path], None] | None = None,
 ) -> Callable:
     """
     Provide a decorator to register a function as an operation.
@@ -69,6 +85,12 @@ def register_operation(
         (Optional) Dictionary of default widget native parameter settings.
     mask_params: tuple[str, ...]
         (Optional) Tuple of mask parameters as needed for the operation.
+    output_kind: Literal["image", "value"]
+        Whether the operation should output an image or a value.
+    display_result: Callable[[Any], None] | None
+        How to interactively display the result.
+    save_result: Callable[[Any, Path], None] | None
+        How to save a non-image result.
 
     Returns
     -------
@@ -99,6 +121,9 @@ def register_operation(
             widget_options=widget_options or {},
             native_options=native_options or {},
             mask_params=tuple(mask_params),
+            output_kind=output_kind,
+            display_result=display_result,
+            save_result=save_result,
         )
         return func
 
