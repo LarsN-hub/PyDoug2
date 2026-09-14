@@ -2,7 +2,7 @@
 Geometric transformations of images.
 """
 
-from typing import Literal, cast
+from typing import Annotated, Literal, cast
 
 import numpy as np
 from skimage import transform
@@ -87,11 +87,10 @@ def reslice(
 @register_operation(
     category="transformations",
     display_name="Rotate",
-    widget_options={"Angle": {"max": 360}},
 )
 def rotate(
     imarray: np.ndarray,
-    Angle: float = 0,
+    Angle: Annotated[float, {"max": 360, "min": 0}] = 0,
     Clockwise: bool = False,
     Resize: bool = False,
     Preserve_Dtype: bool = True,
@@ -160,12 +159,10 @@ def rotate(
 @register_operation(
     category="transformations",
     display_name="Rescale",
-    widget_options={"Scale": {"step": 0.001, "min": 0.001}},
-    native_options={"Scale": {"setDecimals": 3}},
 )
 def rescale(
     imarray: np.ndarray,
-    Scale: float = 1,
+    Scale: Annotated[float, {"step": 0.001, "min": 0.001}] = 1,
     Order: Literal[0, 1, 2, 3, 4, 5] = 1,
     Segmented_Data: bool = False,
     Preserve_Dtype: bool = True,
@@ -221,17 +218,12 @@ def rescale(
 @register_operation(
     category="transformations",
     display_name="Resize",
-    widget_options={
-        "X_Length": {"max": 10000},
-        "Y_Length": {"max": 10000},
-        "Z_Length": {"max": 10000},
-    },
 )
 def resize(
     imarray: np.ndarray,
-    X_Length: int | None = None,
-    Y_Length: int | None = None,
-    Z_Length: int | None = None,
+    X_Length: Annotated[int | None, {"max": 10000, "min": 0}] = None,
+    Y_Length: Annotated[int | None, {"max": 10000, "min": 0}] = None,
+    Z_Length: Annotated[int | None, {"max": 10000, "min": 0}] = None,
     Order: Literal[0, 1, 2, 3, 4, 5] = 1,
     Segmented_Data: bool = False,
     Preserve_Dtype: bool = True,

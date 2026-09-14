@@ -2,6 +2,8 @@
 Domain transformations of images.
 """
 
+from typing import Annotated
+
 import numpy as np
 from scipy import fft as ft
 from scipy.ndimage import distance_transform_edt as edt
@@ -16,10 +18,10 @@ __all__ = ["radon", "invradon", "fft", "invfft", "euclidian_dt"]
 @register_operation(
     category="transformations",
     display_name="Distance",
-    widget_options={"Pixel_Size": {"step": 0.0001, "min": 0.0001}},
-    native_options={"Pixel_Size": {"setDecimals": 4}},
 )
-def euclidian_dt(imarray: np.ndarray, Pixel_Size: float = 1) -> np.ndarray:
+def euclidian_dt(
+    imarray: np.ndarray, Pixel_Size: Annotated[float, {"step": 0.0001, "min": 0}] = 1
+) -> np.ndarray:
     """
     Transform a binary image into the distance domain by calculating the Euclidian
     distance from each foreground point to the nearest background point. Convenience

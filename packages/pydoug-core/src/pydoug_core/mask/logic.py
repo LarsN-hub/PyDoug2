@@ -2,7 +2,7 @@
 Mask logic operations.
 """
 
-from typing import Literal
+from typing import Annotated, Literal
 
 import numpy as np
 
@@ -15,14 +15,13 @@ __all__ = ["apply_mask"]
 @register_operation(
     category="mask",
     display_name="Apply Mask",
-    widget_options={"Masked_Intensity": {"max": 65535, "min": 0}},
     mask_params=("Mask",),
 )
 def apply_mask(
     imarray: np.ndarray,
     Mask: np.ndarray,
     Method: Literal["Out", "In"] = "Out",
-    Masked_Intensity: int = 0,
+    Masked_Intensity: Annotated[int, {"max": 65535, "min": -32768}] = 0,
     Conserve_RAM: bool = False,
 ) -> np.ndarray:
     """

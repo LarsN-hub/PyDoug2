@@ -2,16 +2,19 @@
 Plot and modify an image array's histogram.
 """
 
+from typing import Annotated, Literal
+
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from skimage.exposure import rescale_intensity
 
 from pydoug_core import util
 from pydoug_core.analyze import plot_util
 from pydoug_core.registry import register_operation
 
-__all__ = ["plot_histogram"]
+__all__ = ["plot_histogram", "normalize"]
 
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = "Arial"
@@ -70,3 +73,72 @@ def plot_histogram(
     ax.tick_params("both", labelsize=13)
     fig.set_layout_engine("constrained")
     return fig
+
+
+@register_operation(
+    category="histogram",
+    display_name="Normalize",
+)
+def normalize(
+    imarray: np.ndarray,
+    Input_Range: Literal["Image", "Dtype", "Manual"] = "Image",
+    Manual_Input: tuple[
+        Annotated[float, {"step": 0.0001, "min": -32768, "max": 65535}],
+        Annotated[float, {"step": 0.0001, "min": -32768, "max": 65535}],
+    ] = (0, 0),
+    Output_Range: Literal["Image", "Dtype", "Manual"] = "Dtype",
+    Manual_Output: tuple[
+        Annotated[float, {"step": 0.0001, "min": -32768, "max": 65535}],
+        Annotated[float, {"step": 0.0001, "min": -32768, "max": 65535}],
+    ] = (0, 0),
+) -> np.ndarray:
+    """
+    Shrink or expand an image's histogram to a new range. Convenience wrapper around
+    scikit-image's exposure.rescale_intensity:
+    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.rescale_intensity
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be normalized.
+    Input_Range: Literal["Image", "Dtype", "Manual"]
+        Method for determining the input range to be normalized.
+        - "Image":  (default) uses the current range of the input image.
+        - "Dtype":  uses the max range of the image's data type.
+        - "Manual": uses the range specified in "Manual Input".
+    Manual_Input: tuple[float, float]
+        If Input Range is "Manual", the max and min values of the input range.
+    Output_Range: Literal["Image", "Dtype", "Manual"]
+        Method for determining the output range after normalization.
+        - "Image":  uses the current range of the input image.
+        - "Dtype":  (default) uses the max range of the image's data type.
+        - "Manual": uses the range specified in "Manual Input".
+    Manual_Output: tuple[float, float]
+        If Output Range is "Manual", the max and min values of the output range.
+
+    Returns
+    -------
+    normarray: np.ndarray
+        The normalized image array.
+    """
+
+    if Input_Range == "Image" and Output_Range == "Image":
+        return imarray
+
+    if Input_Range != "Manual" and Output_Range != "Manual":
+        return rescale_intensity(imarray, Input_Range.lower(), Output_Range.lower())
+
+    if Input_Range == "Manual":
+        input: str | tuple[float, float] = Manual_Input
+    else:
+        input = Input_Range.lower()
+    if Output_Range == "Manual":
+        output: str | tuple[float, float] = Manual_Output
+    else:
+        output = Output_Range.lower()
+
+    try:
+        return rescale_intensity(imarray, input, output)  # type: ignore
+    except Exception as e:
+        print(f"Unable to normalize intensities: {e}")
+        return imarray
