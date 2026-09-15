@@ -179,3 +179,43 @@ def normalize(
         output = Output_Range.lower()
 
     return rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
+
+
+@register_operation(category="histogram", display_name="Saturate")
+def saturate(
+    imarray: np.ndarray,
+    Bounds: tuple[
+        Annotated[float, {"step": 0.0001}], Annotated[float, {"step": 0.0001}]
+    ] = (0, 0),
+    Normalize_to_Dtype: bool = True,
+) -> np.ndarray:
+    """
+    Saturate an image by setting values outside the given range to the range's bounds.
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be saturated.
+    Bounds: tuple[float, float]
+        The intensity bounds to use for saturation. Percentiles are not supported, but
+        can be calculated in "Measurements" to use here.
+    Normalize_to_Dtype: bool
+        Whether or not to stretch the final histgoram to the dtype's max range after
+        saturation. Default is True.
+
+    Returns
+    -------
+    satarray: np.ndarray
+        The saturated image array.
+    """
+
+    if imarray.dtype == np.bool:
+        return imarray
+
+    satarray: np.ndarray = np.copy(imarray)
+    satarray[satarray >= max(Bounds)] = max(Bounds)
+    satarray[satarray <= min(Bounds)] = min(Bounds)
+
+    if Normalize_to_Dtype:
+        satarray = normalize(satarray)
+    return satarray

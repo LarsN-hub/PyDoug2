@@ -26,9 +26,9 @@ def test_convert_type(sample_3dgray_array) -> None:
     result4: np.ndarray = hist.convert_dtype(sample_3dgray_array, "Float32")
     result5: np.ndarray = hist.convert_dtype(sample_3dgray_array, "Float64")
     result6: np.ndarray = hist.convert_dtype(sample_3dgray_array, "Bool")
-    result7: np.ndarray = hist.convert_dtype(
-        np.astype(sample_3dgray_array, np.uint16), "Uint8"
-    )
+    uint16_array: np.ndarray = np.astype(sample_3dgray_array, np.uint16)
+    uint16_array[0, 0, 0] = 65535
+    result7: np.ndarray = hist.convert_dtype(uint16_array, "Uint8")
     assert result1.dtype == np.uint8
     assert result2.dtype == np.uint16
     assert result3.dtype == np.int16
@@ -75,3 +75,18 @@ def test_normalize(sample_2dgray_array) -> None:
     assert np.all(result5 == result1)
     assert np.all(result5 == result6)
     assert np.all(result5 == result7)
+
+
+def test_saturate(sample_3dgray_array) -> None:
+
+    test_bool = sample_3dgray_array.astype(np.bool)
+    result0: np.ndarray = hist.saturate(test_bool)
+    assert np.all(test_bool == result0)
+    result1: np.ndarray = hist.saturate(sample_3dgray_array, (50, 200))
+    result2: np.ndarray = hist.saturate(sample_3dgray_array, (50, 200), False)
+    assert result1.dtype == sample_3dgray_array.dtype
+    assert result2.dtype == sample_3dgray_array.dtype
+    assert not np.all(result1 == result2)
+    result3: np.ndarray = hist.saturate(sample_3dgray_array, (0, 255), False)
+    assert result3.dtype == sample_3dgray_array.dtype
+    assert np.all(result3 == sample_3dgray_array)
