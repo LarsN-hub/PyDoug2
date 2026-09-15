@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from skimage import util as skutil
 from skimage.exposure import rescale_intensity
 
 from pydoug_core import util
@@ -75,10 +76,53 @@ def plot_histogram(
     return fig
 
 
-@register_operation(
-    category="histogram",
-    display_name="Normalize",
-)
+@register_operation(category="histogram", display_name="Convert Data Type")
+def convert_dtype(
+    imarray: np.ndarray,
+    New_Type: Literal[
+        "Uint8", "Uint16", "Int16", "Float32", "Float64", "Bool"
+    ] = "Uint8",
+) -> np.ndarray:
+    """
+    Convert the data type of an image. Convenience wrapper around the "img_as_XXXXX"
+    functions in scikit-image's util package:
+    https://scikit-image.org/docs/stable/api/skimage.util.html#
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be converted.
+    New_Type: Literal["Bool", "Uint8", "Uint16", "Int16", "Float32", "Float64"]
+        The data type to convert to.
+        - Uint8: 8-bit unsigned integer format [0, 255]
+        - Uint16: 16-bit unsigned integer format [0, 65,535]
+        - Int16: 16-bit signed integer format [-32,768, 32,767]
+        - Float32: 32-bit (single-precision) floating-point format [-3.4e+38, 3.4e+38]
+        - Float64: 64-bit (double-precision) floating-point format [-1.8e+308, 1.8e+308]
+        - Bool: Boolean True/False format
+
+    Returns
+    -------
+    convarray: np.ndarray
+        The converted image array.
+    """
+
+    if New_Type == "Bool" and imarray.dtype != np.bool:
+        return skutil.img_as_bool(imarray)
+    if New_Type == "Uint8" and imarray.dtype != np.uint8:
+        return skutil.img_as_ubyte(imarray)
+    if New_Type == "Uint16" and imarray.dtype != np.uint16:
+        return skutil.img_as_uint(imarray)
+    if New_Type == "Int16" and imarray.dtype != np.int16:
+        return skutil.img_as_int(imarray)
+    if New_Type == "Float32" and imarray.dtype != np.float32:
+        return skutil.img_as_float32(imarray)
+    if New_Type == "Float64" and imarray.dtype != np.float64:
+        return skutil.img_as_float64(imarray)
+    return imarray
+
+
+@register_operation(category="histogram", display_name="Normalize")
 def normalize(
     imarray: np.ndarray,
     Input_Range: Literal["Image", "Dtype", "Manual"] = "Image",
@@ -103,15 +147,15 @@ def normalize(
         The image array to be normalized.
     Input_Range: Literal["Image", "Dtype", "Manual"]
         Method for determining the input range to be normalized.
-        - "Image":  (default) uses the current range of the input image.
-        - "Dtype":  uses the max range of the image's data type.
+        - "Image": (default) uses the current range of the input image.
+        - "Dtype": uses the max range of the image's data type.
         - "Manual": uses the range specified in "Manual Input".
     Manual_Input: tuple[float, float]
         If Input Range is "Manual", the max and min values of the input range.
     Output_Range: Literal["Image", "Dtype", "Manual"]
         Method for determining the output range after normalization.
-        - "Image":  uses the current range of the input image.
-        - "Dtype":  (default) uses the max range of the image's data type.
+        - "Image": uses the current range of the input image.
+        - "Dtype": (default) uses the max range of the image's data type.
         - "Manual": uses the range specified in "Manual Input".
     Manual_Output: tuple[float, float]
         If Output Range is "Manual", the max and min values of the output range.
@@ -125,9 +169,6 @@ def normalize(
     if Input_Range == "Image" and Output_Range == "Image":
         return imarray
 
-    if Input_Range != "Manual" and Output_Range != "Manual":
-        return rescale_intensity(imarray, Input_Range.lower(), Output_Range.lower())
-
     if Input_Range == "Manual":
         input: str | tuple[float, float] = Manual_Input
     else:
@@ -137,8 +178,4 @@ def normalize(
     else:
         output = Output_Range.lower()
 
-    try:
-        return rescale_intensity(imarray, input, output)  # type: ignore
-    except Exception as e:
-        print(f"Unable to normalize intensities: {e}")
-        return imarray
+    return rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore

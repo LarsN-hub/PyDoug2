@@ -12,11 +12,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["apply_mask"]
 
 
-@register_operation(
-    category="mask",
-    display_name="Apply Mask",
-    mask_params=("Mask",),
-)
+@register_operation(category="mask", display_name="Apply Mask", mask_params=("Mask",))
 def apply_mask(
     imarray: np.ndarray,
     Mask: np.ndarray,

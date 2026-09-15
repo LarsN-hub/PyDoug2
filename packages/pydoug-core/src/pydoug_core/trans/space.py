@@ -15,10 +15,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["radon", "invradon", "fft", "invfft", "euclidian_dt"]
 
 
-@register_operation(
-    category="transformations",
-    display_name="Distance",
-)
+@register_operation(category="transformations", display_name="Distance")
 def euclidian_dt(
     imarray: np.ndarray, Pixel_Size: Annotated[float, {"step": 0.0001, "min": 0}] = 1
 ) -> np.ndarray:
