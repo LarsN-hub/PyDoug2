@@ -85,3 +85,14 @@ def test_stats(sample_3dgray_array) -> None:
     assert isinstance(result5["Range"], int)
     assert result5["Dtype Min"] == 0
     assert result5["Dtype Max"] == 1
+
+
+def test_percentile(sample_2dgray_array) -> None:
+
+    result1: dict = measure.percentiles(sample_2dgray_array)
+    result2: dict = measure.percentiles(sample_2dgray_array, (30, 70))
+    result3: dict = measure.percentiles(sample_2dgray_array, (-5, 105))
+    result4: dict = measure.percentiles(sample_2dgray_array, (0, 100))
+    assert list(result1.values())[0] < list(result2.values())[0]
+    assert list(result1.values())[1] > list(result2.values())[1]
+    assert result4 == result3

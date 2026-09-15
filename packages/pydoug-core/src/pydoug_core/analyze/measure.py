@@ -2,6 +2,8 @@
 Measured and calculated values of images.
 """
 
+from typing import Annotated
+
 import numpy as np
 from scipy.stats import mode
 
@@ -97,4 +99,46 @@ def stats(
         "Range": imrange,
         "Dtype Min": imdmin,
         "Dtype Max": imdmax,
+    }
+
+
+@register_operation(
+    category="measurements", display_name="Percentiles", output_kind="value"
+)
+def percentiles(
+    imarray: np.ndarray,
+    percentiles: tuple[
+        Annotated[float, {"step": 0.0001, "max": 100, "min": 0}],
+        Annotated[float, {"step": 0.0001, "max": 100, "min": 0}],
+    ] = (1, 99),
+) -> dict[float, float]:
+    """
+    Calculate the lower and upper intensity values for the given percentiles.
+    Convenience wrapper around numpy's percentile:
+    https://numpy.org/doc/stable/reference/generated/numpy.percentile.html#numpy-percentile
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to calculate percentile intensities for.
+    percentiles: tuple[float, float]
+        A tuple containing the lower and upper percentiles in the range [0, 100]. Values
+        outside [0, 100] will be clipped to 0 (first value) or 100 (second value).
+
+    Returns
+    -------
+    intensities: dict[float, float]
+        The percentile values in a dictionary containing keys for each given percentile.
+    """
+
+    if percentiles[0] > 100 or percentiles[0] < 0:
+        percentiles = (0, percentiles[1])
+    if percentiles[1] > 100 or percentiles[1] < 0:
+        percentiles = (percentiles[0], 100)
+
+    if percentiles == (0, 100):
+        return {0: np.min(imarray), 100: np.max(imarray)}
+    return {
+        min(percentiles): np.percentile(imarray, min(percentiles)),
+        max(percentiles): np.percentile(imarray, max(percentiles)),
     }
