@@ -17,7 +17,11 @@ def registered_half():
     Fixture to create a registered "half" operation.
     """
 
-    @register_operation(category="testing", display_name="Half")
+    @register_operation(
+        category="testing",
+        display_name="Half",
+        native_options={"factor": {"setDecimals": 3}},
+    )
     def _half(imarray: np.ndarray, factor: float = 0.5) -> np.ndarray:
         return np.round(imarray * factor).astype(imarray.dtype)  # pragma: no cover
 
