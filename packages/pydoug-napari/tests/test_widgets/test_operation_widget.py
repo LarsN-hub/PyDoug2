@@ -8,10 +8,10 @@ import numpy as np
 import pytest
 from magicclass.widgets import CollapsibleContainer
 from magicgui.widgets import FunctionGui
-from matplotlib.figure import Figure
 from napari.layers import Image, Layer
 from napari.viewer import Viewer
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QMainWindow
 
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec, get_operation
@@ -277,6 +277,6 @@ def test_non_image_output(
     assert subwidget2.call_button is not None
     qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(record.steps) == 1, timeout=5000)
-    monkeypatch.setattr(Figure, "show", lambda *a, **k: None)
+    monkeypatch.setattr(QMainWindow, "show", lambda *a, **k: None)
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(record.steps) == 2, timeout=5000)
