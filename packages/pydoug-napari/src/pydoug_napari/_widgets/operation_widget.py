@@ -144,6 +144,10 @@ def make_operation_widget(
 
             _reset_button()
 
+            should_record: bool = operation_spec.recordable and (
+                record_in_workflow if operation_spec.recordable_toggle else True
+            )
+
             if operation_spec.output_kind == "image":
                 in_place: bool = operation_spec.allow_in_place and call_params.get(
                     "In_Place", False
@@ -155,20 +159,21 @@ def make_operation_widget(
                     result_layer: Image | list[Image] = viewer.add_image(
                         result, name=f"{operation_spec.display_name}"
                     )
-                recorder.record(
-                    operation_spec.name,
-                    recorded_params,
-                    input_refs=input_refs,
-                    layer_ref=result_layer,
-                    pending_masks=pending_masks,
-                )
+                if should_record:
+                    recorder.record(
+                        operation_spec.name,
+                        recorded_params,
+                        input_refs=input_refs,
+                        layer_ref=result_layer,
+                        pending_masks=pending_masks,
+                    )
 
             elif operation_spec.output_kind == "plot":
                 (operation_spec.display_result or default_display_plot)(result)  # type: ignore
                 results_log.add(
                     operation_spec.display_name, "Plot generated, see window"
                 )
-                if record_in_workflow:
+                if record_in_workflow and should_record:
                     recorder.record(
                         operation_spec.name,
                         recorded_params,
@@ -179,7 +184,7 @@ def make_operation_widget(
 
             else:  # "value"
                 results_log.add(operation_spec.display_name, result)  # type: ignore
-                if record_in_workflow:
+                if record_in_workflow and should_record:
                     recorder.record(
                         operation_spec.name,
                         recorded_params,
