@@ -18,6 +18,7 @@ __all__ = ["stats"]
     display_name="Stats",
     mask_params=("Mask",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def stats(
     imarray: np.ndarray, Apply_Mask: bool = False, Mask: np.ndarray | None = None

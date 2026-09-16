@@ -74,6 +74,8 @@ def make_operation_widget(
             widget.call_button.native.setEnabled(False)
             widget.call_button.text = "Running..."
 
+        record_in_workflow: bool = params.pop("Record_in_Workflow", True)
+
         call_params: dict = {}
         recorded_params: dict = {}
         input_refs: dict[str, str] = {}
@@ -142,40 +144,54 @@ def make_operation_widget(
 
             _reset_button()
 
+            should_record: bool = operation_spec.recordable and (
+                record_in_workflow if operation_spec.recordable_toggle else True
+            )
+
             if operation_spec.output_kind == "image":
-                result_layer: Image | list[Image] = viewer.add_image(
-                    result, name=f"{operation_spec.display_name}"
+                in_place: bool = operation_spec.allow_in_place and call_params.get(
+                    "In_Place", False
                 )
-                recorder.record(
-                    operation_spec.name,
-                    recorded_params,
-                    input_refs=input_refs,
-                    layer_ref=result_layer,
-                    pending_masks=pending_masks,
-                )
+                if in_place:
+                    layer.data = result  # type: ignore
+                    result_layer = layer
+                else:
+                    result_layer: Image | list[Image] = viewer.add_image(
+                        result, name=f"{operation_spec.display_name}"
+                    )
+                if should_record:
+                    recorder.record(
+                        operation_spec.name,
+                        recorded_params,
+                        input_refs=input_refs,
+                        layer_ref=result_layer,
+                        pending_masks=pending_masks,
+                    )
 
             elif operation_spec.output_kind == "plot":
                 (operation_spec.display_result or default_display_plot)(result)  # type: ignore
                 results_log.add(
                     operation_spec.display_name, "Plot generated, see window"
                 )
-                recorder.record(
-                    operation_spec.name,
-                    recorded_params,
-                    input_refs=input_refs,
-                    layer_ref=None,
-                    pending_masks=pending_masks,
-                )
+                if record_in_workflow and should_record:
+                    recorder.record(
+                        operation_spec.name,
+                        recorded_params,
+                        input_refs=input_refs,
+                        layer_ref=None,
+                        pending_masks=pending_masks,
+                    )
 
-            else:
+            else:  # "value"
                 results_log.add(operation_spec.display_name, result)  # type: ignore
-                recorder.record(
-                    operation_spec.name,
-                    recorded_params,
-                    input_refs=input_refs,
-                    layer_ref=None,
-                    pending_masks=pending_masks,
-                )
+                if record_in_workflow and should_record:
+                    recorder.record(
+                        operation_spec.name,
+                        recorded_params,
+                        input_refs=input_refs,
+                        layer_ref=None,
+                        pending_masks=pending_masks,
+                    )
 
         def _on_error(exc: Exception) -> None:
             """
@@ -198,6 +214,17 @@ def make_operation_widget(
             p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
         params_only.append(p)
 
+    extra_params: list = []
+    if operation_spec.recordable_toggle:
+        extra_params.append(
+            inspect.Parameter(
+                "Record_in_Workflow",
+                inspect.Parameter.KEYWORD_ONLY,
+                annotation=bool,
+                default=True,
+            )
+        )
+
     _dispatch.__doc__ = operation_spec.func.__doc__
     _dispatch.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
         [
@@ -206,14 +233,26 @@ def make_operation_widget(
             )
         ]
         + params_only
+        + extra_params
     )
+
+    extra_widget_options: dict[str, dict[str, str]] = {}
+    if operation_spec.recordable_toggle:
+        extra_widget_options["Record_in_Workflow"] = {
+            "tooltip": "Uncheck to run this without saving it to the workflow."
+        }
 
     widget: FunctionGui = magicgui(
         _dispatch,
         call_button=f"Run {operation_spec.display_name}",
         layer={"label": "Layer", "tooltip": "The image layer to process."},
+        **extra_widget_options,
         **operation_spec.widget_options,
     )
+
+    if operation_spec.allow_in_place:
+        widget.In_Place.tooltip = "Warning: overwrites the selected layer's data "
+        "directly. This is much faster and conserves memory, but cannot be undone."
 
     for field_name, native_calls in operation_spec.native_options.items():
         field_widget = getattr(widget, field_name)
