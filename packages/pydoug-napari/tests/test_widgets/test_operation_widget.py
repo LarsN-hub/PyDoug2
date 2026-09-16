@@ -217,6 +217,7 @@ def test_mask_parameter_behavior(
     assert subwidget1 is not None
     assert subwidget1.layer.value == imlayer
     assert subwidget1.call_button is not None
+    assert not subwidget1.In_Place.value
     assert subwidget2 is not None
     assert subwidget2.layer.value == imlayer
     assert subwidget2.call_button is not None
@@ -239,6 +240,49 @@ def test_mask_parameter_behavior(
     subwidget1.maskarray.value = viewer.layers[-2]
     qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(viewer.layers) == 5, timeout=5000)
+    assert np.all(viewer.layers[0].data == viewer.layers[-1].data)
+
+
+def test_in_place_behavior(
+    make_napari_viewer,
+    qtbot,
+    sample_3dgray_array,
+    sample_masks,
+    registered_mask,
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    record: Recorder = Recorder()
+    results_log: ResultsLog = ResultsLog()
+    imlayer: Image | list[Image] = viewer.add_image(
+        sample_3dgray_array, name="test_layer"
+    )
+    masklayer: Image | list[Image] = viewer.add_image(
+        sample_masks["3dgray"], name="test_mask"
+    )
+    spec: OperationSpec = get_operation(registered_mask)
+    assert spec.mask_params is not None
+    container: CollapsibleContainer = make_operation_widget(
+        spec, viewer, record, results_log
+    )
+    qtbot.addWidget(container.native)
+    subwidget: FunctionGui | None = container.get_widget("_dispatch")
+    assert subwidget is not None
+    assert subwidget.call_button is not None
+    subwidget.layer.value = imlayer
+    subwidget.maskarray.value = masklayer
+    subwidget.Apply_Mask.value = True
+    subwidget.In_Place.value = False
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 3, timeout=5000)
+    assert len(viewer.layers) == 3
+    subwidget.layer.value = imlayer
+    subwidget.maskarray.value = masklayer
+    subwidget.In_Place.value = True
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(record.steps) == 2, timeout=5000)
+    assert len(record.steps) == 2
+    assert len(viewer.layers) == 3
     assert np.all(viewer.layers[0].data == viewer.layers[-1].data)
 
 

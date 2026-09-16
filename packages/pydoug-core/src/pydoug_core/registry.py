@@ -36,6 +36,10 @@ class OperationSpec:
         How to interactively display the result.
     save_result: Callable[[Any, Path], None] | None
         How to save a non-image result.
+    recordable_toggle: bool
+        Whether or not to add a checkbox to the widget to toggle recording.
+    allow_in_place: bool
+        Whether or not to add a checkbox to the widget to toggle in-place operations.
     signature: inspect.Signature
         The function's signature.
     """
@@ -50,6 +54,8 @@ class OperationSpec:
     output_kind: Literal["image", "plot", "value"] = "image"
     display_result: Callable[[Any], None] | None = None
     save_result: Callable[[Any, Path], None] | None = None
+    recordable_toggle: bool = False
+    allow_in_place: bool = False
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -68,6 +74,8 @@ def register_operation(
     output_kind: Literal["image", "plot", "value"] = "image",
     display_result: Callable[[Any], None] | None = None,
     save_result: Callable[[Any, Path], None] | None = None,
+    recordable_toggle: bool = False,
+    allow_in_place: bool = False,
 ) -> Callable:
     """
     Provide a decorator to register a function as an operation.
@@ -91,6 +99,10 @@ def register_operation(
         How to interactively display the result.
     save_result: Callable[[Any, Path], None] | None
         How to save a non-image result.
+    recordable_toggle: bool
+        Whether or not to add a checkbox to the widget to toggle recording.
+    allow_in_place: bool
+        Whether or not to add a checkbox to the widget to toggle in-place operations.
 
     Returns
     -------
@@ -113,6 +125,21 @@ def register_operation(
             The function to be registered as an operation.
         """
 
+        if recordable_toggle and output_kind == "image":
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: recordable_toggle only makes sense for 'value'/"
+                "'plot' operations: skipping the recording of an image step would leave"
+                " later steps referencing its layer with a dangling input reference."
+            )
+
+        sig: inspect.Signature = inspect.signature(func)
+        if allow_in_place and "In_Place" not in sig.parameters:
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: allow_in_place=True requires the function to "
+                "declare its own 'In_Place: bool' parameter — only the operation "
+                "itself can correctly implement zero-copy behavior."
+            )
+
         _REGISTRY[func.__name__] = OperationSpec(
             name=func.__name__,
             func=func,
@@ -124,6 +151,8 @@ def register_operation(
             output_kind=output_kind,
             display_result=display_result,
             save_result=save_result,
+            recordable_toggle=recordable_toggle,
+            allow_in_place=allow_in_place,
         )
         return func
 

@@ -26,6 +26,7 @@ plt.rcParams["font.sans-serif"] = "Arial"
     display_name="Plot Histogram",
     mask_params=("Mask",),
     output_kind="plot",
+    recordable_toggle=True,
 )
 def plot_histogram(
     imarray: np.ndarray,

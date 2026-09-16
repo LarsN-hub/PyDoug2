@@ -36,11 +36,21 @@ def registered_mask():
     """
 
     @register_operation(
-        category="testing", display_name="Mask", mask_params=("maskarray",)
+        category="testing",
+        display_name="Mask",
+        mask_params=("maskarray",),
+        allow_in_place=True,
     )
     def _mask(
-        imarray: np.ndarray, maskarray: np.ndarray, Apply_Mask: bool = False
+        imarray: np.ndarray,
+        maskarray: np.ndarray,
+        Apply_Mask: bool = False,
+        In_Place: bool = False,
     ) -> np.ndarray:
+        if In_Place:  # pragma: no cover
+            if Apply_Mask:  # pragma: no cover
+                imarray[np.logical_not(maskarray)] = 0  # pragma: no cover
+            return imarray  # pragma: no cover
         output: np.ndarray = np.copy(imarray)  # pragma: no cover
         if Apply_Mask:  # pragma: no cover
             output[np.logical_not(maskarray)] = 0  # pragma: no cover

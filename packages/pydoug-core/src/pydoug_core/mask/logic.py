@@ -12,13 +12,18 @@ from pydoug_core.registry import register_operation
 __all__ = ["apply_mask"]
 
 
-@register_operation(category="mask", display_name="Apply Mask", mask_params=("Mask",))
+@register_operation(
+    category="mask",
+    display_name="Apply Mask",
+    mask_params=("Mask",),
+    allow_in_place=True,
+)
 def apply_mask(
     imarray: np.ndarray,
     Mask: np.ndarray,
     Method: Literal["Out", "In"] = "Out",
     Masked_Intensity: Annotated[int, {"max": 65535, "min": -32768}] = 0,
-    Conserve_RAM: bool = False,
+    In_Place: bool = False,
 ) -> np.ndarray:
     """
     Apply a mask to an image array. Convenience wrapper around numpy's boolean indexing:
@@ -40,8 +45,9 @@ def apply_mask(
         Whether to mask values outside (False) or inside (True) Mask. Default is "Out".
     Masked_Intensity: int
         The intensity to assign masked values. Default is 0.
-    Conserve_RAM: bool
-        Whether or not to perform the masking on the input imarray or a copy.
+    In_Place: bool
+        Whether or not to perform the masking on the input image (faster, saves RAM, but
+        is non-reversible) or a copy (slower, consumes RAM, but is reversible).
         Default is False.
 
     Returns
@@ -50,15 +56,17 @@ def apply_mask(
         The masked image array.
     """
 
-    if Conserve_RAM:
+    if In_Place:
         if Method == "In":
             imarray[util.prep_mask(imarray, Mask)] = Masked_Intensity
         else:
             imarray[np.logical_not(util.prep_mask(imarray, Mask))] = Masked_Intensity
         return imarray
-    outarray: np.ndarray = np.copy(imarray)
+    masked_array: np.ndarray = np.copy(imarray)
     if Method == "In":
-        outarray[util.prep_mask(outarray, Mask)] = Masked_Intensity
+        masked_array[util.prep_mask(masked_array, Mask)] = Masked_Intensity
     else:
-        outarray[np.logical_not(util.prep_mask(outarray, Mask))] = Masked_Intensity
-    return outarray
+        masked_array[np.logical_not(util.prep_mask(masked_array, Mask))] = (
+            Masked_Intensity
+        )
+    return masked_array
