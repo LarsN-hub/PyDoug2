@@ -8,14 +8,28 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from skimage import exposure
 from skimage import util as skutil
-from skimage.exposure import rescale_intensity
+from skimage.filters.rank import (
+    autolevel,
+    enhance_contrast,
+)
+from skimage.filters.rank import equalize as equalize_rank
+from skimage.morphology import ball, disk
 
 from pydoug_core import util
 from pydoug_core.analyze import plot_util
 from pydoug_core.registry import register_operation
 
-__all__ = ["plot_histogram", "normalize"]
+__all__ = [
+    "plot_histogram",
+    "invert",
+    "normalize",
+    "saturate",
+    "equalize",
+    "adjust",
+    "local_contrast",
+]
 
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = "Arial"
@@ -77,50 +91,24 @@ def plot_histogram(
     return fig
 
 
-@register_operation(category="histogram", display_name="Convert Data Type")
-def convert_dtype(
-    imarray: np.ndarray,
-    New_Type: Literal[
-        "Uint8", "Uint16", "Int16", "Float32", "Float64", "Bool"
-    ] = "Uint8",
-) -> np.ndarray:
+@register_operation(category="histogram", display_name="Invert")
+def invert(imarray: np.ndarray) -> np.ndarray:
     """
-    Convert the data type of an image. Convenience wrapper around the "img_as_XXXXX"
-    functions in scikit-image's util package:
-    https://scikit-image.org/docs/stable/api/skimage.util.html#
+    Invert an image's histogram. Convenience wrapper around scikit-image's util.invert:
+    https://scikit-image.org/docs/stable/api/skimage.util.html#skimage.util.invert
 
     Parameters
     ----------
     imarray: np.ndarray
-        The image array to be converted.
-    New_Type: Literal["Bool", "Uint8", "Uint16", "Int16", "Float32", "Float64"]
-        The data type to convert to.
-        - Uint8: 8-bit unsigned integer format [0, 255]
-        - Uint16: 16-bit unsigned integer format [0, 65,535]
-        - Int16: 16-bit signed integer format [-32,768, 32,767]
-        - Float32: 32-bit (single-precision) floating-point format [-3.4e+38, 3.4e+38]
-        - Float64: 64-bit (double-precision) floating-point format [-1.8e+308, 1.8e+308]
-        - Bool: Boolean True/False format
+        The image array to be inverted.
 
     Returns
     -------
-    convarray: np.ndarray
-        The converted image array.
+    invarray: np.ndarray
+        The ivnerted image array.
     """
 
-    if New_Type == "Bool" and imarray.dtype != np.bool:
-        return skutil.img_as_bool(imarray)
-    if New_Type == "Uint8" and imarray.dtype != np.uint8:
-        return skutil.img_as_ubyte(imarray)
-    if New_Type == "Uint16" and imarray.dtype != np.uint16:
-        return skutil.img_as_uint(imarray)
-    if New_Type == "Int16" and imarray.dtype != np.int16:
-        return skutil.img_as_int(imarray)
-    if New_Type == "Float32" and imarray.dtype != np.float32:
-        return skutil.img_as_float32(imarray)
-    if New_Type == "Float64" and imarray.dtype != np.float64:
-        return skutil.img_as_float64(imarray)
-    return imarray
+    return skutil.invert(imarray)
 
 
 @register_operation(category="histogram", display_name="Normalize")
@@ -179,7 +167,7 @@ def normalize(
     else:
         output = Output_Range.lower()
 
-    return rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
+    return exposure.rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
 
 
 @register_operation(category="histogram", display_name="Saturate")
@@ -192,6 +180,7 @@ def saturate(
 ) -> np.ndarray:
     """
     Saturate an image by setting values outside the given range to the range's bounds.
+    Normalizing after saturation enhances the contrast of an image.
 
     Parameters
     ----------
@@ -220,3 +209,228 @@ def saturate(
     if Normalize_to_Dtype:
         satarray = normalize(satarray)
     return satarray
+
+
+@register_operation(
+    category="histogram", display_name="Equalize", mask_params=("Mask",)
+)
+def equalize(
+    imarray: np.ndarray,
+    Method: Literal["Global", "CLAHE", "Rank"] = "CLAHE",
+    Radius: int = 5,
+    CLAHE_Clip_Limit: Annotated[float, {"max": 1, "min": 0}] = 0.5,
+    Perform_Slicewise: bool = False,
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+) -> np.ndarray:
+    """
+    Equalize the histogram of an image array. Equalization spreads out the most common
+    intensity values along the length of the histogram to improve contrast. Convenience
+    wrapper around scikit-image's exposure.equalize_hist (Global),
+    exposure.equalize_adapthist (CLAHE), and filters.rank.equalize (Rank):
+    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.equalize_hist
+    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.equalize_adapthist
+    https://scikit-image.org/docs/stable/api/skimage.filters.rank.html#skimage.filters.rank.equalize
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        - The image array to be equalized.
+    Method: Literal["Global", "CLAHE", "Rank"]
+        The method to use for equalization.
+        - Global: The entire histogram is used for equalization.
+        - CLAHE: (C)ontrast (L)imited (A)daptive (H)istogram (E)qualization uses
+        multiple histograms from the image (determined by Radius) for equalization.
+        - Rank: Uses the local histogram around each pixel (determined by Radius) for
+        equalization.
+    Radius: int
+        The local radius for the kernel (CLAHE) or rank filter (Rank). Ignored if
+        "Global" is selected for "Method".
+    CLAHE_Clip_Limit: float
+        The clip limit in the range [0, 1] to use for CLAHE. Higher = more contrast.
+    Perform_Slicewise: bool
+        Whether or not to perform the operation slice-by-slice. Default is False.
+    Apply_Mask: bool
+        Whether or not to apply a mask to the histogram sampling region before
+        equalization. Ignored if "CLAHE" is selected for "Method".
+    Mask: np.ndarray
+        The mask array to apply if "Apply Mask" is True.
+
+    Returns
+    -------
+    eqarray: np.ndarray
+        The histogram-equalized image array.
+    """
+
+    def _equalize(
+        imarray: np.ndarray,
+        Method: Literal["Global", "CLAHE", "Rank"],
+        Radius: int,
+        CLAHE_Clip_Limit: float,
+        Apply_Mask: bool,
+        Mask: np.ndarray | None,
+    ) -> np.ndarray:
+
+        input_dtype: str = util.dtype_2_str(imarray.dtype)
+
+        if Method == "Global":
+            if Apply_Mask and Mask is not None:
+                return util.convert_dtype(
+                    exposure.equalize_hist(imarray, mask=Mask),
+                    input_dtype,  # type: ignore
+                )
+            return util.convert_dtype(exposure.equalize_hist(imarray), input_dtype)  # type: ignore
+
+        if Method == "CLAHE":
+            return util.convert_dtype(
+                exposure.equalize_adapthist(imarray, Radius * 2, CLAHE_Clip_Limit),
+                input_dtype,  # type: ignore
+            )
+
+        if Method == "Rank":
+            if util.is3d(imarray):
+                footprint = ball(Radius)
+            else:
+                footprint = disk(Radius)
+            if Apply_Mask and Mask is not None:
+                return util.convert_dtype(
+                    equalize_rank(imarray, footprint, mask=Mask),
+                    input_dtype,  # type: ignore
+                )
+            return util.convert_dtype(equalize_rank(imarray, footprint), input_dtype)  # type: ignore
+
+    if Apply_Mask and Mask is not None:
+        Mask = util.prep_mask(imarray, Mask)
+
+    if Perform_Slicewise and util.is3d(imarray):
+        eqarray: np.ndarray = np.empty(imarray.shape, imarray.dtype)
+        for slice_index in range(0, eqarray.shape[0]):
+            if Apply_Mask and Mask is not None:
+                eqarray[slice_index] = _equalize(
+                    imarray[slice_index],
+                    Method,
+                    Radius,
+                    CLAHE_Clip_Limit,
+                    Apply_Mask,
+                    Mask[slice_index],
+                )
+
+            else:
+                eqarray[slice_index] = _equalize(
+                    imarray[slice_index],
+                    Method,
+                    Radius,
+                    CLAHE_Clip_Limit,
+                    Apply_Mask,
+                    None,
+                )
+
+        return eqarray
+
+    return _equalize(imarray, Method, Radius, CLAHE_Clip_Limit, Apply_Mask, Mask)
+
+
+@register_operation(category="histogram", display_name="Adjust")
+def adjust(
+    imarray: np.ndarray,
+    Method: Literal["Gamma", "Log", "Sigmoid"] = "Log",
+    Gamma: Annotated[int, {"min": 0}] = 1,
+    Gain: int = 1,
+    Sigmoid_Cutoff: float = 0.5,
+    Inverse: bool = False,
+) -> np.ndarray:
+    """
+    Adjust the contrast of an image using one of several methods. Convenience wrapper
+    around adjust_gamma, adjust_log, and adjust_sigmoid in scikit-image's exposure
+    package:
+    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.adjust_gamma
+    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.adjust_log
+    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.adjust_sigmoid
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be adjusted.
+    Method: Literal["Gamma", "Log", "Sigmoid"]
+        The method to use for contrast adjustment.
+        - Gamma: perform gamma correction on the image.
+        - Log: perform logarithmic correction on the image.
+        - Sigmoid: perform sigmoid correction on the image.
+    Gamma: float
+        The gamma value used if "Gamma" is selected for "Method". Ignored for others.
+    Gain: float
+        The gain value used by all methods.
+    Sigmoid_Cutoff: float
+        The cutoff value used if "Sigmoid" is selected for "Method". Ignored for others.
+    Inverse: bool
+        Whether or not to use an inverse transform if "Log" or "Sigmoid" are selected
+        for "Method". Ignored for "Gamma".
+
+    Returns
+    -------
+    adjarray: np.ndarray
+        The contrast-adjusted image array.
+    """
+
+    if Method == "Gamma":
+        return exposure.adjust_gamma(imarray, Gamma, Gain)
+
+    if Method == "Log":
+        return exposure.adjust_log(imarray, Gain, Inverse)
+
+    if Method == "Sigmoid":
+        return exposure.adjust_sigmoid(imarray, Sigmoid_Cutoff, Gain, Inverse)
+
+
+@register_operation(
+    category="histogram", display_name="Local Contrast", mask_params=("Mask",)
+)
+def local_contrast(
+    imarray: np.ndarray,
+    Method: Literal["Autolevel", "Local Extrema"] = "Autolevel",
+    Radius: int = 5,
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+) -> np.ndarray:
+    """
+    Perform local contrast enhancement on an image array. Convenience wrapper around
+    autolevel, and enhance_contrast from scikit-image's filters.rank package:
+    https://scikit-image.org/docs/stable/api/skimage.filters.rank.html#skimage.filters.rank.autolevel
+    https://scikit-image.org/docs/stable/api/skimage.filters.rank.html#skimage.filters.rank.enhance_contrast
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be contrast-enhanced.
+    Method: Literal["Autolevel", "Extrema"]
+        The method to use for local contrast enhancement. Default is "Autolevel".
+    Radius: int
+        The radius for the local footprint.
+    Apply_Mask: bool
+        Whether or not to apply a mask defining the area used for contrast enhancement.
+        Default is False.
+    Mask: np.ndarray
+        If "Apply Mask" is True, the mask array to use.
+
+    Returns
+    -------
+    enhanced_array: np.ndarray
+        The contrast-enhanced image array.
+    """
+
+    if util.is3d(imarray):
+        footprint = ball(Radius)
+    else:
+        footprint = disk(Radius)
+
+    if Method == "Autolevel":
+        if Apply_Mask and Mask is not None:
+            return autolevel(imarray, footprint, mask=util.prep_mask(imarray, Mask))
+        return autolevel(imarray, footprint)
+
+    if Method == "Local Extrema":
+        if Apply_Mask and Mask is not None:
+            return enhance_contrast(
+                imarray, footprint, mask=util.prep_mask(imarray, Mask)
+            )
+        return enhance_contrast(imarray, footprint)

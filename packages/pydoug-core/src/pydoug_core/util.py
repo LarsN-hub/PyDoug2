@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+import skimage.util as skutil
 from skimage.color import rgb2gray as skrgb2gray
 
 from pydoug_core.registry import register_operation
@@ -16,9 +17,14 @@ __all__ = [
     "gray2rgb",
     "rgb2gray",
     "chan_axis",
+    "convert_dtype",
     "output_dtype",
+    "axstr2int",
+    "axint2str",
     "axlengths",
     "tidypath",
+    "prep_mask",
+    "dtype_2_str",
 ]
 
 
@@ -145,6 +151,52 @@ def chan_axis(imarray: np.ndarray) -> int | None:
         return imarray.ndim - 1
     else:
         return None
+
+
+@register_operation(category="histogram", display_name="Convert Data Type")
+def convert_dtype(
+    imarray: np.ndarray,
+    New_Type: Literal[
+        "Uint8", "Uint16", "Int16", "Float32", "Float64", "Bool"
+    ] = "Uint8",
+) -> np.ndarray:
+    """
+    Convert the data type of an image. Convenience wrapper around the "img_as_XXXXX"
+    functions in scikit-image's util package:
+    https://scikit-image.org/docs/stable/api/skimage.util.html#
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to be converted.
+    New_Type: Literal["Bool", "Uint8", "Uint16", "Int16", "Float32", "Float64"]
+        The data type to convert to.
+        - Uint8: 8-bit unsigned integer format [0, 255]
+        - Uint16: 16-bit unsigned integer format [0, 65,535]
+        - Int16: 16-bit signed integer format [-32,768, 32,767]
+        - Float32: 32-bit (single-precision) floating-point format [-3.4e+38, 3.4e+38]
+        - Float64: 64-bit (double-precision) floating-point format [-1.8e+308, 1.8e+308]
+        - Bool: Boolean True/False format
+
+    Returns
+    -------
+    convarray: np.ndarray
+        The converted image array.
+    """
+
+    if New_Type == "Bool" and imarray.dtype != np.bool:
+        return skutil.img_as_bool(imarray)
+    if New_Type == "Uint8" and imarray.dtype != np.uint8:
+        return skutil.img_as_ubyte(imarray)
+    if New_Type == "Uint16" and imarray.dtype != np.uint16:
+        return skutil.img_as_uint(imarray)
+    if New_Type == "Int16" and imarray.dtype != np.int16:
+        return skutil.img_as_int(imarray)
+    if New_Type == "Float32" and imarray.dtype != np.float32:
+        return skutil.img_as_float32(imarray)
+    if New_Type == "Float64" and imarray.dtype != np.float64:
+        return skutil.img_as_float64(imarray)
+    return imarray
 
 
 def output_dtype(
@@ -365,3 +417,31 @@ def prep_mask(imarray: np.ndarray, maskarray: np.ndarray) -> np.ndarray:
             )
 
     return np.astype(maskarray, np.bool)
+
+
+def dtype_2_str(dtype: np.dtype) -> str:
+    """
+    Convert a numpy dtype to a string usable by pydoug_core.hist.convert_dtype.
+
+    Parameters
+    ----------
+    dtype: np.dtype
+        The dtype to convert.
+
+    Returns
+    -------
+    dtype_str: str
+        The converted str.
+    """
+
+    if dtype == np.uint8:
+        return "Uint8"
+    if dtype == np.uint16:
+        return "Uint16"
+    if dtype == np.int16:
+        return "Int16"
+    if dtype == np.dtype(np.bool):
+        return "Bool"
+    if dtype == np.float32:
+        return "Float32"
+    return "Float64"

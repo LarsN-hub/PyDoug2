@@ -63,6 +63,26 @@ def test_chan_axis_returns(sample_arrays) -> None:
     assert util.chan_axis(sample_arrays["3drgb"]) == 3
 
 
+def test_convert_type(sample_3dgray_array) -> None:
+
+    result1: np.ndarray = util.convert_dtype(sample_3dgray_array, "Uint8")
+    result2: np.ndarray = util.convert_dtype(sample_3dgray_array, "Uint16")
+    result3: np.ndarray = util.convert_dtype(sample_3dgray_array, "Int16")
+    result4: np.ndarray = util.convert_dtype(sample_3dgray_array, "Float32")
+    result5: np.ndarray = util.convert_dtype(sample_3dgray_array, "Float64")
+    result6: np.ndarray = util.convert_dtype(sample_3dgray_array, "Bool")
+    uint16_array: np.ndarray = np.astype(sample_3dgray_array, np.uint16)
+    uint16_array[0, 0, 0] = 65535
+    result7: np.ndarray = util.convert_dtype(uint16_array, "Uint8")
+    assert result1.dtype == np.uint8
+    assert result2.dtype == np.uint16
+    assert result3.dtype == np.int16
+    assert result4.dtype == np.float32
+    assert result5.dtype == np.float64
+    assert result6.dtype == np.bool
+    assert result7.dtype == np.uint8
+
+
 def test_output_dtype_returns(sample_2dgray_array) -> None:
 
     assert util.output_dtype(sample_2dgray_array) == sample_2dgray_array.dtype
@@ -252,3 +272,21 @@ def test_prep_mask(sample_arrays) -> None:
     assert result14.shape == sample_arrays["3drgb"].shape
     assert result15.shape == sample_arrays["3drgb"].shape
     assert result16.shape == sample_arrays["3drgb"].shape
+
+
+def test_dtype_2_str() -> None:
+
+    result1: str = util.dtype_2_str(np.dtype(np.uint8))
+    result2: str = util.dtype_2_str(np.dtype(np.uint16))
+    result3: str = util.dtype_2_str(np.dtype(np.int16))
+    result4: str = util.dtype_2_str(np.dtype(np.float32))
+    result5: str = util.dtype_2_str(np.dtype(np.float64))
+    result6: str = util.dtype_2_str(np.dtype(np.bool))
+    result7: str = util.dtype_2_str(np.dtype(np.int32))
+    assert result1 == "Uint8"
+    assert result2 == "Uint16"
+    assert result3 == "Int16"
+    assert result4 == "Float32"
+    assert result5 == "Float64"
+    assert result6 == "Bool"
+    assert result7 == "Float64"
