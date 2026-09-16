@@ -37,6 +37,8 @@ def test_make_main_widget(make_napari_viewer, qtbot, sample_3dgray_array) -> Non
     assert len(mainwidget.recorder.steps) == 1
     assert subwidget1.layer != layer
     subwidget2.layer.value = layer
+    assert subwidget2.Record_in_Workflow is not None
+    subwidget2.Record_in_Workflow.value = True
     assert subwidget2.call_button is not None
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(mainwidget.recorder.steps) == 2, timeout=5000)

@@ -221,7 +221,7 @@ def make_operation_widget(
                 "Record_in_Workflow",
                 inspect.Parameter.KEYWORD_ONLY,
                 annotation=bool,
-                default=True,
+                default=False,
             )
         )
 
