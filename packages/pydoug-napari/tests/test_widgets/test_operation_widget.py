@@ -183,7 +183,7 @@ def test_layer_refs(
     assert record.steps[2].input_refs["layer"] == f"step:{record.steps[1].step_id}"
 
 
-def test_mask_parameter_behavior(
+def test_array_parameter_behavior(
     make_napari_viewer,
     qtbot,
     sample_3dgray_array,
@@ -203,7 +203,7 @@ def test_mask_parameter_behavior(
     )
     spec1: OperationSpec = get_operation(registered_mask)
     spec2: OperationSpec = get_operation(registered_bool)
-    assert spec1.mask_params is not None
+    assert spec1.array_params is not None
     container1: CollapsibleContainer = make_operation_widget(
         spec1, viewer, record, results_log
     )
@@ -261,7 +261,7 @@ def test_in_place_behavior(
         sample_masks["3dgray"], name="test_mask"
     )
     spec: OperationSpec = get_operation(registered_mask)
-    assert spec.mask_params is not None
+    assert spec.array_params is not None
     container: CollapsibleContainer = make_operation_widget(
         spec, viewer, record, results_log
     )

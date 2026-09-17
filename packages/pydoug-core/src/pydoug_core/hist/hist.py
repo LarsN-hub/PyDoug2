@@ -38,7 +38,8 @@ plt.rcParams["font.sans-serif"] = "Arial"
 @register_operation(
     category="histogram",
     display_name="Plot Histogram",
-    mask_params=("Mask",),
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
     output_kind="plot",
     recordable_toggle=True,
 )
@@ -212,7 +213,10 @@ def saturate(
 
 
 @register_operation(
-    category="histogram", display_name="Equalize", mask_params=("Mask",)
+    category="histogram",
+    display_name="Equalize",
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
 )
 def equalize(
     imarray: np.ndarray,
@@ -383,7 +387,10 @@ def adjust(
 
 
 @register_operation(
-    category="histogram", display_name="Local Contrast", mask_params=("Mask",)
+    category="histogram",
+    display_name="Local Contrast",
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
 )
 def local_contrast(
     imarray: np.ndarray,

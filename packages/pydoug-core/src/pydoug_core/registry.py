@@ -28,8 +28,12 @@ class OperationSpec:
         Options to modify default widget parameters.
     native_options: dict[str, dict]
         Options to modify the default widget's native parameters.
-    mask_params: tuple[str, ...]
-        Mask layer parameters as required.
+    array_params: tuple[str, ...]
+        Image layer parameters as required.
+    array_param_types: dict[str, type]
+        The layer type for each array input.
+    array_param_flags: dict[str, str]
+        Relevant flags for array inputs.
     output_kind: Literal["image", "plot", "value"]
         Whether the operation should output an image or a value.
     display_result: Callable[[Any], None] | None
@@ -54,7 +58,9 @@ class OperationSpec:
     display_name: str
     widget_options: dict = field(default_factory=dict)
     native_options: dict[str, dict] = field(default_factory=dict)
-    mask_params: tuple[str, ...] = ()
+    array_params: tuple[str, ...] = ()
+    array_param_types: dict[str, type] = field(default_factory=dict)
+    array_param_flags: dict[str, str] = field(default_factory=dict)
     output_kind: Literal["image", "plot", "value"] = "image"
     display_result: Callable[[Any], None] | None = None
     save_result: Callable[[Any, Path], None] | None = None
@@ -76,7 +82,9 @@ def register_operation(
     display_name: None | str = None,
     widget_options: dict | None = None,
     native_options: dict[str, dict] | None = None,
-    mask_params: tuple[str, ...] = (),
+    array_params: tuple[str, ...] = (),
+    array_param_types: dict[str, type] = {},
+    array_param_flags: dict[str, str] = {},
     output_kind: Literal["image", "plot", "value"] = "image",
     display_result: Callable[[Any], None] | None = None,
     save_result: Callable[[Any, Path], None] | None = None,
@@ -99,8 +107,12 @@ def register_operation(
         (Optional) Dictionary of default widget parameter settings.
     native_options: dict[str, dict] | None
         (Optional) Dictionary of default widget native parameter settings.
-    mask_params: tuple[str, ...]
-        (Optional) Tuple of mask parameters as needed for the operation.
+    array_params: tuple[str, ...]
+        (Optional) Tuple of array parameters as needed for the operation.
+    array_param_types: dict[str, type]
+        The napari layer type for each array input.
+    array_param_flags: dict[str, str]
+        Relevant flags for array inputs.
     output_kind: Literal["image", "value"]
         Whether the operation should output an image or a value.
     display_result: Callable[[Any], None] | None
@@ -169,7 +181,9 @@ def register_operation(
             display_name=display_name or func.__name__.replace("_", " ").title(),
             widget_options=widget_options or {},
             native_options=native_options or {},
-            mask_params=tuple(mask_params),
+            array_params=tuple(array_params),
+            array_param_types=array_param_types or {},
+            array_param_flags=array_param_flags or {},
             output_kind=output_kind,
             display_result=display_result,
             save_result=save_result,

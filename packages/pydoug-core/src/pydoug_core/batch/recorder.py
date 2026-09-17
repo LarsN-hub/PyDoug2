@@ -34,8 +34,8 @@ class RecordedStep:
         References to other steps as required for input parameters for an operation.
     layer_ref: None | Any
         The layer created during the recorded step.
-    pending_masks: dict
-        Masks used in operations that may need to be saved for batch processing.
+    pending_arrays: dict
+        Arrays used in operations that may need to be saved for batch processing.
     """
 
     step_id: str
@@ -43,7 +43,7 @@ class RecordedStep:
     params: dict
     input_refs: dict[str, str] = field(default_factory=dict)
     layer_ref: None | Any = None
-    pending_masks: dict[str, ndarray] = field(default_factory=dict)
+    pending_arrays: dict[str, ndarray] = field(default_factory=dict)
 
 
 class Recorder:
@@ -88,7 +88,7 @@ class Recorder:
         params: dict,
         input_refs: dict[str, str],
         layer_ref: None | Any = None,
-        pending_masks: dict | None = None,
+        pending_arrays: dict | None = None,
     ) -> str:
         """
         Record a step in the parameters log.
@@ -103,8 +103,8 @@ class Recorder:
             The dictionary of references to other steps as required.
         layer_ref: None | Any
             The layer created during the recorded step.
-        pending_masks: dict | None
-            Pending masks to be saved if required.
+        pending_arrays: dict | None
+            Pending arrays to be saved if required.
         """
 
         step_id: str = uuid.uuid4().hex
@@ -115,7 +115,7 @@ class Recorder:
                 params,
                 input_refs,
                 layer_ref,
-                pending_masks or {},
+                pending_arrays or {},
             )
         )
         if layer_ref is not None:
@@ -207,7 +207,7 @@ class Recorder:
 
     def save(self, path: Path) -> None:
         """
-        Save a parameters log as a json file and masks folder.
+        Save a parameters log as a json file and arrays folder.
 
         Parameters
         ----------
@@ -217,7 +217,7 @@ class Recorder:
 
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
-        masks_dir: Path = path / "masks"
+        arrays_dir: Path = path / "arrays"
         data: list[dict] = []
 
         for s in self.steps:
@@ -227,20 +227,20 @@ class Recorder:
                 if ref.startswith("file:") and self._workflow_dir is not None:
                     src: Path = self._workflow_dir / ref.split(":", 1)[1]
                     fname: str = Path(ref.split(":", 1)[1]).name
-                    masks_dir.mkdir(exist_ok=True)
-                    dest: Path = masks_dir / fname
+                    arrays_dir.mkdir(exist_ok=True)
+                    dest: Path = arrays_dir / fname
                     if src.resolve() != dest.resolve():
                         shutil.copy2(src, dest)
-                    refs[name] = f"file:masks/{fname}"
+                    refs[name] = f"file:arrays/{fname}"
 
-            for name, arr in s.pending_masks.items():
-                masks_dir.mkdir(exist_ok=True)
+            for name, arr in s.pending_arrays.items():
+                arrays_dir.mkdir(exist_ok=True)
                 fname = f"{s.step_id}_{name}.tiff"
-                imwriter.imwrite(arr, masks_dir, f"{s.step_id}_{name}", "tiff")
-                refs[name] = f"file:masks/{fname}"
+                imwriter.imwrite(arr, arrays_dir, f"{s.step_id}_{name}", "tiff")
+                refs[name] = f"file:arrays/{fname}"
 
             s.input_refs = refs
-            s.pending_masks = {}
+            s.pending_arrays = {}
             data.append(
                 {
                     "step_id": s.step_id,
@@ -310,7 +310,7 @@ class Recorder:
         if ref.startswith("step:"):
             return outputs[ref.split(":", 1)[1]]
         if ref.startswith("pending:"):
-            return step.pending_masks[param_name]
+            return step.pending_arrays[param_name]
         if ref.startswith("file:"):
             if self._workflow_dir is None:
                 raise ValueError(

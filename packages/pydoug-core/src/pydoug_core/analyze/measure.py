@@ -16,7 +16,8 @@ __all__ = ["stats"]
 @register_operation(
     category="measurements",
     display_name="Stats",
-    mask_params=("Mask",),
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
     output_kind="value",
     recordable_toggle=True,
 )
