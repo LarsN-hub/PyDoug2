@@ -28,7 +28,7 @@ def test_Recorder(tmp_path, sample_3dgray_array, sample_masks) -> None:
             "layer": f"step:{record1.steps[0].step_id}",
             "Mask": "pending:anything",
         },
-        pending_masks={"Mask": sample_masks["3dgray"]},
+        pending_arrays={"Mask": sample_masks["3dgray"]},
     )
     record1.record(
         "reslice",
@@ -37,15 +37,15 @@ def test_Recorder(tmp_path, sample_3dgray_array, sample_masks) -> None:
     )
     assert record1.step_id_for_layer(layer_ref1) == record1.steps[0].step_id
     assert record1.dependents_of(record1.steps[0].step_id) == record1.steps[1:]
-    result0: np.ndarray = record1.replay(sample_3dgray_array)
+    result0: np.ndarray = record1.replay(sample_3dgray_array)  # type: ignore
     record1.save(Path(tmp_path / "test_params"))
     assert Path(tmp_path / "test_params").exists()
     record2: recorder.Recorder = recorder.Recorder()
     record2.load(Path(tmp_path / "test_params"))
     record2.save(Path(tmp_path / "test_params2"))
     assert Path(tmp_path / "test_params2").exists()
-    result1: np.ndarray = record1.replay(sample_3dgray_array)
-    result2: np.ndarray = record2.replay(sample_3dgray_array)
+    result1: np.ndarray = record1.replay(sample_3dgray_array)  # type: ignore
+    result2: np.ndarray = record2.replay(sample_3dgray_array)  # type: ignore
     result3: np.ndarray = reslice(
         apply_mask(mirror(sample_3dgray_array), sample_masks["3dgray"]), "Left"
     )

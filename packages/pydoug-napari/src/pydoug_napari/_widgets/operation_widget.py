@@ -50,7 +50,7 @@ def make_operation_widget(
         A magicgui widget.
     """
 
-    mask_names: set[str] = set(operation_spec.mask_params)
+    array_names: set[str] = set(operation_spec.array_params)
     is_running: dict[str, bool] = {"value": False}
 
     def _dispatch(layer: Image, **params) -> None:
@@ -80,21 +80,22 @@ def make_operation_widget(
         call_params: dict = {}
         recorded_params: dict = {}
         input_refs: dict[str, str] = {}
-        pending_masks: dict[str, np.ndarray] = {}
-        mask_enabled: bool = params.get("Apply_Mask", True)
+        pending_arrays: dict[str, np.ndarray] = {}
 
         for name, value in params.items():
-            if name in mask_names:
-                if mask_enabled and value is not None:
-                    mask_layer: Image = value
-                    call_params[name] = mask_layer.data
-                    step_id: str | None = recorder.step_id_for_layer(mask_layer)
+            if name in array_names:
+                flag_name: str | None = operation_spec.array_param_flags.get(name)
+                enabled: bool = params.get(flag_name, True) if flag_name else True
+                if enabled and value is not None:
+                    array_layer: Image = value
+                    call_params[name] = array_layer.data
+                    step_id: str | None = recorder.step_id_for_layer(array_layer)
                     if step_id is not None:
                         input_refs[name] = f"step:{step_id}"
                     else:
                         input_refs[name] = f"pending:{uuid4().hex[:8]}"
-                        if isinstance(mask_layer.data, np.ndarray):
-                            pending_masks[name] = np.copy(mask_layer.data)
+                        if isinstance(array_layer.data, np.ndarray):
+                            pending_arrays[name] = np.copy(array_layer.data)
                 else:
                     call_params[name] = None
             else:
@@ -171,7 +172,7 @@ def make_operation_widget(
                         recorded_params,
                         input_refs=input_refs,
                         layer_ref=result_layer,
-                        pending_masks=pending_masks,
+                        pending_arrays=pending_arrays,
                     )
 
             elif operation_spec.output_kind == "plot":
@@ -185,7 +186,7 @@ def make_operation_widget(
                         recorded_params,
                         input_refs=input_refs,
                         layer_ref=None,
-                        pending_masks=pending_masks,
+                        pending_arrays=pending_arrays,
                     )
 
             else:  # "value"
@@ -196,7 +197,7 @@ def make_operation_widget(
                         recorded_params,
                         input_refs=input_refs,
                         layer_ref=None,
-                        pending_masks=pending_masks,
+                        pending_arrays=pending_arrays,
                     )
 
         def _on_error(exc: Exception) -> None:
@@ -214,8 +215,9 @@ def make_operation_widget(
 
     params_only: list = []
     for p in list(operation_spec.signature.parameters.values())[1:]:
-        if p.name in mask_names:
-            p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY, annotation=Image)
+        if p.name in array_names:
+            layer_type = operation_spec.array_param_types.get(p.name, Image)
+            p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY, annotation=layer_type)
         else:
             p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
         params_only.append(p)
@@ -315,7 +317,7 @@ def make_operation_widget(
             getattr(field_widget.native, method_name)(arg)
 
     connect_layer_autoselect(viewer, widget, "layer", autoselect=True)
-    for mask_name in mask_names:
+    for mask_name in array_names:
         connect_layer_autoselect(viewer, widget, mask_name, autoselect=False)
 
     container: CollapsibleContainer = CollapsibleContainer(

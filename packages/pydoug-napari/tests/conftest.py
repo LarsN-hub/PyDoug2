@@ -38,7 +38,8 @@ def registered_mask():
     @register_operation(
         category="testing",
         display_name="Mask",
-        mask_params=("maskarray",),
+        array_params=("maskarray",),
+        array_param_flags={"Mask": "Apply_Mask"},
         allow_in_place=True,
     )
     def _mask(
@@ -68,7 +69,10 @@ def registered_bool():
     """
 
     @register_operation(
-        category="testing", display_name="Mask", mask_params=("maskarray",)
+        category="testing",
+        display_name="Mask",
+        array_params=("maskarray",),
+        array_param_flags={"Mask": "Apply_Mask"},
     )
     def _bool(imarray: np.ndarray, thresh: int = 128) -> np.ndarray:
         output: np.ndarray = np.copy(imarray)  # pragma: no cover

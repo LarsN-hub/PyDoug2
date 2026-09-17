@@ -15,7 +15,7 @@ __all__ = ["apply_mask"]
 @register_operation(
     category="mask",
     display_name="Apply Mask",
-    mask_params=("Mask",),
+    array_params=("Mask",),
     allow_in_place=True,
 )
 def apply_mask(
