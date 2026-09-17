@@ -7,6 +7,7 @@ packages/pydoug-core/src/pydoug_core/hist/__pycache__/
 packages/pydoug-core/src/pydoug_core/io/__pycache__/
 packages/pydoug-core/src/pydoug_core/mask/__pycache__/
 packages/pydoug-core/src/pydoug_core/trans/__pycache__/
+packages/pydoug-core/src/pydoug_core/user/__pycache__/
 packages/pydoug-core/tests/__pycache__/
 packages/pydoug-core/tests/test_analyze/__pycache__/
 packages/pydoug-core/tests/test_batch/__pycache__/
