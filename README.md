@@ -40,6 +40,13 @@ PyDoug merely assembles functionality from other well-established libraries into
 
 To add your own widgets, install PyDoug through the **Developers** route described above. Then, open the user_functions.py file found in the packages/pydoug-core/src/pydoug_core/user directory. In this file is a sample function (commented out) that will create a widget called "Simple Threshold" in a tab called "Users" in the PyDoug plugin. The following code is all that is required to create this widget:
 ```
+from typing import Annotated
+
+import numpy as np
+
+from pydoug_core.registry import register_operation
+
+
 @register_operation(
     category="user",
     display_name="Simple Threshold",
@@ -52,7 +59,7 @@ def sample_function(
     ] = (50, 200),
 ) -> np.ndarray:
     """
-    This is a nympy-style docstring for a sample function that thresholds an image array
+    This is a numpy-style docstring for a sample function that thresholds an image array
     using inclusive upper and lower bounds and returns a binary image array where all
     pixels within the threshold range are white and all pixels outside the range are
     black.
