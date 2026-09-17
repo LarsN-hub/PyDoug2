@@ -12,7 +12,7 @@ from magicclass.widgets import CollapsibleContainer
 from magicgui import magicgui
 from magicgui.widgets import FunctionGui
 from matplotlib.figure import Figure
-from napari.layers import Image
+from napari.layers import Image, Layer
 from napari.qt.threading import thread_worker
 from napari.viewer import Viewer
 
@@ -75,6 +75,7 @@ def make_operation_widget(
             widget.call_button.text = "Running..."
 
         record_in_workflow: bool = params.pop("Record_in_Workflow", True)
+        live_preview: bool = params.pop("Preview", False)
 
         call_params: dict = {}
         recorded_params: dict = {}
@@ -147,6 +148,11 @@ def make_operation_widget(
             should_record: bool = operation_spec.recordable and (
                 record_in_workflow if operation_spec.recordable_toggle else True
             )
+
+            if live_preview and preview_layer_ref["layer"] is not None:
+                viewer.layers.remove(preview_layer_ref["layer"])
+                preview_layer_ref["layer"] = None
+                widget.Preview.value = False
 
             if operation_spec.output_kind == "image":
                 in_place: bool = operation_spec.allow_in_place and call_params.get(
@@ -224,6 +230,15 @@ def make_operation_widget(
                 default=False,
             )
         )
+    if operation_spec.live_preview:
+        extra_params.append(
+            inspect.Parameter(
+                "Preview",
+                inspect.Parameter.KEYWORD_ONLY,
+                annotation=bool,
+                default=False,
+            )
+        )
 
     _dispatch.__doc__ = operation_spec.func.__doc__
     _dispatch.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
@@ -241,6 +256,10 @@ def make_operation_widget(
         extra_widget_options["Record_in_Workflow"] = {
             "tooltip": "Uncheck to run this without saving it to the workflow."
         }
+    if operation_spec.live_preview:
+        extra_widget_options["Preview"] = {
+            "tooltip": "Check to see a preview of the thresholding segmentation."
+        }
 
     widget: FunctionGui = magicgui(
         _dispatch,
@@ -253,6 +272,42 @@ def make_operation_widget(
     if operation_spec.allow_in_place:
         widget.In_Place.tooltip = "Warning: overwrites the selected layer's data "
         "directly. This is much faster and conserves memory, but cannot be undone."
+
+    if operation_spec.live_preview:
+        preview_layer_ref: dict[str, Layer | None] = {"layer": None}
+
+        def _current_real_params() -> dict:
+            real_names = [p.name for p in operation_spec.signature.parameters.values()][
+                1:
+            ]
+            return {
+                name: getattr(widget, name).value
+                for name in real_names
+                if hasattr(widget, name)
+            }
+
+        def _update_preview(event=None):
+            if not widget.Preview.value or widget.layer.value is None:
+                return
+            result = operation_spec.func(
+                widget.layer.value.data, **_current_real_params()
+            )
+            if preview_layer_ref["layer"] is None:
+                preview_layer_ref["layer"] = viewer.add_labels(  # type: ignore
+                    result, name=f"{operation_spec.display_name} (preview)", opacity=0.5
+                )
+            else:
+                preview_layer_ref["layer"].data = result
+
+        def _on_preview_toggled(event):
+            if widget.Preview.value:
+                _update_preview()
+            elif preview_layer_ref["layer"] is not None:
+                viewer.layers.remove(preview_layer_ref["layer"])
+                preview_layer_ref["layer"] = None
+
+        widget.changed.connect(_update_preview)
+        widget.Preview.changed.connect(_on_preview_toggled)
 
     for field_name, native_calls in operation_spec.native_options.items():
         field_widget = getattr(widget, field_name)
