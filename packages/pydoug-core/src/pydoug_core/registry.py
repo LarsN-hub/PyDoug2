@@ -42,6 +42,8 @@ class OperationSpec:
         Whether or not to add a checkbox to the widget to toggle in-place operations.
     recordable: bool
         Whether or not the operation should be recorded on use.
+    live_preview: bool
+        Whether or not to allow a live preview of the operation.
     signature: inspect.Signature
         The function's signature.
     """
@@ -59,6 +61,7 @@ class OperationSpec:
     recordable_toggle: bool = False
     allow_in_place: bool = False
     recordable: bool = True
+    live_preview: bool = False
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -79,6 +82,7 @@ def register_operation(
     save_result: Callable[[Any, Path], None] | None = None,
     recordable_toggle: bool = False,
     recordable: bool = True,
+    live_preview: bool = False,
     allow_in_place: bool = False,
 ) -> Callable:
     """
@@ -109,6 +113,9 @@ def register_operation(
         Whether or not the operation should be recorded on use.
     allow_in_place: bool
         Whether or not to add a checkbox to the widget to toggle in-place operations.
+    live_preview: bool
+        Whether or not to allow a live preview of the operation.
+
 
     Returns
     -------
@@ -169,6 +176,7 @@ def register_operation(
             recordable_toggle=recordable_toggle,
             allow_in_place=allow_in_place,
             recordable=recordable,
+            live_preview=live_preview,
         )
         return func
 

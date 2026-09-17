@@ -324,3 +324,39 @@ def test_non_image_output(
     monkeypatch.setattr(QMainWindow, "show", lambda *a, **k: None)
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(record.steps) == 2, timeout=5000)
+
+
+def test_live_preview(
+    make_napari_viewer,
+    qtbot,
+    sample_3dgray_array,
+    registered_threshold,
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    record: Recorder = Recorder()
+    results_log: ResultsLog = ResultsLog()
+    imlayer: Image | list[Image] = viewer.add_image(
+        sample_3dgray_array, name="test_layer"
+    )
+    spec: OperationSpec = get_operation(registered_threshold)
+    container: CollapsibleContainer = make_operation_widget(
+        spec, viewer, record, results_log
+    )
+    qtbot.addWidget(container.native)
+    subwidget: FunctionGui | None = container.get_widget("_dispatch")
+    assert subwidget is not None
+    assert subwidget.call_button is not None
+    assert subwidget.Preview is not None
+    subwidget.layer.value = imlayer
+    subwidget.Preview.value = True
+    assert len(viewer.layers) == 2
+    subwidget.Preview.value = False
+    assert len(viewer.layers) == 1
+    subwidget.Preview.value = True
+    assert len(viewer.layers) == 2
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(record.steps) == 1, timeout=5000)
+    assert len(record.steps) == 1
+    assert not subwidget.Preview.value
+    assert len(viewer.layers) == 2

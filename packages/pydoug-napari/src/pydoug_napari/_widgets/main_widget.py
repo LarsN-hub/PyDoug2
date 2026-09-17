@@ -162,6 +162,9 @@ class MainWidget(QTabWidget):
         if "histogram" in categories:
             sorted_categories.append("histogram")
             categories.remove("histogram")
+        if "segmentation" in categories:
+            sorted_categories.append("segmentation")
+            categories.remove("segmentation")
         if "measurements" in categories:
             sorted_categories.append("measurements")
             categories.remove("measurements")

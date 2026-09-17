@@ -108,6 +108,22 @@ def registered_plot():
     unregister_operation("_plot")
 
 
+@pytest.fixture
+def registered_threshold():
+    """
+    Fixture to create a registerd "threshold" operation.
+    """
+
+    @register_operation(category="testing", display_name="Threshold", live_preview=True)
+    def _threshold(imarray: np.ndarray, threshold: int) -> np.ndarray:
+        thresh_array: np.ndarray = np.zeros(imarray.shape, np.uint8)  # pragma: no cover
+        thresh_array[imarray > threshold] = 255  # pragma: no cover
+        return thresh_array  # pragma: no cover
+
+    yield "_threshold"
+    unregister_operation("_threshold")
+
+
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
