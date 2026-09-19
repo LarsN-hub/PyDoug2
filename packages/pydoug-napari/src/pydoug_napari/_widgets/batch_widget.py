@@ -6,11 +6,13 @@ from pathlib import Path
 
 from magicclass.widgets import CollapsibleContainer, ScrollableContainer
 from magicgui import magicgui
+from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from pydoug_core import util
+from pydoug_napari._widgets._batch_run_widget import build_run_batch_widget
 
 
-def make_batch_widget(recorder) -> ScrollableContainer:
+def make_batch_widget(recorder) -> QWidget:
     """
     Create the batch widget container.
 
@@ -43,19 +45,6 @@ def make_batch_widget(recorder) -> ScrollableContainer:
         tidiedpath: Path = util.tidypath(Parent_Folder / Workflow_Folder_Name, "dir")
         recorder.save(tidiedpath)
 
-    @magicgui(Workflow_Folder_Path={"mode": "d"}, call_button="Load Workflow")
-    def load_widget(Workflow_Folder_Path: Path = Path("")) -> None:
-        """
-        Load workflow for batch processing.
-
-        Parameters
-        ----------
-        File_Path: Path
-            The path to the workflow folder.
-        """
-
-        recorder.load(Workflow_Folder_Path)
-
     @magicgui(call_button="Clear Workflow")
     def clear_widget() -> None:
         """
@@ -68,17 +57,24 @@ def make_batch_widget(recorder) -> ScrollableContainer:
         return CollapsibleContainer(widgets=[widget], labels=False)
 
     widget_list: list[CollapsibleContainer] = []
-    for index, w in enumerate([save_widget, load_widget, clear_widget]):
+    for index, w in enumerate([save_widget, clear_widget]):
         current_w: CollapsibleContainer = _get_collapsible_widget(w)
-        current_w.text = ["Save Workflow", "Load Workflow", "Clear Workflow"][index]
-        current_w.native.setObjectName("Collapsible")
+        current_w.text = ["Save Workflow", "Clear Workflow"][index]
+        current_w.native.setObjectName("Widget")
         current_w.native.setStyleSheet(
-            "QWidget#Collapsible { border: 1px solid #888; border-radius: 4px; }"
+            "QWidget#Widget { border: 1px solid #888; border-radius: 4px; }"
         )
         current_w.native.setContentsMargins(2, 2, 2, 6)
         widget_list.append(current_w)
     container: ScrollableContainer = ScrollableContainer(
         widgets=widget_list, labels=False
     )
+    container.text = "Workflow Operations"
 
-    return container
+    outer: QWidget = QWidget()
+    outer_layout: QVBoxLayout = QVBoxLayout()
+    outer_layout.addWidget(container.native)
+    outer_layout.addWidget(build_run_batch_widget())
+    outer.setLayout(outer_layout)
+
+    return outer

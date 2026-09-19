@@ -4,7 +4,6 @@ Convert PyDoug core functions into napari widgets.
 
 import inspect
 from typing import Any
-from uuid import uuid4
 
 import numpy as np
 from docstring_parser import parse as parse_docstring
@@ -80,7 +79,6 @@ def make_operation_widget(
         call_params: dict = {}
         recorded_params: dict = {}
         input_refs: dict[str, str] = {}
-        pending_arrays: dict[str, np.ndarray] = {}
 
         for name, value in params.items():
             if name in array_names:
@@ -93,9 +91,9 @@ def make_operation_widget(
                     if step_id is not None:
                         input_refs[name] = f"step:{step_id}"
                     else:
-                        input_refs[name] = f"pending:{uuid4().hex[:8]}"
-                        if isinstance(array_layer.data, np.ndarray):
-                            pending_arrays[name] = np.copy(array_layer.data)
+                        input_refs[name] = recorder.get_or_create_pending_ref(
+                            array_layer
+                        )
                 else:
                     call_params[name] = None
             else:
@@ -172,7 +170,6 @@ def make_operation_widget(
                         recorded_params,
                         input_refs=input_refs,
                         layer_ref=result_layer,
-                        pending_arrays=pending_arrays,
                     )
 
             elif operation_spec.output_kind == "plot":
@@ -186,7 +183,6 @@ def make_operation_widget(
                         recorded_params,
                         input_refs=input_refs,
                         layer_ref=None,
-                        pending_arrays=pending_arrays,
                     )
 
             else:  # "value"
@@ -197,7 +193,6 @@ def make_operation_widget(
                         recorded_params,
                         input_refs=input_refs,
                         layer_ref=None,
-                        pending_arrays=pending_arrays,
                     )
 
         def _on_error(exc: Exception) -> None:
