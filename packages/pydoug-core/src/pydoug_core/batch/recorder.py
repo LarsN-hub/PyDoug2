@@ -3,7 +3,6 @@ Recorder for PyDoug operations used in napari widgets.
 """
 
 import json
-import shutil
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -57,7 +56,7 @@ class Recorder:
         The workflow directory.
     _external_layer_refs: WeakKeyDictionary
         Weak key dictionary mapping imported masks to layers.
-    _pending_arrays: dict[str, np.ndarray]
+    _arrays: dict[str, np.ndarray]
         Arrays that need be saved.
     """
 
@@ -68,7 +67,7 @@ class Recorder:
         self._layer_to_step: WeakKeyDictionary = WeakKeyDictionary()
         self._workflow_dir: Path | None = None
         self._external_layer_refs: WeakKeyDictionary = WeakKeyDictionary()
-        self._pending_arrays: dict[str, np.ndarray] = {}
+        self._arrays: dict[str, np.ndarray] = {}
 
     def step_id_for_layer(self, layer) -> None | str:
         """
@@ -88,7 +87,7 @@ class Recorder:
 
         return self._layer_to_step.get(layer)
 
-    def get_or_create_pending_ref(self, layer: Any) -> str:
+    def get_or_create_array_ref(self, layer: Any) -> str:
         """
         Reuse an existing reference for this layer if one was already assigned.
 
@@ -106,10 +105,29 @@ class Recorder:
         if existing is not None:
             return existing
         tag: str = uuid.uuid4().hex[:8]
-        ref: str = f"pending:{tag}"
+        ref: str = f"array:{tag}"
         self._external_layer_refs[layer] = ref
-        self._pending_arrays[tag] = np.copy(layer.data)
+        self._arrays[tag] = np.copy(layer.data)
         return ref
+
+    def register_array(self, array: np.ndarray) -> str:
+        """
+        Store an array directly and return its reference.
+
+        Parameters
+        ----------
+        array: np.ndarray
+            The array to be stored.
+
+        Returns
+        -------
+        tag_str: str
+            The tag for the array (with "array:" in front).
+        """
+
+        tag: str = uuid.uuid4().hex[:8]
+        self._arrays[tag] = np.copy(array)
+        return f"array:{tag}"
 
     def record(
         self,
@@ -131,6 +149,11 @@ class Recorder:
             The dictionary of references to other steps as required.
         layer_ref: None | Any
             The layer created during the recorded step.
+
+        Returns
+        -------
+        step_id: str
+            The step's string ID.
         """
 
         step_id: str = uuid.uuid4().hex
@@ -229,7 +252,7 @@ class Recorder:
         self.steps = []
         self._layer_to_step.clear()
         self._external_layer_refs.clear()
-        self._pending_arrays.clear()
+        self._arrays.clear()
         self.steps_changed.emit()
 
     def save(self, path: Path) -> None:
@@ -245,36 +268,23 @@ class Recorder:
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
         arrays_dir: Path = path / "arrays"
-        tag_to_file: dict[str, str] = {}
-
-        for tag, arr in self._pending_arrays.items():
-            arrays_dir.mkdir(exist_ok=True)
-            imwriter.imwrite(arr, arrays_dir, tag, "tiff")
-            written_path = arrays_dir / f"{tag}.tiff"
-            if not written_path.exists():
-                raise RuntimeError(
-                    f"Failed to save array for tag '{tag}' to {written_path}"
-                )
-            tag_to_file[tag] = f"file:arrays/{tag}.tiff"
+        used_tags: set[str] = {
+            ref.split(":", 1)[1]
+            for step in self.steps
+            for ref in step.input_refs.values()
+            if ref.startswith("array:")
+        }
 
         data: list[dict] = []
         for s in self.steps:
-            refs: dict = dict(s.input_refs)
-            for name, ref in refs.items():
-                if ref.startswith("pending:"):
-                    refs[name] = tag_to_file[ref.split(":", 1)[1]]
-                elif ref.startswith("file:") and self._workflow_dir is not None:
-                    rel: str = ref.split(":", 1)[1]
-                    src, dest = self._workflow_dir / rel, path / rel
-                    if src.resolve() != dest.resolve():
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-                        if not src.exists():
-                            raise RuntimeError(
-                                f"Referenced array file is missing: {src}"
-                            )
-                        shutil.copy2(src, dest)
-
-            s.input_refs = refs
+            refs: dict[str, str] = {
+                name: (
+                    f"file:arrays/{ref.split(':', 1)[1]}.tiff"
+                    if ref.startswith("array:")
+                    else ref
+                )
+                for name, ref in s.input_refs.items()
+            }
             data.append(
                 {
                     "step_id": s.step_id,
@@ -284,19 +294,23 @@ class Recorder:
                 }
             )
 
-        self._pending_arrays.clear()
-        self._external_layer_refs.clear()
+        for tag in used_tags:
+            arrays_dir.mkdir(parents=True, exist_ok=True)
+            imwriter.imwrite(self._arrays[tag], arrays_dir, tag, "tiff")
+            written = arrays_dir / f"{tag}.tiff"
+            if not written.exists():
+                raise RuntimeError(f"Failed to save array for tag '{tag}' to {written}")
+
         (path / "workflow.json").write_text(json.dumps(data, indent=2))
-        self._workflow_dir = path
 
     def load(self, path: Path) -> None:
         """
-        Load a parameters log from a json file.
+        Load a workflow from its directory.
 
         Parameters
         ----------
         path: Path
-            The path to the parameters log to be loaded.
+            The path to the workflow directory to be loaded.
         """
 
         path = Path(path)
@@ -308,6 +322,8 @@ class Recorder:
             for d in data
         ]
         self._layer_to_step.clear()
+        self._external_layer_refs.clear()
+        self._arrays.clear()
         self._workflow_dir = path
         self.steps_changed.emit()
 
@@ -324,10 +340,6 @@ class Recorder:
         ----------
         ref: str
             The array's reference string.
-        step: RecordedStep
-            The array's recorded step.
-        param_name: str
-            The name of the array's parameter.
         primary: np.ndarray
             The primary array.
         outputs: dict[str, object]
@@ -344,7 +356,7 @@ class Recorder:
         if ref.startswith("step:"):
             return outputs[ref.split(":", 1)[1]]
         if ref.startswith("pending:"):
-            return self._pending_arrays[ref.split(":", 1)[1]]
+            return self._arrays[ref.split(":", 1)[1]]
         if ref.startswith("file:"):
             if self._workflow_dir is None:
                 raise ValueError(

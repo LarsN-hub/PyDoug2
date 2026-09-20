@@ -91,9 +91,7 @@ def make_operation_widget(
                     if step_id is not None:
                         input_refs[name] = f"step:{step_id}"
                     else:
-                        input_refs[name] = recorder.get_or_create_pending_ref(
-                            array_layer
-                        )
+                        input_refs[name] = recorder.get_or_create_array_ref(array_layer)
                 else:
                     call_params[name] = None
             else:
