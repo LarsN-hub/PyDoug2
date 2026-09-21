@@ -4,6 +4,7 @@ Shared fixtures for pydoug-core tests.
 
 import numpy as np
 import pytest
+from matplotlib.figure import Figure
 
 from pydoug_core.registry import register_operation, unregister_operation
 
@@ -25,6 +26,40 @@ def registered_nothing():
 
     yield "_nothing"
     unregister_operation("_nothing")
+
+
+@pytest.fixture
+def registered_nothing_plot():
+    """
+    Fixture to create a registered "nothing_plot" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Nothing Plot",
+        output_kind="plot",
+    )
+    def _nothing_plot(imarray: np.ndarray) -> Figure:
+        return Figure()  # pragma: no cover
+
+    yield "_nothing_plot"
+    unregister_operation("_nothing_plot")
+
+
+@pytest.fixture
+def registered_nothing_calc():
+    """
+    Fixture to create a registered "nothing_calc" operation.
+    """
+
+    @register_operation(
+        category="testing", display_name="Nothing Calc", output_kind="value"
+    )
+    def _nothing_calc(imarray: np.ndarray) -> dict[str, int]:
+        return {"test": 2}  # pragma: no cover
+
+    yield "_nothing_calc"
+    unregister_operation("_nothing_calc")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
