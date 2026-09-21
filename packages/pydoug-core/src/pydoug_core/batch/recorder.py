@@ -52,8 +52,6 @@ class Recorder:
         List of recorded steps.
     _layer_to_step: WeakKeyDictionary
         Weak key dictionary mapping layers to steps.
-    _workflow_dir: Path | None
-        The workflow directory.
     _external_layer_refs: WeakKeyDictionary
         Weak key dictionary mapping imported masks to layers.
     _arrays: dict[str, np.ndarray]
@@ -65,7 +63,6 @@ class Recorder:
     def __init__(self):
         self.steps: list[RecordedStep] = []
         self._layer_to_step: WeakKeyDictionary = WeakKeyDictionary()
-        self._workflow_dir: Path | None = None
         self._external_layer_refs: WeakKeyDictionary = WeakKeyDictionary()
         self._arrays: dict[str, np.ndarray] = {}
 
@@ -121,8 +118,8 @@ class Recorder:
 
         Returns
         -------
-        tag_str: str
-            The tag for the array (with "array:" in front).
+        ref: str
+            The reference for the array (with "array:" in front).
         """
 
         tag: str = uuid.uuid4().hex[:8]
@@ -190,7 +187,7 @@ class Recorder:
                 layer for layer, sid in self._layer_to_step.items() if sid == step_id
             ]
             for layer in stale:
-                del self._layer_to_step[layer]
+                del self._layer_to_step[layer]  # pragma: no cover
             self.steps_changed.emit()
 
     def remove_steps_by_layer(self, layer: Any) -> None:
@@ -315,16 +312,37 @@ class Recorder:
 
         path = Path(path)
         data: Any = json.loads((path / "workflow.json").read_text())
-        self.steps: list[RecordedStep] = [
-            RecordedStep(
-                d["step_id"], d["operation"], d["params"], d.get("input_refs", {})
-            )
-            for d in data
-        ]
         self._layer_to_step.clear()
         self._external_layer_refs.clear()
         self._arrays.clear()
-        self._workflow_dir = path
+        tag_by_file: dict[str, str] = {}
+
+        def _convert_ref(ref: str) -> str:
+            if not ref.startswith("file:"):
+                return ref
+            rel: str = ref.split(":", 1)[1]
+            if rel not in tag_by_file:
+                array: np.ndarray | None = imreader.imread(path / rel)
+                if array is None:
+                    raise RuntimeError(
+                        f"Could not read referenced array file: {path / rel}"
+                    )
+                tag_by_file[rel] = self.register_array(array)
+            return tag_by_file[rel]
+
+        self.steps: list[RecordedStep] = [
+            RecordedStep(
+                d["step_id"],
+                d["operation"],
+                d["params"],
+                {
+                    name: _convert_ref(ref)
+                    for name, ref in d.get("input_refs", {}).items()
+                },
+            )
+            for d in data
+        ]
+
         self.steps_changed.emit()
 
     def _resolve(
@@ -355,15 +373,8 @@ class Recorder:
             return primary
         if ref.startswith("step:"):
             return outputs[ref.split(":", 1)[1]]
-        if ref.startswith("pending:"):
+        if ref.startswith("array:"):
             return self._arrays[ref.split(":", 1)[1]]
-        if ref.startswith("file:"):
-            if self._workflow_dir is None:
-                raise ValueError(
-                    f"Cannot resolve '{ref}':"
-                    "no workflow directory is set (was load() called?)"
-                )
-            return imreader.imread(self._workflow_dir / ref.split(":", 1)[1])
         raise ValueError(f"Unrecognized input reference: {ref!r}")
 
     def iter_replay(self, imarray: np.ndarray):
