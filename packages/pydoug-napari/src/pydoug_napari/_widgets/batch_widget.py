@@ -77,4 +77,7 @@ def make_batch_widget(recorder) -> QWidget:
     outer_layout.addWidget(build_run_batch_widget())
     outer.setLayout(outer_layout)
 
+    outer.container = container  # type: ignore
+    outer.run_batch_widget = build_run_batch_widget  # type: ignore
+
     return outer

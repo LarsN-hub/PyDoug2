@@ -138,3 +138,65 @@ def test_run_batch_no_primary(
     assert result[2] == (2, 2, "Processing image 2 of 2: test2.tiff")
     assert result[3] == (2, 2, "Skipped (could not read): test2.tiff")
     assert result[4] == (2, 2, "Finished processing all images!")
+
+
+def test_run_batch_no_write(
+    tmp_path, sample_2dgray_array, registered_nothing, monkeypatch
+) -> None:
+
+    os.mkdir(Path(tmp_path / "test_runner_import_no_write"))
+    os.mkdir(Path(tmp_path / "test_runner_output_no_write1"))
+    os.mkdir(Path(tmp_path / "test_runner_output_no_write2"))
+    assert Path(tmp_path / "test_runner_import_no_write").exists()
+    assert Path(tmp_path / "test_runner_output_no_write1").exists()
+    assert Path(tmp_path / "test_runner_output_no_write2").exists()
+    iio.imwrite(
+        Path(tmp_path / "test_runner_import_no_write/test1.tiff"), sample_2dgray_array
+    )
+    iio.imwrite(
+        Path(tmp_path / "test_runner_import_no_write/test2.tiff"), sample_2dgray_array
+    )
+    layer1: DummyLayer = DummyLayer(sample_2dgray_array)
+    record: recorder.Recorder = recorder.Recorder()
+    record.record("_nothing", {}, {"layer": "primary"}, layer1)
+    record.save(Path(tmp_path / "test_runner_workflow_no_write"))
+    assert Path(tmp_path / "test_runner_workflow_no_write").exists()
+
+    def _skip(*args, **kwargs) -> None:
+        return
+
+    monkeypatch.setattr(runner, "imwrite", _skip)
+    result1: list[tuple[int, int, str]] = list(
+        runner.run_batch(
+            [
+                Path(tmp_path / "test_runner_import_no_write/test1.tiff"),
+                Path(tmp_path / "test_runner_import_no_write/test2.tiff"),
+            ],
+            Path(tmp_path / "test_runner_workflow_no_write"),
+            Path(tmp_path / "test_runner_output_no_write1"),
+        )
+    )
+    assert len(result1) == 5
+    assert result1[0] == (1, 2, "Processing image 1 of 2: test1")
+    assert result1[1] == (1, 2, "WARNING: failed to write final image for test1")
+    assert result1[2] == (2, 2, "Processing image 2 of 2: test2")
+    assert result1[3] == (2, 2, "WARNING: failed to write final image for test2")
+    assert result1[4] == (2, 2, "Finished processing all images!")
+
+    result2: list[tuple[int, int, str]] = list(
+        runner.run_batch(
+            [
+                Path(tmp_path / "test_runner_import_no_write/test1.tiff"),
+                Path(tmp_path / "test_runner_import_no_write/test2.tiff"),
+            ],
+            Path(tmp_path / "test_runner_workflow_no_write"),
+            Path(tmp_path / "test_runner_output_no_write2"),
+            True,
+        )
+    )
+    assert len(result2) == 5
+    assert result2[0] == (1, 2, "Processing image 1 of 2: test1")
+    assert result2[1] == (1, 2, "WARNING: failed to write 01__nothing for test1")
+    assert result2[2] == (2, 2, "Processing image 2 of 2: test2")
+    assert result2[3] == (2, 2, "WARNING: failed to write 01__nothing for test2")
+    assert result2[4] == (2, 2, "Finished processing all images!")

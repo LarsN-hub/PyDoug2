@@ -78,9 +78,8 @@ def run_batch(
                     out_path: Path = folder / f"{name}.tiff"
                     imwrite(result, folder, name, "tiff")
                     if not out_path.exists():
-                        text: str = "WARNING: failed to write"  # pragma: no cover
-                        f"{folder.name} for {name}"  # pragma: no cover
-                        yield index, total, text  # pragma: no cover
+                        text: str = f"WARNING: failed to write {folder.name} for {name}"
+                        yield index, total, text
             else:
                 (spec.save_result or default_save_result)(result, folder / name)
 
@@ -92,6 +91,6 @@ def run_batch(
                     index,
                     total,
                     f"WARNING: failed to write final image for {name}",
-                )  # pragma: no cover
+                )
 
     yield total, total, "Finished processing all images!"
