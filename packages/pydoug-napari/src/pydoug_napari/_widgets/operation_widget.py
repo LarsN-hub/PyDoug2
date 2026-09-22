@@ -201,7 +201,7 @@ def make_operation_widget(
             _reset_button()
             raise exc
 
-        worker = _run()  # type: ignore[call-arg]
+        worker = _run()  # type: ignore
         worker.returned.connect(_on_done)
         worker.errored.connect(_on_error)
         worker.start()
