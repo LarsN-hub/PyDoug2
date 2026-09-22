@@ -3,14 +3,13 @@ Recorder for PyDoug operations used in napari widgets.
 """
 
 import json
-import shutil
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from weakref import WeakKeyDictionary
 
-from numpy import ndarray
+import numpy as np
 from psygnal import Signal
 
 from pydoug_core.io import imreader, imwriter
@@ -34,8 +33,6 @@ class RecordedStep:
         References to other steps as required for input parameters for an operation.
     layer_ref: None | Any
         The layer created during the recorded step.
-    pending_arrays: dict
-        Arrays used in operations that may need to be saved for batch processing.
     """
 
     step_id: str
@@ -43,7 +40,6 @@ class RecordedStep:
     params: dict
     input_refs: dict[str, str] = field(default_factory=dict)
     layer_ref: None | Any = None
-    pending_arrays: dict[str, ndarray] = field(default_factory=dict)
 
 
 class Recorder:
@@ -55,6 +51,11 @@ class Recorder:
     steps: list[RecordedStep]
         List of recorded steps.
     _layer_to_step: WeakKeyDictionary
+        Weak key dictionary mapping layers to steps.
+    _external_layer_refs: WeakKeyDictionary
+        Weak key dictionary mapping imported masks to layers.
+    _arrays: dict[str, np.ndarray]
+        Arrays that need be saved.
     """
 
     steps_changed: Signal = Signal()
@@ -62,7 +63,8 @@ class Recorder:
     def __init__(self):
         self.steps: list[RecordedStep] = []
         self._layer_to_step: WeakKeyDictionary = WeakKeyDictionary()
-        self._workflow_dir: Path | None = None
+        self._external_layer_refs: WeakKeyDictionary = WeakKeyDictionary()
+        self._arrays: dict[str, np.ndarray] = {}
 
     def step_id_for_layer(self, layer) -> None | str:
         """
@@ -82,13 +84,54 @@ class Recorder:
 
         return self._layer_to_step.get(layer)
 
+    def get_or_create_array_ref(self, layer: Any) -> str:
+        """
+        Reuse an existing reference for this layer if one was already assigned.
+
+        Parameters
+        ----------
+        layer: the layer that needs to be referenced.
+
+        Returns
+        -------
+        ref: str
+            The reference to the layer.
+        """
+
+        existing: str | None = self._external_layer_refs.get(layer)
+        if existing is not None:
+            return existing
+        tag: str = uuid.uuid4().hex[:8]
+        ref: str = f"array:{tag}"
+        self._external_layer_refs[layer] = ref
+        self._arrays[tag] = np.copy(layer.data)
+        return ref
+
+    def register_array(self, array: np.ndarray) -> str:
+        """
+        Store an array directly and return its reference.
+
+        Parameters
+        ----------
+        array: np.ndarray
+            The array to be stored.
+
+        Returns
+        -------
+        ref: str
+            The reference for the array (with "array:" in front).
+        """
+
+        tag: str = uuid.uuid4().hex[:8]
+        self._arrays[tag] = np.copy(array)
+        return f"array:{tag}"
+
     def record(
         self,
         operation_name: str,
         params: dict,
         input_refs: dict[str, str],
         layer_ref: None | Any = None,
-        pending_arrays: dict | None = None,
     ) -> str:
         """
         Record a step in the parameters log.
@@ -103,8 +146,11 @@ class Recorder:
             The dictionary of references to other steps as required.
         layer_ref: None | Any
             The layer created during the recorded step.
-        pending_arrays: dict | None
-            Pending arrays to be saved if required.
+
+        Returns
+        -------
+        step_id: str
+            The step's string ID.
         """
 
         step_id: str = uuid.uuid4().hex
@@ -115,7 +161,6 @@ class Recorder:
                 params,
                 input_refs,
                 layer_ref,
-                pending_arrays or {},
             )
         )
         if layer_ref is not None:
@@ -142,7 +187,7 @@ class Recorder:
                 layer for layer, sid in self._layer_to_step.items() if sid == step_id
             ]
             for layer in stale:
-                del self._layer_to_step[layer]
+                del self._layer_to_step[layer]  # pragma: no cover
             self.steps_changed.emit()
 
     def remove_steps_by_layer(self, layer: Any) -> None:
@@ -203,6 +248,8 @@ class Recorder:
 
         self.steps = []
         self._layer_to_step.clear()
+        self._external_layer_refs.clear()
+        self._arrays.clear()
         self.steps_changed.emit()
 
     def save(self, path: Path) -> None:
@@ -218,29 +265,23 @@ class Recorder:
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
         arrays_dir: Path = path / "arrays"
+        used_tags: set[str] = {
+            ref.split(":", 1)[1]
+            for step in self.steps
+            for ref in step.input_refs.values()
+            if ref.startswith("array:")
+        }
+
         data: list[dict] = []
-
         for s in self.steps:
-            refs: dict = dict(s.input_refs)
-
-            for name, ref in list(refs.items()):
-                if ref.startswith("file:") and self._workflow_dir is not None:
-                    src: Path = self._workflow_dir / ref.split(":", 1)[1]
-                    fname: str = Path(ref.split(":", 1)[1]).name
-                    arrays_dir.mkdir(exist_ok=True)
-                    dest: Path = arrays_dir / fname
-                    if src.resolve() != dest.resolve():
-                        shutil.copy2(src, dest)
-                    refs[name] = f"file:arrays/{fname}"
-
-            for name, arr in s.pending_arrays.items():
-                arrays_dir.mkdir(exist_ok=True)
-                fname = f"{s.step_id}_{name}.tiff"
-                imwriter.imwrite(arr, arrays_dir, f"{s.step_id}_{name}", "tiff")
-                refs[name] = f"file:arrays/{fname}"
-
-            s.input_refs = refs
-            s.pending_arrays = {}
+            refs: dict[str, str] = {
+                name: (
+                    f"file:arrays/{ref.split(':', 1)[1]}.tiff"
+                    if ref.startswith("array:")
+                    else ref
+                )
+                for name, ref in s.input_refs.items()
+            }
             data.append(
                 {
                     "step_id": s.step_id,
@@ -250,39 +291,66 @@ class Recorder:
                 }
             )
 
+        for tag in used_tags:
+            arrays_dir.mkdir(parents=True, exist_ok=True)
+            imwriter.imwrite(self._arrays[tag], arrays_dir, tag, "tiff")
+            written = arrays_dir / f"{tag}.tiff"
+            if not written.exists():
+                raise RuntimeError(f"Failed to save array for tag '{tag}' to {written}")
+
         (path / "workflow.json").write_text(json.dumps(data, indent=2))
-        self._workflow_dir = path
 
     def load(self, path: Path) -> None:
         """
-        Load a parameters log from a json file.
+        Load a workflow from its directory.
 
         Parameters
         ----------
         path: Path
-            The path to the parameters log to be loaded.
+            The path to the workflow directory to be loaded.
         """
 
         path = Path(path)
         data: Any = json.loads((path / "workflow.json").read_text())
+        self._layer_to_step.clear()
+        self._external_layer_refs.clear()
+        self._arrays.clear()
+        tag_by_file: dict[str, str] = {}
+
+        def _convert_ref(ref: str) -> str:
+            if not ref.startswith("file:"):
+                return ref
+            rel: str = ref.split(":", 1)[1]
+            if rel not in tag_by_file:
+                array: np.ndarray | None = imreader.imread(path / rel)
+                if array is None:
+                    raise RuntimeError(
+                        f"Could not read referenced array file: {path / rel}"
+                    )
+                tag_by_file[rel] = self.register_array(array)
+            return tag_by_file[rel]
+
         self.steps: list[RecordedStep] = [
             RecordedStep(
-                d["step_id"], d["operation"], d["params"], d.get("input_refs", {})
+                d["step_id"],
+                d["operation"],
+                d["params"],
+                {
+                    name: _convert_ref(ref)
+                    for name, ref in d.get("input_refs", {}).items()
+                },
             )
             for d in data
         ]
-        self._layer_to_step.clear()
-        self._workflow_dir = path
+
         self.steps_changed.emit()
 
     def _resolve(
         self,
         ref: str,
-        step: RecordedStep,
-        param_name: str,
-        primary: ndarray,
-        outputs: dict[str, ndarray],
-    ) -> ndarray | None:
+        primary: np.ndarray,
+        outputs: dict[str, np.ndarray],
+    ) -> np.ndarray | None:
         """
         Resolve input reference array.
 
@@ -290,10 +358,6 @@ class Recorder:
         ----------
         ref: str
             The array's reference string.
-        step: RecordedStep
-            The array's recorded step.
-        param_name: str
-            The name of the array's parameter.
         primary: np.ndarray
             The primary array.
         outputs: dict[str, object]
@@ -309,40 +373,56 @@ class Recorder:
             return primary
         if ref.startswith("step:"):
             return outputs[ref.split(":", 1)[1]]
-        if ref.startswith("pending:"):
-            return step.pending_arrays[param_name]
-        if ref.startswith("file:"):
-            if self._workflow_dir is None:
-                raise ValueError(
-                    f"Cannot resolve '{ref}':"
-                    "no workflow directory is set (was load() called?)"
-                )
-            return imreader.imread(self._workflow_dir / ref.split(":", 1)[1])
+        if ref.startswith("array:"):
+            return self._arrays[ref.split(":", 1)[1]]
         raise ValueError(f"Unrecognized input reference: {ref!r}")
 
-    def replay(self, imarray: ndarray) -> ndarray | dict | Any:
+    def iter_replay(self, imarray: np.ndarray):
+        """
+        Yield (step, spec, result) for each recorded step in order.
+
+        Parameters
+        ----------
+        imarray: np.ndarray
+            The image array being processed.
+
+        Yields
+        ------
+        step: RecordedStep
+            The current recorded step.
+        spec: OperationSpec
+            The operation specifications for the current step.
+        result: Any
+            The result of the operaiton (array, alphanumeric, or plot figure)
+        """
+
+        outputs: dict[str, np.ndarray] = {}
+        for step in self.steps:
+            spec: OperationSpec = get_operation(step.operation_name)
+            primary_ref: str = step.input_refs.get("layer", "primary")
+            primary_arg: np.ndarray | None = self._resolve(
+                primary_ref, imarray, outputs
+            )
+            other_kwargs = {
+                name: self._resolve(ref, imarray, outputs)
+                for name, ref in step.input_refs.items()
+                if name != "layer"
+            }
+            result: Any = spec.func(primary_arg, **other_kwargs, **step.params)
+            outputs[step.step_id] = result
+            yield step, spec, result
+
+    def replay(self, imarray: np.ndarray) -> np.ndarray | dict | Any:
         """
         Apply a recorded workflow to an image.
 
         Parameters
         ----------
         imarray: np.ndarray
-            The image array to apply parameters to.
+            The image array to apply the workflow to.
         """
 
-        outputs: dict[str, ndarray] = {}
         result: Any = None
-        for step in self.steps:
-            spec: OperationSpec = get_operation(step.operation_name)
-            primary_ref: str = step.input_refs.get("layer", "primary")
-            primary_arg: ndarray | None = self._resolve(
-                primary_ref, step, "layer", imarray, outputs
-            )
-            other_kwargs = {
-                name: self._resolve(ref, step, name, imarray, outputs)
-                for name, ref in step.input_refs.items()
-                if name != "layer"
-            }
-            result = spec.func(primary_arg, **other_kwargs, **step.params)
-            outputs[step.step_id] = result
+        for _, _, result in self.iter_replay(imarray):
+            pass
         return result

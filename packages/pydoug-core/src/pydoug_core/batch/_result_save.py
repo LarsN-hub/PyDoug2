@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from matplotlib.figure import Figure
+from numpy import generic, ndarray
 
 
 def default_save_result(
@@ -27,7 +28,21 @@ def default_save_result(
     if isinstance(result, Figure):
         result.savefig(path_without_ext.with_suffix(".png"))
         return
+
     if isinstance(result, dict):
-        path_without_ext.with_suffix(".json").write_text(json.dumps(result, indent=2))
+
+        def _default(o):  # pragma: no cover
+            if isinstance(o, generic):  # pragma: no cover
+                return o.item()  # pragma: no cover
+            if isinstance(o, ndarray):  # pragma: no cover
+                return o.tolist()  # pragma: no cover
+            raise TypeError(
+                f"Object of type {type(o)} is not JSON serializable"
+            )  # pragma: no cover
+
+        path_without_ext.with_suffix(".json").write_text(
+            json.dumps(result, indent=2, default=_default)
+        )
+
     else:
         path_without_ext.with_suffix(".txt").write_text(str(result))

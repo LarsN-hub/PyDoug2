@@ -45,7 +45,7 @@ class MainWidget(QTabWidget):
                 self._build_category_tab(category, viewer).native, category.title()
             )
 
-        self.addTab(make_batch_widget(self.recorder).native, "Batch")
+        self.addTab(make_batch_widget(self.recorder), "Batch")
 
         viewer.window.add_dock_widget(
             RecordingLogWidget(self.recorder), name="Workflow Log", area="bottom"
