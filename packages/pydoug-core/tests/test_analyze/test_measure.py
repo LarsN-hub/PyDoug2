@@ -2,6 +2,8 @@
 Tests for PyDoug's analyze.measure module.
 """
 
+from typing import Any
+
 import numpy as np
 
 from pydoug_core.analyze import measure
@@ -96,3 +98,30 @@ def test_percentile(sample_2dgray_array) -> None:
     assert list(result1.values())[0] < list(result2.values())[0]
     assert list(result1.values())[1] > list(result2.values())[1]
     assert result4 == result3
+
+
+def test_thresholds(sample_3dgray_array, sample_masks) -> None:
+
+    mod_array1: np.ndarray = np.random.binomial(20, 0.5, (5, 10, 10)).astype(np.uint8)
+    mod_array2: np.ndarray = 255 - mod_array1
+    min_array: np.ndarray = np.stack((mod_array1, mod_array2), 0)
+    result1: Any = measure.thresholds(sample_3dgray_array)
+    result2: Any = measure.thresholds(sample_3dgray_array, "Isodata")
+    result3: Any = measure.thresholds(sample_3dgray_array, "Li")
+    result4: Any = measure.thresholds(sample_3dgray_array, "Mean")
+    result5: Any = measure.thresholds(min_array, "Minimum")
+    result6: Any = measure.thresholds(sample_3dgray_array, "Triangle")
+    result7: Any = measure.thresholds(sample_3dgray_array, "Yen")
+    result8: Any = measure.thresholds(sample_3dgray_array, "Otsu", Otsu_Classes=3)
+    result9: Any = measure.thresholds(
+        sample_3dgray_array, Apply_Mask=True, Mask=sample_masks["3dgray"]
+    )
+    assert not isinstance(result1, np.ndarray)
+    assert not isinstance(result2, np.ndarray)
+    assert not isinstance(result3, np.ndarray)
+    assert not isinstance(result4, np.ndarray)
+    assert not isinstance(result5, np.ndarray)
+    assert not isinstance(result6, np.ndarray)
+    assert not isinstance(result7, np.ndarray)
+    assert isinstance(result8, np.ndarray)
+    assert not isinstance(result9, np.ndarray)

@@ -12,7 +12,7 @@ def sample_2dgray_array() -> np.ndarray:
     Fixture to create a sample 2d grayscale image array.
     """
 
-    return np.random.randint(0, 255, size=(10, 10), dtype=np.uint8)
+    return np.random.randint(0, 256, size=(10, 10), dtype=np.uint8)
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def sample_3dgray_array() -> np.ndarray:
     Fixture to create a sample 3d grayscale image array.
     """
 
-    return np.random.randint(0, 255, size=(5, 10, 10), dtype=np.uint8)
+    return np.random.randint(0, 256, size=(5, 10, 10), dtype=np.uint8)
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def sample_2drgb_array() -> np.ndarray:
     Fixture to create a sample 2d RGB image array.
     """
 
-    return np.random.randint(0, 255, size=(10, 10, 3), dtype=np.uint8)
+    return np.random.randint(0, 256, size=(10, 10, 3), dtype=np.uint8)
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def sample_3drgb_array() -> np.ndarray:
     Fixture to create a sample 2d RGB image array.
     """
 
-    return np.random.randint(0, 255, size=(5, 10, 10, 3), dtype=np.uint8)
+    return np.random.randint(0, 256, size=(5, 10, 10, 3), dtype=np.uint8)
 
 
 @pytest.fixture
@@ -66,19 +66,19 @@ def sample_masks(
     Registry for mapping kind-name to corresponding sample mask array.
     """
 
-    mask_2dgray: np.ndarray = sample_2dgray_array
+    mask_2dgray: np.ndarray = np.copy(sample_2dgray_array)
     mask_2dgray[mask_2dgray < 128] = 0
     mask_2dgray[mask_2dgray >= 128] = 255
     mask_2dgray = np.astype(mask_2dgray, np.bool)
-    mask_3dgray: np.ndarray = sample_3dgray_array
+    mask_3dgray: np.ndarray = np.copy(sample_3dgray_array)
     mask_3dgray[mask_3dgray < 128] = 0
     mask_3dgray[mask_3dgray >= 128] = 255
     mask_3dgray = np.astype(mask_3dgray, np.bool)
-    mask_2drgb: np.ndarray = sample_2drgb_array
+    mask_2drgb: np.ndarray = np.copy(sample_2drgb_array)
     mask_2drgb[mask_2drgb < 128] = 0
     mask_2drgb[mask_2drgb >= 128] = 255
     mask_2drgb = np.astype(mask_2drgb, np.bool)
-    mask_3drgb: np.ndarray = sample_3drgb_array
+    mask_3drgb: np.ndarray = np.copy(sample_3drgb_array)
     mask_3drgb[mask_3drgb < 128] = 0
     mask_3drgb[mask_3drgb >= 128] = 255
     mask_3drgb = np.astype(mask_3drgb, np.bool)

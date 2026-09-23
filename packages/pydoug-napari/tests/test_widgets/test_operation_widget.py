@@ -236,10 +236,10 @@ def test_array_parameter_behavior(
     qtbot.waitUntil(lambda: len(viewer.layers) == 5, timeout=5000)
     assert len(viewer.layers) == 5
     subwidget1.Apply_Mask.value = False
-    subwidget1.layer.value = viewer.layers[0]
+    subwidget1.layer.value = imlayer
     subwidget1.maskarray.value = viewer.layers[-2]
     qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: len(viewer.layers) == 5, timeout=5000)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 6, timeout=5000)
     assert np.all(viewer.layers[0].data == viewer.layers[-1].data)
 
 
