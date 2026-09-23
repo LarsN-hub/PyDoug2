@@ -2,15 +2,16 @@
 Measured and calculated values of images.
 """
 
-from typing import Annotated
+from typing import Annotated, Any, Literal
 
 import numpy as np
 from scipy.stats import mode
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
+from pydoug_core.segment.segment_util import calc_thresholds
 
-__all__ = ["stats"]
+__all__ = ["stats", "percentiles", "thresholds"]
 
 
 @register_operation(
@@ -105,7 +106,10 @@ def stats(
 
 
 @register_operation(
-    category="measurements", display_name="Percentiles", output_kind="value"
+    category="measurements",
+    display_name="Percentiles",
+    output_kind="value",
+    recordable_toggle=True,
 )
 def percentiles(
     imarray: np.ndarray,
@@ -144,3 +148,62 @@ def percentiles(
         min(percentiles): np.percentile(imarray, min(percentiles)),
         max(percentiles): np.percentile(imarray, max(percentiles)),
     }
+
+
+@register_operation(
+    category="measurements",
+    display_name="Thresholds",
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
+    output_kind="value",
+    recordable_toggle=True,
+)
+def thresholds(
+    imarray: np.ndarray,
+    Method: Literal[
+        "Isodata", "Li", "Mean", "Minimum", "Otsu", "Triangle", "Yen"
+    ] = "Otsu",
+    Otsu_Classes: Annotated[int, {"min": 2}] = 2,
+    Bin_Count: Annotated[int, {"min": 1}] = 256,
+    Max_Iteration_Count: Annotated[int, {"min": 1, "max": 100000}] = 10000,
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+) -> Any:
+    """
+    Calculate segmentation thresholds for an image using histogram-based algorithms.
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to segment.
+    Method: Literal["Isodata", "Li", "Mean", "Minimum", "Otsu", "Triangle", "Yen"]
+        The algorithm to use for identifying the threshold value(s). Default is Otsu.
+    Otsu_Classes: int
+        The number of classes to segmented if "Method" is "Otsu".
+        Ignored for other methods.
+    Bin_Count: int
+        The number of bins to use for calculating the histogram.
+        Ignored for integer dtypes.
+    Max_Iteration_Count: int
+        The maximum number of iterations to use for smoothing the histogram.
+        Only applied if "Method" is "Minimum".
+    Apply_Mask: bool
+        Whether or not to apply a mask. Default is False.
+    Mask: np.ndarray | None
+        (Optional) If Apply Mask is True, only values within the provided mask array
+        will be included in the histogram.
+
+    Returns
+    -------
+    thresh_vals: float | int | np.ndarray
+        The threshold value(s).
+    """
+
+    if Apply_Mask and Mask is not None:
+        eval_array: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
+    else:
+        eval_array = imarray
+
+    return calc_thresholds(
+        eval_array, Method, Otsu_Classes, Bin_Count, Max_Iteration_Count
+    )

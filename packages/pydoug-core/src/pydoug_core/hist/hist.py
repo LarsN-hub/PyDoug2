@@ -45,7 +45,7 @@ plt.rcParams["font.sans-serif"] = "Arial"
 )
 def plot_histogram(
     imarray: np.ndarray,
-    Bin_Count: int = 256,
+    Bin_Count: Annotated[int, {"min": 1}] = 256,
     Normalize: bool = False,
     Apply_Mask: bool = False,
     Mask: np.ndarray | None = None,
@@ -221,7 +221,7 @@ def saturate(
 def equalize(
     imarray: np.ndarray,
     Method: Literal["Global", "CLAHE", "Rank"] = "CLAHE",
-    Radius: int = 5,
+    Radius: Annotated[int, {"min": 1}] = 5,
     CLAHE_Clip_Limit: Annotated[float, {"max": 1, "min": 0}] = 0.5,
     Perform_Slicewise: bool = False,
     Apply_Mask: bool = False,
@@ -339,7 +339,7 @@ def adjust(
     imarray: np.ndarray,
     Method: Literal["Gamma", "Log", "Sigmoid"] = "Log",
     Gamma: Annotated[int, {"min": 0}] = 1,
-    Gain: int = 1,
+    Gain: Annotated[int, {"min": 1}] = 1,
     Sigmoid_Cutoff: float = 0.5,
     Inverse: bool = False,
 ) -> np.ndarray:
@@ -395,7 +395,7 @@ def adjust(
 def local_contrast(
     imarray: np.ndarray,
     Method: Literal["Autolevel", "Local Extrema"] = "Autolevel",
-    Radius: int = 5,
+    Radius: Annotated[int, {"min": 1}] = 5,
     Apply_Mask: bool = False,
     Mask: np.ndarray | None = None,
 ) -> np.ndarray:
