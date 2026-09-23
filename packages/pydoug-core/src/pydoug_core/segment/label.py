@@ -16,7 +16,7 @@ __all__ = ["connectivity"]
 def connectivity(
     imarray: np.ndarray,
     Connectivity: Literal[1, 2, 3] = 2,
-    Background: Annotated[int, {"min: 0"}] = 0,
+    Background: Annotated[int, {"min": 0}] = 0,
 ) -> np.ndarray:
     """
     Label an image using pixel connectivity. Convenience wrapper around scikit-image's
