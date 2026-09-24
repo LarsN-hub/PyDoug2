@@ -52,7 +52,7 @@ def local_threshold(
         Default is "Gaussian".
     Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"]
         If "Method" is "Adaptive", how the algorithm should handle image borders.
-        Default is "Nearest". Ignroed for other methods.
+        Default is "Nearest". Ignored for other methods.
         - "Constant": The border is extended with a value defined in "Constant Value".
         - "Mirror": The border is extended by reflecting about the center of the pixel.
         - "Nearest": The border is extended by copying the edge pixel.

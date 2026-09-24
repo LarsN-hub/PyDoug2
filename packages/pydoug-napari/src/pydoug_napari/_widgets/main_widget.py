@@ -163,12 +163,27 @@ class MainWidget(QTabWidget):
         if "histogram" in categories:
             sorted_categories.append("histogram")
             categories.remove("histogram")
+        if "denoise" in categories:
+            sorted_categories.append("denoise")
+            categories.remove("denoise")
+        # if "filters" in categories:
+        #    sorted_categories.append("filters")
+        #    categories.remove("filters")
+        # if "features" in categories:
+        #    sorted_categories.append("features")
+        #    categories.remove("features")
         if "segmentation" in categories:
             sorted_categories.append("segmentation")
             categories.remove("segmentation")
+        # if "morphology" in categories:
+        #    sorted_categories.append("morphology")
+        #    categories.remove("morphology")
         if "measurements" in categories:
             sorted_categories.append("measurements")
             categories.remove("measurements")
+        # if "plots" in categories:
+        #    sorted_categories.append("plots")
+        #    categories.remove("plots")
         if "color" in categories:
             sorted_categories.append("color")
             categories.remove("color")
