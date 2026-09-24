@@ -2,9 +2,18 @@
 Utilities for dynamically updating magicgui widget selections.
 """
 
+from typing import Any
+
+from magicgui.widgets import FunctionGui
+from napari.utils.events import Event
+from napari.viewer import Viewer
+
 
 def connect_layer_autoselect(
-    viewer, widget, param_name: str = "layer", autoselect: bool = True
+    viewer: Viewer,
+    widget: FunctionGui,
+    param_name: str = "layer",
+    autoselect: bool = True,
 ) -> None:
     """
     Keep magicgui layer selection widgets in sync with the napari viewer's layer list.
@@ -21,9 +30,9 @@ def connect_layer_autoselect(
         Whether or not to automatically update the layer selection.
     """
 
-    field = getattr(widget, param_name)
+    field: Any = getattr(widget, param_name)
 
-    def _select_newest(event):
+    def _select_newest(event: Event):
         """
         Select the newest layer in the layers list while preventing incorrect layer
         types selection.
@@ -37,18 +46,14 @@ def connect_layer_autoselect(
         if event.value in field.choices:
             field.value = event.value
 
-    def _select_last():
+    def _select_last(event: Event):
         """
-        Select the last layer in the layers list.
-
-        Parameters
-        ----------
-        event: Event
-            The napari gui event.
+        Select the last layer in the layers list while preventing incorrect layer
+        types selection.
         """
 
-        if viewer.layers:
-            field.value = viewer.layers[-1]
+        if field.choices:
+            field.value = field.choices[-1]
 
     viewer.layers.events.inserted.connect(field.reset_choices)
     viewer.layers.events.removed.connect(field.reset_choices)

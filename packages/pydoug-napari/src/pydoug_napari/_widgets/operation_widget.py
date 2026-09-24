@@ -11,7 +11,7 @@ from magicclass.widgets import CollapsibleContainer
 from magicgui import magicgui
 from magicgui.widgets import FunctionGui
 from matplotlib.figure import Figure
-from napari.layers import Image, Layer
+from napari.layers import Image, Labels, Layer
 from napari.qt.threading import thread_worker
 from napari.viewer import Viewer
 
@@ -20,6 +20,8 @@ from pydoug_core.registry import OperationSpec
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
 from pydoug_napari._widgets.plot_display_widget import default_display_plot
 from pydoug_napari._widgets.results_log_widget import ResultsLog
+
+_LAYER_TYPE_MAP: dict = {"image": Image, "labels": Labels}
 
 
 def make_operation_widget(
@@ -151,7 +153,7 @@ def make_operation_widget(
                 preview_layer_ref["layer"] = None
                 widget.Preview.value = False
 
-            if operation_spec.output_kind == "image":
+            if operation_spec.output_kind in ("image", "labels"):
                 in_place: bool = operation_spec.allow_in_place and call_params.get(
                     "In_Place", False
                 )
@@ -159,9 +161,12 @@ def make_operation_widget(
                     layer.data = result  # type: ignore
                     result_layer = layer
                 else:
-                    result_layer: Image | list[Image] = viewer.add_image(
-                        result, name=f"{operation_spec.display_name}"
+                    add_fn = (
+                        viewer.add_labels  # type: ignore
+                        if operation_spec.output_kind == "labels"
+                        else viewer.add_image
                     )
+                    result_layer = add_fn(result, name=f"{operation_spec.display_name}")
                 if should_record:
                     recorder.record(
                         operation_spec.name,
@@ -209,7 +214,9 @@ def make_operation_widget(
     params_only: list = []
     for p in list(operation_spec.signature.parameters.values())[1:]:
         if p.name in array_names:
-            layer_type = operation_spec.array_param_types.get(p.name, Image)
+            layer_type = _LAYER_TYPE_MAP[
+                operation_spec.array_param_types.get(p.name, "image")
+            ]
             p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY, annotation=layer_type)
         else:
             p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
@@ -235,11 +242,12 @@ def make_operation_widget(
             )
         )
 
+    layer_type = _LAYER_TYPE_MAP[operation_spec.layer_type]
     _dispatch.__doc__ = operation_spec.func.__doc__
     _dispatch.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
         [
             inspect.Parameter(
-                "layer", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Image
+                "layer", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=layer_type
             )
         ]
         + params_only
@@ -259,7 +267,10 @@ def make_operation_widget(
     widget: FunctionGui = magicgui(
         _dispatch,
         call_button=f"Run {operation_spec.display_name}",
-        layer={"label": "Layer", "tooltip": "The image layer to process."},
+        layer={
+            "label": "Layer",
+            "tooltip": f"The {layer_type.__name__.lower()} layer to process.",
+        },
         **extra_widget_options,
         **operation_spec.widget_options,
     )
@@ -310,8 +321,8 @@ def make_operation_widget(
             getattr(field_widget.native, method_name)(arg)
 
     connect_layer_autoselect(viewer, widget, "layer", autoselect=True)
-    for mask_name in array_names:
-        connect_layer_autoselect(viewer, widget, mask_name, autoselect=False)
+    for array_name in array_names:
+        connect_layer_autoselect(viewer, widget, array_name, autoselect=False)
 
     container: CollapsibleContainer = CollapsibleContainer(
         widgets=[widget], labels=False

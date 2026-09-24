@@ -12,7 +12,11 @@ from pydoug_core.registry import register_operation
 __all__ = ["connectivity"]
 
 
-@register_operation(category="segmentation", display_name="Connectivity Label")
+@register_operation(
+    category="segmentation",
+    display_name="Connectivity Label",
+    output_kind="labels",
+)
 def connectivity(
     imarray: np.ndarray,
     Connectivity: Literal[1, 2, 3] = 2,

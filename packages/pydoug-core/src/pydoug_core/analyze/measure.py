@@ -207,3 +207,30 @@ def thresholds(
     return calc_thresholds(
         eval_array, Method, Otsu_Classes, Bin_Count, Max_Iteration_Count
     )
+
+
+@register_operation(
+    category="measurements",
+    display_name="Label Count",
+    layer_type="labels",
+    output_kind="value",
+)
+def label_count(imarray: np.ndarray) -> int:
+    """
+    Count the number of unique labels in a labeled segmented image. Convenience wrapper
+    around numpy's max function (labels are generated sequentially, so the max value
+    in a labeled image should be the number of unique labels):
+    https://numpy.org/doc/stable/reference/generated/numpy.max.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The labeled segmented image to count unique labels.
+
+    Returns
+    -------
+    lab_count: int
+        The unique label count.
+    """
+
+    return np.max(imarray)

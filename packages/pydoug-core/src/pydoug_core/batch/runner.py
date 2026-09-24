@@ -54,7 +54,7 @@ def run_batch(
 
     for step in recorder.steps:
         spec: OperationSpec = get_operation(step.operation_name)
-        needs_folder: bool = spec.output_kind != "image" or (
+        needs_folder: bool = spec.output_kind not in ("image", "labels") or (
             save_every_step and save_images
         )
         if needs_folder:
@@ -72,7 +72,7 @@ def run_batch(
         last_image_result: ndarray | None = None
         for step, spec, result in recorder.iter_replay(primary):
             folder: Path = output_dir / step_folders[step.step_id]
-            if spec.output_kind == "image":
+            if spec.output_kind in ("image", "labels"):
                 last_image_result = result
                 if save_every_step and save_images:
                     out_path: Path = folder / f"{name}.tiff"

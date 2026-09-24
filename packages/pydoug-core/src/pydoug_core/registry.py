@@ -30,11 +30,11 @@ class OperationSpec:
         Options to modify the default widget's native parameters.
     array_params: tuple[str, ...]
         Image layer parameters as required.
-    array_param_types: dict[str, type]
+    array_param_types: dict[str, str]
         The layer type for each array input.
     array_param_flags: dict[str, str]
         Relevant flags for array inputs.
-    output_kind: Literal["image", "plot", "value"]
+    output_kind: Literal["image", "labels", "plot", "value"]
         Whether the operation should output an image or a value.
     display_result: Callable[[Any], None] | None
         How to interactively display the result.
@@ -48,6 +48,8 @@ class OperationSpec:
         Whether or not the operation should be recorded on use.
     live_preview: bool
         Whether or not to allow a live preview of the operation.
+    layer_type: Literal["image", "labels"]
+        The layer type to be added if a numpy array is produced.
     signature: inspect.Signature
         The function's signature.
     """
@@ -59,15 +61,16 @@ class OperationSpec:
     widget_options: dict = field(default_factory=dict)
     native_options: dict[str, dict] = field(default_factory=dict)
     array_params: tuple[str, ...] = ()
-    array_param_types: dict[str, type] = field(default_factory=dict)
+    array_param_types: dict[str, str] = field(default_factory=dict)
     array_param_flags: dict[str, str] = field(default_factory=dict)
-    output_kind: Literal["image", "plot", "value"] = "image"
+    output_kind: Literal["image", "labels", "plot", "value"] = "image"
     display_result: Callable[[Any], None] | None = None
     save_result: Callable[[Any, Path], None] | None = None
     recordable_toggle: bool = False
     allow_in_place: bool = False
     recordable: bool = True
     live_preview: bool = False
+    layer_type: Literal["image", "labels"] = "image"
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -83,14 +86,15 @@ def register_operation(
     widget_options: dict | None = None,
     native_options: dict[str, dict] | None = None,
     array_params: tuple[str, ...] = (),
-    array_param_types: dict[str, type] = {},
+    array_param_types: dict[str, str] = {},
     array_param_flags: dict[str, str] = {},
-    output_kind: Literal["image", "plot", "value"] = "image",
+    output_kind: Literal["image", "labels", "plot", "value"] = "image",
     display_result: Callable[[Any], None] | None = None,
     save_result: Callable[[Any, Path], None] | None = None,
     recordable_toggle: bool = False,
     recordable: bool = True,
     live_preview: bool = False,
+    layer_type: Literal["image", "labels"] = "image",
     allow_in_place: bool = False,
 ) -> Callable:
     """
@@ -109,11 +113,11 @@ def register_operation(
         (Optional) Dictionary of default widget native parameter settings.
     array_params: tuple[str, ...]
         (Optional) Tuple of array parameters as needed for the operation.
-    array_param_types: dict[str, type]
+    array_param_types: dict[str, str]
         The napari layer type for each array input.
     array_param_flags: dict[str, str]
         Relevant flags for array inputs.
-    output_kind: Literal["image", "value"]
+    output_kind: Literal["image", "labels", "plot", "value"]
         Whether the operation should output an image or a value.
     display_result: Callable[[Any], None] | None
         How to interactively display the result.
@@ -127,7 +131,8 @@ def register_operation(
         Whether or not to add a checkbox to the widget to toggle in-place operations.
     live_preview: bool
         Whether or not to allow a live preview of the operation.
-
+    layer_type: Literal["image", "labels"]
+        The layer type to be added if a numpy array is produced.
 
     Returns
     -------
@@ -165,6 +170,12 @@ def register_operation(
                 "itself can correctly implement zero-copy behavior."
             )
 
+        if allow_in_place and output_kind not in ("image",):
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: allow_in_place only makes sense for "
+                "output_kind='image'."
+            )
+
         if not recordable and output_kind == "image":
             raise ValueError(  # pragma: no cover
                 f"{func.__name__}: recordable=False on an 'image' operation means its "
@@ -172,6 +183,19 @@ def register_operation(
                 "would silently fall back to referencing the original input instead — "
                 "breaking batch replay. Only use recordable=False for output_kind that "
                 "isn't consumed downstream as an image/mask input."
+            )
+
+        valid: set[str] = {"image", "labels"}
+        if layer_type not in valid:
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: layer_type must be one of "
+                f"{valid}, got {layer_type!r}"
+            )
+        bad: set[str] = set((array_param_types or {}).values()) - valid
+        if bad:
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: array_param_types values must be one of "
+                f"{valid}, got {bad}"
             )
 
         _REGISTRY[func.__name__] = OperationSpec(
@@ -191,6 +215,7 @@ def register_operation(
             allow_in_place=allow_in_place,
             recordable=recordable,
             live_preview=live_preview,
+            layer_type=layer_type,
         )
         return func
 
