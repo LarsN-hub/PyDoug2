@@ -4,6 +4,7 @@ Main widget for PyDoug's napari plugin.
 
 from magicclass.widgets import CollapsibleContainer, ScrollableContainer
 from napari.layers import Layer
+from napari.utils.events import Event
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QMessageBox, QTabWidget
 
@@ -29,7 +30,7 @@ class MainWidget(QTabWidget):
 
     """
 
-    def __init__(self, viewer: Viewer, parent=None):
+    def __init__(self, viewer: Viewer, parent=None) -> None:
         super().__init__(parent)
         self.viewer: Viewer = viewer
         self.recorder: Recorder = Recorder()
@@ -83,7 +84,7 @@ class MainWidget(QTabWidget):
             containers.append(op_widget)
         return ScrollableContainer(widgets=containers, labels=False)
 
-    def _on_layer_removed(self, event):
+    def _on_layer_removed(self, event: Event) -> None:
         """
         Connector method for defining what happens when a layer is removed.
 

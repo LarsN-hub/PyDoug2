@@ -28,11 +28,13 @@ def test_make_main_widget(make_napari_viewer, qtbot, sample_3dgray_array) -> Non
     subwidget1.layer.value = layer
     assert subwidget1.call_button is not None
     qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: len(mainwidget.recorder.steps) == 1, timeout=5000)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
     assert len(mainwidget.recorder.steps) == 1
+    assert len(viewer.layers) == 2
     qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: len(mainwidget.recorder.steps) == 2, timeout=5000)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 3, timeout=5000)
     assert len(mainwidget.recorder.steps) == 2
+    assert len(viewer.layers) == 3
     viewer.layers.remove(viewer.layers[-1])
     assert len(mainwidget.recorder.steps) == 1
     assert subwidget1.layer != layer

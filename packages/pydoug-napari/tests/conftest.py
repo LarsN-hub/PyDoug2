@@ -128,6 +128,25 @@ def registered_threshold():
     unregister_operation("_threshold")
 
 
+@pytest.fixture
+def registered_label_count():
+    """
+    Fixture to create a registered "label_count" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Label Count",
+        layer_type="labels",
+        output_kind="value",
+    )
+    def _label_count(imarray: np.ndarray) -> int:
+        return np.max(imarray)  # pragma: no cover
+
+    yield "_label_count"
+    unregister_operation("_label_count")
+
+
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield

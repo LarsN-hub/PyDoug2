@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from magicclass.widgets import CollapsibleContainer
 from magicgui.widgets import FunctionGui
-from napari.layers import Image, Layer
+from napari.layers import Image, Labels, Layer
 from napari.viewer import Viewer
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QMainWindow
@@ -360,3 +360,45 @@ def test_live_preview(
     assert len(record.steps) == 1
     assert not subwidget.Preview.value
     assert len(viewer.layers) == 2
+
+
+def test_preview_never_hijacks_layer_selection(
+    make_napari_viewer, qtbot, sample_2dgray_array, registered_threshold
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    layer: Image | list[Image] = viewer.add_image(sample_2dgray_array, name="test")
+    spec: OperationSpec = get_operation(registered_threshold)
+    container: CollapsibleContainer = make_operation_widget(
+        spec, viewer, Recorder(), ResultsLog()
+    )
+    qtbot.addWidget(container.native)
+    subwidget: FunctionGui | None = container.get_widget("_dispatch")
+    assert subwidget is not None
+    subwidget.layer.value = layer
+    subwidget.Preview.value = True
+    assert subwidget.layer.value is layer
+    assert len(viewer.layers) == 2
+
+
+def test_select_last_respects_field_type(
+    make_napari_viewer, qtbot, sample_2dgray_array, registered_label_count
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    image_layer: Image | list[Image] = viewer.add_image(
+        sample_2dgray_array, name="image"
+    )
+    labels_layer: Labels | list[Labels] = viewer.add_labels(  # type: ignore
+        np.zeros(sample_2dgray_array.shape, dtype=int), name="labels"
+    )
+    spec: OperationSpec = get_operation(registered_label_count)
+    container: CollapsibleContainer = make_operation_widget(
+        spec, viewer, Recorder(), ResultsLog()
+    )
+    qtbot.addWidget(container.native)
+    subwidget: FunctionGui | None = container.get_widget("_dispatch")
+    assert subwidget is not None
+    subwidget.layer.value = labels_layer
+    viewer.layers.remove(image_layer)  # type: ignore
+    assert subwidget.layer.value is labels_layer
