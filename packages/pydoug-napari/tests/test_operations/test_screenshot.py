@@ -2,9 +2,11 @@
 Tests for PyDoug's napari plugin operations.screenshot module.
 """
 
+import os
 from typing import Any
 
 import numpy as np
+import pytest
 from napari.components.camera import (
     DepthAxisOrientation,
     HorizontalAxisOrientation,
@@ -13,7 +15,13 @@ from napari.components.camera import (
 
 from pydoug_napari._operations import screenshot
 
+requires_gl = pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="needs a real OpenGL context; unavailable on the CI runner",
+)
 
+
+@requires_gl
 def test_render_screenshots(sample_2dgray_array) -> None:
 
     base_settings: dict[str, Any] = {
