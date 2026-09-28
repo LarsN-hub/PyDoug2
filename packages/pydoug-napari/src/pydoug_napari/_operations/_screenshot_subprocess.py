@@ -69,10 +69,18 @@ def main(config_path: str) -> None:  # pragma: no cover
         viewer.dims.ndisplay = settings["dims_ndisplay"]
 
         qt_window = viewer.window._qt_window
+        canvas_widget = viewer.window._qt_viewer.canvas.native
+        target_w, target_h = settings.get("canvas_size", [1600, 1200])
+        qt_window.resize(target_w + 400, target_h + 200)
         qt_window.setWindowFlag(Qt.WindowType.Tool, True)
         qt_window.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
         qt_window.setWindowOpacity(0.0)
         viewer.show()
+        app.processEvents()
+        qt_window.resize(
+            qt_window.width() + (target_w - canvas_widget.width()),
+            qt_window.height() + (target_h - canvas_widget.height()),
+        )
         app.processEvents()
         np.save(config["output_path"], viewer.screenshot(canvas_only=True))
 

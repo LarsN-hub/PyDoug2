@@ -336,8 +336,10 @@ def make_operation_widget(
             if target is None:
                 return  # pragma: no cover
 
+            canvas = viewer.window._qt_viewer.canvas.native
             raw: dict[str, Any] = {
                 "blending": target.blending,
+                "canvas_size": [canvas.width(), canvas.height()],
                 "colormap": target.colormap.name,
                 "camera_angles": list(viewer.scene.camera.angles),
                 "camera_zoom": viewer.scene.camera.zoom,
