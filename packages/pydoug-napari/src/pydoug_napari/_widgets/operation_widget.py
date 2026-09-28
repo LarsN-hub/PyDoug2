@@ -18,6 +18,7 @@ from napari.viewer import Viewer
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
+from pydoug_napari._widgets._settings_capture import to_jsonable
 from pydoug_napari._widgets.plot_display_widget import default_display_plot
 from pydoug_napari._widgets.results_log_widget import ResultsLog
 
@@ -100,17 +101,12 @@ def make_operation_widget(
                 call_params[name] = value
                 recorded_params[name] = value
 
+        if operation_spec.captures_viewer_settings:
+            call_params["Settings"] = dict(captured_settings)
+            recorded_params["Settings"] = dict(captured_settings)
+
         layer_step_id: str | None = recorder.step_id_for_layer(layer)
         input_refs["layer"] = f"step:{layer_step_id}" if layer_step_id else "primary"
-
-        @thread_worker(ignore_errors=True)
-        def _run() -> Any:
-            """
-            Run the operation widget's function and return its results.
-            """
-
-            return operation_spec.func(layer.data, **call_params)  # pragma: no cover
-            # covered in a separate Qt threading event
 
         def _reset_button() -> None:
             """
@@ -201,10 +197,24 @@ def make_operation_widget(
         def _on_error(exc: Exception) -> None:
             """
             Raise exception and reset call button when an error is encountered.
+
+            Parameters
+            ----------
+            exc: Exception
+                The error that ocurred.
             """
 
             _reset_button()
             raise exc
+
+        @thread_worker(ignore_errors=True)
+        def _run() -> Any:
+            """
+            Run the operation widget's function and return its results.
+            """
+
+            return operation_spec.func(layer.data, **call_params)  # pragma: no cover
+            # covered in a separate Qt threading event
 
         worker = _run()  # type: ignore
         worker.returned.connect(_on_done)
@@ -213,6 +223,8 @@ def make_operation_widget(
 
     params_only: list = []
     for p in list(operation_spec.signature.parameters.values())[1:]:
+        if operation_spec.captures_viewer_settings and p.name == "Settings":
+            continue
         if p.name in array_names:
             layer_type = _LAYER_TYPE_MAP[
                 operation_spec.array_param_types.get(p.name, "image")
@@ -274,6 +286,7 @@ def make_operation_widget(
         **extra_widget_options,
         **operation_spec.widget_options,
     )
+    widget_list: list[FunctionGui] = [widget]
 
     if operation_spec.allow_in_place:
         widget.In_Place.tooltip = "Warning: overwrites the selected layer's data "
@@ -315,6 +328,67 @@ def make_operation_widget(
         widget.changed.connect(_update_preview)
         widget.Preview.changed.connect(_on_preview_toggled)
 
+    if operation_spec.captures_viewer_settings:
+        captured_settings: dict = {}
+
+        def _capture_settings() -> None:
+            target = widget.layer.value
+            if target is None:
+                return  # pragma: no cover
+
+            canvas = viewer.window._qt_viewer.canvas.native
+            raw: dict[str, Any] = {
+                "blending": target.blending,
+                "canvas_size": [canvas.width(), canvas.height()],
+                "colormap": target.colormap.name,
+                "camera_angles": list(viewer.scene.camera.angles),
+                "camera_zoom": viewer.scene.camera.zoom,
+                "camera_center": list(viewer.scene.camera.center),
+                "camera_perspective": viewer.scene.camera.perspective,
+                "camera_orientation": viewer.scene.camera.orientation,
+                "depiction": target.depiction,
+                "dims_ndisplay": viewer.dims.ndisplay,
+                "opacity": target.opacity,
+                "plane": target.plane,
+                "projection_mode": target.projection_mode,
+                "rendering": target.rendering,
+            }
+            if isinstance(target, Labels):
+                raw.update(
+                    {
+                        "layer_type": "labels",
+                        "iso_gradient_mode": target.iso_gradient_mode,
+                    }
+                )
+            else:
+                raw.update(
+                    {
+                        "layer_type": "image",
+                        "attenuation": target.attenuation,
+                        "contrast_limits": list(target.contrast_limits),
+                        "gamma": target.gamma,
+                        "interpolation2d": target.interpolation2d,
+                        "interpolation3d": target.interpolation3d,
+                        "iso_threshold": target.iso_threshold,
+                    }
+                )
+
+            captured_settings.clear()
+            captured_settings.update(to_jsonable(raw))
+
+            if widget.call_button is not None:
+                widget.call_button.text = "Settings Captured ✓"
+            if widget.call_button is not None:
+                widget.call_button.native.setEnabled(True)
+
+        capture_widget = magicgui(
+            _capture_settings, call_button="Capture View Settings"
+        )
+        widget_list.insert(0, capture_widget)
+
+        if widget.call_button is not None:
+            widget.call_button.native.setEnabled(False)
+
     for field_name, native_calls in operation_spec.native_options.items():
         field_widget = getattr(widget, field_name)
         for method_name, arg in native_calls.items():
@@ -325,7 +399,7 @@ def make_operation_widget(
         connect_layer_autoselect(viewer, widget, array_name, autoselect=False)
 
     container: CollapsibleContainer = CollapsibleContainer(
-        widgets=[widget], labels=False
+        widgets=widget_list, labels=False
     )
     container.text = operation_spec.display_name
     container.native.setObjectName("Collapsible")

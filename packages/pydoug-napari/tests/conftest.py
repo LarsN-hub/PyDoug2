@@ -2,6 +2,8 @@
 Shared fixtures for pydoug-napari tests.
 """
 
+from typing import Any
+
 import numpy as np
 import pytest
 from matplotlib.figure import Figure
@@ -145,6 +147,47 @@ def registered_label_count():
 
     yield "_label_count"
     unregister_operation("_label_count")
+
+
+@pytest.fixture
+def registered_capture_screen_image():
+    """
+    Fixture to create a registered "capture screen image" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Capture Screen Image",
+        captures_viewer_settings=True,
+    )
+    def _capture_screen_image(
+        imarray: np.ndarray, Settings: dict[str, Any]
+    ) -> np.ndarray:
+        return imarray  # pragma: no cover
+
+    yield "_capture_screen_image"
+    unregister_operation("_capture_screen_image")
+
+
+@pytest.fixture
+def registered_capture_screen_labels():
+    """
+    Fixture to create a registered "capture screen labels" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Capture Screen Labels",
+        captures_viewer_settings=True,
+        layer_type="labels",
+    )
+    def _capture_screen_labels(
+        imarray: np.ndarray, Settings: dict[str, Any]
+    ) -> np.ndarray:
+        return imarray  # pragma: no cover
+
+    yield "_capture_screen_labels"
+    unregister_operation("_capture_screen_labels")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)

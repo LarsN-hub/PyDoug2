@@ -9,6 +9,7 @@ from napari.viewer import Viewer
 from qtpy.QtWidgets import QMessageBox, QTabWidget
 
 import pydoug_core  # noqa: F401 — imported for its registration side effect
+import pydoug_napari._operations  # noqa: F401 — imported for its registration side effect
 from pydoug_core.batch.recorder import RecordedStep, Recorder
 from pydoug_core.registry import list_operations
 from pydoug_napari._widgets.batch_widget import make_batch_widget
