@@ -2,6 +2,7 @@
 Tests for PyDoug's napari plugin operation_widget module.
 """
 
+import json
 from time import sleep
 
 import numpy as np
@@ -402,3 +403,58 @@ def test_select_last_respects_field_type(
     subwidget.layer.value = labels_layer
     viewer.layers.remove(image_layer)  # type: ignore
     assert subwidget.layer.value is labels_layer
+
+
+def test_captures_viewer_settings(
+    make_napari_viewer,
+    qtbot,
+    sample_2dgray_array,
+    registered_capture_screen_image,
+    registered_capture_screen_labels,
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    imlayer: Image | list[Image] = viewer.add_image(sample_2dgray_array, name="test")
+    lablayer: Image | list[Image] = viewer.add_labels(  # type: ignore
+        sample_2dgray_array.astype(np.int32), name="test"
+    )
+    spec1: OperationSpec = get_operation(registered_capture_screen_image)
+    spec2: OperationSpec = get_operation(registered_capture_screen_labels)
+    recorder: Recorder = Recorder()
+    container1: CollapsibleContainer = make_operation_widget(
+        spec1, viewer, recorder, ResultsLog()
+    )
+    container2: CollapsibleContainer = make_operation_widget(
+        spec2, viewer, recorder, ResultsLog()
+    )
+    qtbot.addWidget(container1.native)
+
+    capture_widget1: FunctionGui | None = container1.get_widget("_capture_settings")
+    run_widget1: FunctionGui | None = container1.get_widget("_dispatch")
+    assert capture_widget1 is not None and run_widget1 is not None
+    assert (
+        capture_widget1.call_button is not None and run_widget1.call_button is not None
+    )
+    run_widget1.layer.value = imlayer
+    assert not run_widget1.call_button.native.isEnabled()
+    qtbot.mouseClick(capture_widget1.call_button.native, Qt.MouseButton.LeftButton)
+    assert run_widget1.call_button.native.isEnabled()
+    qtbot.mouseClick(run_widget1.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 3, timeout=5000)
+    assert len(recorder.steps) == 1
+    json.dumps(recorder.steps[0].params)
+
+    capture_widget2: FunctionGui | None = container2.get_widget("_capture_settings")
+    run_widget2: FunctionGui | None = container2.get_widget("_dispatch")
+    assert capture_widget2 is not None and run_widget2 is not None
+    assert (
+        capture_widget2.call_button is not None and run_widget2.call_button is not None
+    )
+    run_widget2.layer.value = lablayer
+    assert not run_widget2.call_button.native.isEnabled()
+    qtbot.mouseClick(capture_widget2.call_button.native, Qt.MouseButton.LeftButton)
+    assert run_widget2.call_button.native.isEnabled()
+    qtbot.mouseClick(run_widget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 4, timeout=5000)
+    assert len(recorder.steps) == 2
+    json.dumps(recorder.steps[1].params)

@@ -50,6 +50,8 @@ class OperationSpec:
         Whether or not to allow a live preview of the operation.
     layer_type: Literal["image", "labels"]
         The layer type to be added if a numpy array is produced.
+    captures_viewer_settings: bool = False
+        Whether or not the operation should capture viewer sttings (for screenshots).
     signature: inspect.Signature
         The function's signature.
     """
@@ -71,6 +73,7 @@ class OperationSpec:
     recordable: bool = True
     live_preview: bool = False
     layer_type: Literal["image", "labels"] = "image"
+    captures_viewer_settings: bool = False
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -95,6 +98,7 @@ def register_operation(
     recordable: bool = True,
     live_preview: bool = False,
     layer_type: Literal["image", "labels"] = "image",
+    captures_viewer_settings: bool = False,
     allow_in_place: bool = False,
 ) -> Callable:
     """
@@ -133,6 +137,8 @@ def register_operation(
         Whether or not to allow a live preview of the operation.
     layer_type: Literal["image", "labels"]
         The layer type to be added if a numpy array is produced.
+    captures_viewer_settings: bool = False
+        Whether or not the operation should capture viewer sttings (for screenshots).
 
     Returns
     -------
@@ -216,6 +222,7 @@ def register_operation(
             recordable=recordable,
             live_preview=live_preview,
             layer_type=layer_type,
+            captures_viewer_settings=captures_viewer_settings,
         )
         return func
 
