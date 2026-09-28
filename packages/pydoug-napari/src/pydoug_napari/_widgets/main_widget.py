@@ -167,9 +167,9 @@ class MainWidget(QTabWidget):
         if "denoise" in categories:
             sorted_categories.append("denoise")
             categories.remove("denoise")
-        # if "filters" in categories:
-        #    sorted_categories.append("filters")
-        #    categories.remove("filters")
+        if "filters" in categories:
+            sorted_categories.append("filters")
+            categories.remove("filters")
         # if "features" in categories:
         #    sorted_categories.append("features")
         #    categories.remove("features")
