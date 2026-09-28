@@ -23,7 +23,7 @@ dependencies = [
     "magic-class",
     "magicgui",
     "PySide6",
-    "napari",
+    "napari>=0.9.0",
     "qtpy",
 ]
 

@@ -61,11 +61,11 @@ def main(config_path: str) -> None:  # pragma: no cover
                 projection_mode=settings["projection_mode"],
                 rendering=settings["rendering"],
             )
-        viewer.camera.angles = settings["camera_angles"]
-        viewer.camera.zoom = settings["camera_zoom"]
-        viewer.camera.center = settings["camera_center"]
-        viewer.camera.perspective = settings["camera_perspective"]
-        viewer.camera.orientation = tuple(settings["camera_orientation"])
+        viewer.scene.camera.angles = settings["camera_angles"]
+        viewer.scene.camera.zoom = settings["camera_zoom"]
+        viewer.scene.camera.center = settings["camera_center"]
+        viewer.scene.camera.perspective = settings["camera_perspective"]
+        viewer.scene.camera.orientation = tuple(settings["camera_orientation"])
         viewer.dims.ndisplay = settings["dims_ndisplay"]
 
         qt_window = viewer.window._qt_window
