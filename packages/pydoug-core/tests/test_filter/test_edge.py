@@ -329,3 +329,66 @@ def test_gradient_scharr(sample_arrays) -> None:
     assert result14.shape == sample_arrays["2drgb"].shape
     assert result15.shape == sample_arrays["3dgray"].shape
     assert result16.shape == sample_arrays["3drgb"].shape
+
+
+def test_gradient_local(sample_arrays) -> None:
+
+    result1: np.ndarray = edge.gradient(sample_arrays["2dgray"], Method="Local")
+    result2: np.ndarray = edge.gradient(sample_arrays["2drgb"], Method="Local")
+    result3: np.ndarray = edge.gradient(sample_arrays["3dgray"], Method="Local")
+    result4: np.ndarray = edge.gradient(sample_arrays["3drgb"], Method="Local")
+    assert result1.shape == sample_arrays["2dgray"].shape
+    assert result2.shape == sample_arrays["2drgb"].shape
+    assert result3.shape == sample_arrays["3dgray"].shape
+    assert result4.shape == sample_arrays["3drgb"].shape
+
+    result5: np.ndarray = edge.gradient(
+        sample_arrays["2dgray"], Method="Local", Horizontal=True
+    )
+    result6: np.ndarray = edge.gradient(
+        sample_arrays["2drgb"], Method="Local", Horizontal=True
+    )
+    result7: np.ndarray = edge.gradient(
+        sample_arrays["3dgray"], Method="Local", Horizontal=True
+    )
+    result8: np.ndarray = edge.gradient(
+        sample_arrays["3drgb"], Method="Local", Horizontal=True
+    )
+    assert result5.shape == sample_arrays["2dgray"].shape
+    assert result6.shape == sample_arrays["2drgb"].shape
+    assert result7.shape == sample_arrays["3dgray"].shape
+    assert result8.shape == sample_arrays["3drgb"].shape
+
+    result9: np.ndarray = edge.gradient(
+        sample_arrays["2dgray"], Method="Local", Vertical=True
+    )
+    result10: np.ndarray = edge.gradient(
+        sample_arrays["2drgb"], Method="Local", Vertical=True
+    )
+    result11: np.ndarray = edge.gradient(
+        sample_arrays["3dgray"], Method="Local", Vertical=True
+    )
+    result12: np.ndarray = edge.gradient(
+        sample_arrays["3drgb"], Method="Local", Vertical=True
+    )
+    assert result9.shape == sample_arrays["2dgray"].shape
+    assert result10.shape == sample_arrays["2drgb"].shape
+    assert result11.shape == sample_arrays["3dgray"].shape
+    assert result12.shape == sample_arrays["3drgb"].shape
+
+    result13: np.ndarray = edge.gradient(
+        sample_arrays["2dgray"], Method="Local", Perform_Slicewise=True
+    )
+    result14: np.ndarray = edge.gradient(
+        sample_arrays["2drgb"], Method="Local", Perform_Slicewise=True
+    )
+    result15: np.ndarray = edge.gradient(
+        sample_arrays["3dgray"], Method="Local", Perform_Slicewise=True
+    )
+    result16: np.ndarray = edge.gradient(
+        sample_arrays["3drgb"], Method="Local", Perform_Slicewise=True
+    )
+    assert result13.shape == sample_arrays["2dgray"].shape
+    assert result14.shape == sample_arrays["2drgb"].shape
+    assert result15.shape == sample_arrays["3dgray"].shape
+    assert result16.shape == sample_arrays["3drgb"].shape

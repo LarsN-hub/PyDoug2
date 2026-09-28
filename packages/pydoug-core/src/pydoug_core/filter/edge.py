@@ -23,6 +23,8 @@ from skimage.filters import (
     sobel_h,
     sobel_v,
 )
+from skimage.filters.rank import gradient as rank_grad
+from skimage.morphology import ball, disk
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -32,9 +34,10 @@ from pydoug_core.registry import register_operation
 def gradient(
     imarray: np.ndarray,
     Method: Literal[
-        "Farid", "Laplace", "Prewitt", "Roberts", "Scharr", "Sobel"
+        "Farid", "Laplace", "Local", "Prewitt", "Roberts", "Scharr", "Sobel"
     ] = "Sobel",
     K_Size: Annotated[int, {"min": 1}] = 3,
+    Radius: Annotated[int, {"min": 1}] = 3,
     Horizontal: bool = False,
     Vertical: bool = False,
     Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"] = "Nearest",
@@ -44,7 +47,8 @@ def gradient(
     """
     Filter an image with a gradient response filter. Convenience wrapper around the
     gradient filters in scikit-image's filters package, including farid, laplace,
-    prewitt, roberts, scharr, and sobel:
+    prewitt, roberts, scharr, and sobel, as well as the (local) gradient function in
+    scikit-image's filters.rank package:
     https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.farid
     https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.farid_h
     https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.farid_v
@@ -61,17 +65,23 @@ def gradient(
     https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.sobel
     https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.sobel_h
     https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.sobel_v
+    https://scikit-image.org/docs/stable/api/skimage.filters.rank.html#skimage.filters.rank.gradient
 
     Parameters
     ----------
     imarray: np.ndarray
         The image to be filtered.
-    Method: Literal["Farid", "Laplace", "Prewitt", "Roberts", "Scharr", "Sobel"]
+    Method: Literal[
+        "Farid", "Laplace", "Local", "Prewitt", "Roberts", "Scharr", "Sobel"
+    ]
         The method to use to calculate the gradient response. "Roberts" will
-        automatically be performed slicewise if the input image is 3D.
+        automatically be performed slicewise if the input image is 3D. "Local" is the
+        only one that requiers "Radius".
         Default is "Sobel".
     K_Size: int
         The k size if "Method" is "Laplace". Ignored for all other methods.
+    Radius: int
+        The size of the local radius if "Method" is "Local". Ignored for all others.
     Horizontal: bool
         Whether or not to apply the filter horizontally only. "Vertical" must be False
         or this will be ignored. Forces slicewise performance on 3D images and channel-
@@ -103,7 +113,7 @@ def gradient(
     """
 
     def _grad(
-        imarray, Method, K_Size, Horizontal, Vertical, Edge_Mode, Constant_Value
+        imarray, Method, K_Size, Radius, Horizontal, Vertical, Edge_Mode, Constant_Value
     ) -> np.ndarray:
 
         if Method == "Farid":
@@ -125,6 +135,25 @@ def gradient(
 
         elif Method == "Laplace":
             return laplace(imarray, K_Size)
+
+        elif Method == "Local":
+            if util.is3d(imarray):
+                fp = ball(Radius)
+                if util.isrgb(imarray):
+                    grad_array: np.ndarray = np.empty(imarray.shape)
+                    for cindex in range(0, imarray.shape[-1]):
+                        grad_array[:, :, :, cindex] = rank_grad(
+                            imarray[:, :, :, cindex], fp
+                        )
+                    return grad_array
+            else:
+                fp = disk(Radius)
+                if util.isrgb(imarray):
+                    grad_array: np.ndarray = np.empty(imarray.shape)
+                    for cindex in range(0, imarray.shape[-1]):
+                        grad_array[:, :, cindex] = rank_grad(imarray[:, :, cindex], fp)
+                    return grad_array
+            return rank_grad(imarray, fp)
 
         elif Method == "Prewitt":
             if Horizontal and not Vertical:
@@ -217,6 +246,7 @@ def gradient(
                 imarray[index],
                 Method,
                 K_Size,
+                Radius,
                 Horizontal,
                 Vertical,
                 Edge_Mode,
@@ -228,6 +258,7 @@ def gradient(
             imarray,
             Method,
             K_Size,
+            Radius,
             Horizontal,
             Vertical,
             Edge_Mode,
