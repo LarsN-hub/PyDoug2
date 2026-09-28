@@ -49,16 +49,20 @@ def _render_screenshot_impl(
                 }
             )
         )
-        result = subprocess.run(
-            [
+        if getattr(sys, "frozen", False):
+            command = [  # pragma: no cover
+                sys.executable,  # pragma: no cover
+                "--render-screenshot",  # pragma: no cover
+                str(config_path),  # pragma: no cover
+            ]  # pragma: no cover
+        else:
+            command = [
                 sys.executable,
                 "-m",
                 "pydoug_napari._operations._screenshot_subprocess",
                 str(config_path),
-            ],
-            capture_output=True,
-            text=True,
-        )
+            ]
+        result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(  # pragma: no cover
                 f"Screenshot rendering failed:\n{result.stderr}"  # pragma: no cover
