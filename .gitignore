@@ -1,3 +1,5 @@
+build/
+dist/
 .coverage
 
 packages/pydoug-core/src/pydoug_core/__pycache__/
@@ -27,3 +29,5 @@ packages/pydoug-napari/src/pydoug_napari/_widgets/__pycache__
 packages/pydoug-napari/tests/__pycache__
 packages/pydoug-napari/tests/test_operations/__pycache__/
 packages/pydoug-napari/tests/test_widgets/__pycache__
+
+packages/pydoug-standalone/src/pydoug_standalone/__pycache__/
