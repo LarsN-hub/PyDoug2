@@ -3,6 +3,19 @@ Main entry point for PyDoug standalone executable app
 """
 
 import sys
+from pathlib import Path
+
+
+def _get_icon_path() -> Path:
+    """
+    Resolve the path to the app icon.
+    """
+
+    if getattr(sys, "frozen", False):
+        base_dir: Path = Path(sys._MEIPASS)  # type: ignore
+    else:
+        base_dir: Path = Path(__file__).resolve().parents[3]
+    return base_dir / "assets" / "images" / "logo.png"
 
 
 def main() -> None:
@@ -17,10 +30,22 @@ def main() -> None:
         return
 
     import napari
+    from qtpy.QtGui import QIcon
+    from qtpy.QtWidgets import QApplication
 
     from pydoug_napari._widgets.main_widget import MainWidget
 
     viewer: napari.Viewer = napari.Viewer()
+
+    try:
+        app = QApplication.instance()
+        if app is not None:
+            icon_path = _get_icon_path()
+            if icon_path.exists():
+                app.setWindowIcon(QIcon(str(icon_path)))  # type: ignore
+    except Exception as exc:
+        print(f"could not set window icon: {exc}", file=sys.stderr)
+
     viewer.window.add_dock_widget(
         MainWidget(viewer), name="PyDoug Image Processing Toolbox", area="right"
     )

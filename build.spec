@@ -1,6 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 from importlib.util import find_spec
+from pathlib import Path
+
+assert Path("packages/pydoug-core/src/pydoug_core/_manifest.py").exists()
+assert Path("packages/pydoug-napari/src/pydoug_napari/_operations/_manifest.py").exists()
 
 from PyInstaller.utils.hooks import (
     collect_all,
@@ -38,6 +42,7 @@ for pkg in ("pydoug_core", "pydoug_napari", "pydoug_standalone"):
     hiddenimports += collect_submodules(pkg)
     datas += collect_data_files(pkg)
 datas += copy_metadata("pydoug-core") + copy_metadata("pydoug-napari")
+datas += [('assets/images/logo.png', 'assets/images')]
 
 a = Analysis(
     ['packages/pydoug-standalone/src/pydoug_standalone/__main__.py'],
@@ -49,7 +54,7 @@ a = Analysis(
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=[],
+    hookspath = ["./packages/pydoug-standalone/src/pydoug_standalone/hooks"],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
