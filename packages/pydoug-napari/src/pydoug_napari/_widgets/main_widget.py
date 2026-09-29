@@ -164,9 +164,9 @@ class MainWidget(QTabWidget):
         if "transformations" in categories:
             sorted_categories.append("transformations")
             categories.remove("transformations")
-        if "mask" in categories:
-            sorted_categories.append("mask")
-            categories.remove("mask")
+        if "arithmetic" in categories:
+            sorted_categories.append("arithmetic")
+            categories.remove("arithmetic")
         if "histogram" in categories:
             sorted_categories.append("histogram")
             categories.remove("histogram")

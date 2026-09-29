@@ -1,10 +1,10 @@
 """
-Tests for PyDoug's mask.logic module.
+Tests for PyDoug's arithmetic.logic module.
 """
 
 import numpy as np
 
-from pydoug_core.mask import logic
+from pydoug_core.arithmetic import logic
 
 
 def test_apply_mask(sample_arrays, sample_masks) -> None:
@@ -118,3 +118,18 @@ def test_apply_mask(sample_arrays, sample_masks) -> None:
     assert np.all(result26 == gray3dcopy)
     assert np.all(result27 == rgb2dcopy)
     assert np.all(result28 == rgb3dcopy)
+
+
+def test_mask_logic() -> None:
+
+    first_array: np.ndarray = np.zeros((10, 10), np.bool)
+    first_array[2:7, 2:7] = True
+    second_array: np.ndarray = np.zeros((10, 10), np.bool)
+    second_array[4:9, 4:9] = True
+    result1: np.ndarray = logic.mask_logic(first_array, second_array, "Intersect")
+    result2: np.ndarray = logic.mask_logic(first_array, second_array, "Subtract")
+    result3: np.ndarray = logic.mask_logic(first_array, second_array)
+    assert np.all(result1[4:7, 4:7])
+    assert np.all(result2[2:4, 2:4])
+    assert np.all(result3[2:7, 2:7])
+    assert np.all(result3[4:9, 4:9])
