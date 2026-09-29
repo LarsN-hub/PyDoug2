@@ -2,6 +2,7 @@ build/
 dist/
 .coverage
 
+packages/pydoug-core/src/pydoug_core/_manifest.py
 packages/pydoug-core/src/pydoug_core/__pycache__/
 packages/pydoug-core/src/pydoug_core/analyze/__pycache__/
 packages/pydoug-core/src/pydoug_core/batch/__pycache__/
@@ -26,6 +27,7 @@ packages/pydoug-core/tests/test_trans/__pycache__/
 packages/pydoug-core/tests/test_user/__pycache__/
 
 packages/pydoug-napari/src/pydoug_napari/__pycache__
+packages/pydoug-napari/src/pydoug_napari/_operations/_manifest.py
 packages/pydoug-napari/src/pydoug_napari/_operations/__pycache__/
 packages/pydoug-napari/src/pydoug_napari/_widgets/__pycache__
 packages/pydoug-napari/tests/__pycache__
@@ -33,3 +35,6 @@ packages/pydoug-napari/tests/test_operations/__pycache__/
 packages/pydoug-napari/tests/test_widgets/__pycache__
 
 packages/pydoug-standalone/src/pydoug_standalone/__pycache__/
+packages/pydoug-standalone/src/pydoug_standalone/hooks/__pycache__/
+
+scripts/__pycache__/
