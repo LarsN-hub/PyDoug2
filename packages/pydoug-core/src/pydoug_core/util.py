@@ -400,11 +400,11 @@ def prep_mask(imarray: np.ndarray, maskarray: np.ndarray) -> np.ndarray:
             return np.astype(maskarray[0], np.bool)
         if maskarray.ndim == 4:
             if imarray.ndim == 3:
-                return np.astype(maskarray[:, :, :, 0], np.bool)
+                return np.astype(maskarray[..., 0], np.bool)
             return np.astype(maskarray[0, :, :, 0], np.bool)
         if maskarray.shape[0:2] == imarray.shape:
-            return np.astype(maskarray[:, :, 0], np.bool)
-        return np.astype(maskarray[0, :, :], np.bool)
+            return np.astype(maskarray[..., 0], np.bool)
+        return np.astype(maskarray[0, ...], np.bool)
 
     if maskarray.shape != imarray.shape:
         if maskarray.ndim == 3:
@@ -413,7 +413,7 @@ def prep_mask(imarray: np.ndarray, maskarray: np.ndarray) -> np.ndarray:
                     np.stack([maskarray[0]] * imarray.shape[2], 2), np.bool
                 )
             return np.astype(
-                np.stack([maskarray[:, :, 0]] * imarray.shape[0], 0), np.bool
+                np.stack([maskarray[..., 0]] * imarray.shape[0], 0), np.bool
             )
 
     return np.astype(maskarray, np.bool)

@@ -1,0 +1,3 @@
+"""
+Crop images with masks.
+"""

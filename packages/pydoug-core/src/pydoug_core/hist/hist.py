@@ -182,6 +182,8 @@ def saturate(
     """
     Saturate an image by setting values outside the given range to the range's bounds.
     Normalizing after saturation enhances the contrast of an image.
+    Convenience wrapper around numpy's clip:
+    https://numpy.org/doc/stable/reference/generated/numpy.clip.html#numpy.clip
 
     Parameters
     ----------
@@ -203,12 +205,10 @@ def saturate(
     if imarray.dtype == np.bool:
         return imarray
 
-    satarray: np.ndarray = np.copy(imarray)
-    satarray[satarray >= max(Bounds)] = max(Bounds)
-    satarray[satarray <= min(Bounds)] = min(Bounds)
-
+    satarray: np.ndarray = np.clip(imarray, min(Bounds), max(Bounds))
     if Normalize_to_Dtype:
         satarray = normalize(satarray)
+
     return satarray
 
 

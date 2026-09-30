@@ -161,6 +161,9 @@ class MainWidget(QTabWidget):
         """
 
         sorted_categories: list[str] = []
+        if "manipulate" in categories:
+            sorted_categories.append("manipulate")
+            categories.remove("manipulate")
         if "transformations" in categories:
             sorted_categories.append("transformations")
             categories.remove("transformations")

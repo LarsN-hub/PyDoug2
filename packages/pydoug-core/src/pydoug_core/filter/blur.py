@@ -95,46 +95,31 @@ def smooth(
             if util.isrgb(imarray):
                 smooth_array: np.ndarray = np.empty(imarray.shape, imarray.dtype)
                 for cindex in range(0, imarray.shape[-1]):
-                    if util.is3d(imarray):
-                        smooth_array[:, :, :, cindex] = median(
-                            imarray[:, :, :, cindex],
-                            fp,
-                            mode=Edge_Mode.lower(),
-                            cval=Constant_Value,
-                        )
-                    else:
-                        smooth_array[:, :, cindex] = median(
-                            imarray[:, :, cindex],
-                            fp,
-                            mode=Edge_Mode.lower(),
-                            cval=Constant_Value,
-                        )
+                    smooth_array[..., cindex] = median(
+                        imarray[..., cindex],
+                        fp,
+                        mode=Edge_Mode.lower(),
+                        cval=Constant_Value,
+                    )
                 return smooth_array
             return median(imarray, fp, mode=Edge_Mode.lower(), cval=Constant_Value)
+
         elif Method == "Mean":
             if util.isrgb(imarray):
                 smooth_array: np.ndarray = np.empty(imarray.shape, imarray.dtype)
                 for cindex in range(0, imarray.shape[-1]):
-                    if util.is3d(imarray):
-                        smooth_array[:, :, :, cindex] = mean(
-                            imarray[:, :, :, cindex], fp
-                        )
-                    else:
-                        smooth_array[:, :, cindex] = mean(imarray[:, :, cindex], fp)
+                    smooth_array[..., cindex] = mean(imarray[..., cindex], fp)
                 return smooth_array
             return mean(imarray, fp)
+
         elif Method == "Mode":
             if util.isrgb(imarray):
                 smooth_array: np.ndarray = np.empty(imarray.shape, imarray.dtype)
                 for cindex in range(0, imarray.shape[-1]):
-                    if util.is3d(imarray):
-                        smooth_array[:, :, :, cindex] = modal(
-                            imarray[:, :, :, cindex], fp
-                        )
-                    else:
-                        smooth_array[:, :, cindex] = modal(imarray[:, :, cindex], fp)
+                    smooth_array[..., cindex] = modal(imarray[..., cindex], fp)
                 return smooth_array
             return modal(imarray, fp)
+
         else:
             smooth_array: np.ndarray = gaussian(
                 imarray,
