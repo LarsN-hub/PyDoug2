@@ -9,11 +9,11 @@ import numpy as np
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["apply_mask", "mask_logic"]
+__all__ = ["apply_mask", "logic"]
 
 
 @register_operation(
-    category="arithmetic",
+    category="math",
     display_name="Apply Mask",
     array_params=("Mask",),
     allow_in_place=True,
@@ -73,11 +73,11 @@ def apply_mask(
 
 
 @register_operation(
-    category="arithmetic",
+    category="math",
     display_name="Logic",
     array_params=("Logic_Layer",),
 )
-def mask_logic(
+def logic(
     imarray: np.ndarray,
     Logic_Layer: np.ndarray,
     Method: Literal["Intersect", "Subtract", "Union"] = "Union",
