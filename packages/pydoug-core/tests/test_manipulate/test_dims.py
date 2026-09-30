@@ -1,22 +1,22 @@
 """
-Tests for PyDoug's manipulate.trimpad module.
+Tests for PyDoug's manipulate.dims module.
 """
 
 import numpy as np
 
-from pydoug_core.manipulate import trimpad
+from pydoug_core.manipulate import dims
 
 
 def test_refine_pad_bounds(sample_arrays) -> None:
 
-    result1: tuple = trimpad._refine_pad_bounds(
+    result1: tuple = dims._refine_pad_bounds(
         sample_arrays["2dgray"], True, (0, 0), (0, 0), (0, 0)
     )
     assert result1[0] == (0, 0)
     assert result1[1] == (0, 0)
     assert result1[2] == (0, 0)
 
-    result2: tuple = trimpad._refine_pad_bounds(
+    result2: tuple = dims._refine_pad_bounds(
         sample_arrays["2dgray"],
         True,
         (2, 2),
@@ -27,13 +27,13 @@ def test_refine_pad_bounds(sample_arrays) -> None:
     assert result2[1] == (3, 4)
     assert result2[2] == (-1, "test")
 
-    result3: tuple = trimpad._refine_pad_bounds(
+    result3: tuple = dims._refine_pad_bounds(
         sample_arrays["2dgray"], True, (-1, -1), (-1, -1), (0, 0)
     )
     assert result3[0] == (0, 0)
     assert result3[1] == (0, 0)
 
-    result4: tuple = trimpad._refine_pad_bounds(
+    result4: tuple = dims._refine_pad_bounds(
         sample_arrays["2dgray"],
         False,
         (2, 2),
@@ -44,10 +44,10 @@ def test_refine_pad_bounds(sample_arrays) -> None:
     assert result4[1] == (1, 1)
     assert result4[2] == (0, 0)
 
-    result5: tuple = trimpad._refine_pad_bounds(
+    result5: tuple = dims._refine_pad_bounds(
         sample_arrays["3dgray"], True, (0, 0), (2, 2), (4, 4)
     )
-    result6: tuple = trimpad._refine_pad_bounds(
+    result6: tuple = dims._refine_pad_bounds(
         sample_arrays["3dgray"],
         False,
         (0, 0),
@@ -56,7 +56,7 @@ def test_refine_pad_bounds(sample_arrays) -> None:
     )
     assert result5 == result6
 
-    result7: tuple = trimpad._refine_pad_bounds(
+    result7: tuple = dims._refine_pad_bounds(
         sample_arrays["3drgb"], True, (0, 0), (2, 2), (4, 4)
     )
     assert result7 == ((0, 0), (2, 2), (4, 4))
@@ -64,21 +64,21 @@ def test_refine_pad_bounds(sample_arrays) -> None:
 
 def test_refine_trim_bounds(sample_arrays) -> None:
 
-    result1: tuple = trimpad._refine_trim_bounds(
+    result1: tuple = dims._refine_trim_bounds(
         sample_arrays["2dgray"], True, (0, 0), (0, 0), (0, 0)
     )
     assert result1[0] == (0, sample_arrays["2dgray"].shape[1])
     assert result1[1] == (0, sample_arrays["2dgray"].shape[0])
     assert result1[2] == (0, 0)
 
-    result2: tuple = trimpad._refine_trim_bounds(
+    result2: tuple = dims._refine_trim_bounds(
         sample_arrays["2dgray"], True, (2, 2), (3, 4), (-1, 11)
     )
     assert result2[0] == (2, 8)
     assert result2[1] == (3, 6)
     assert result2[2] == (-1, 11)
 
-    result3: tuple = trimpad._refine_trim_bounds(
+    result3: tuple = dims._refine_trim_bounds(
         sample_arrays["2dgray"],
         True,
         (-1, -1),
@@ -89,7 +89,7 @@ def test_refine_trim_bounds(sample_arrays) -> None:
     assert result3[1] == (4, sample_arrays["2dgray"].shape[0] - 5)
     assert result3[2] == ("test", "test")
 
-    result4: tuple = trimpad._refine_trim_bounds(
+    result4: tuple = dims._refine_trim_bounds(
         sample_arrays["2dgray"],
         True,
         (0, sample_arrays["2dgray"].shape[1]),
@@ -105,14 +105,14 @@ def test_refine_trim_bounds(sample_arrays) -> None:
         sample_arrays["2dgray"].shape[0] - (sample_arrays["2dgray"].shape[0] - 6),
     )
 
-    result5: tuple = trimpad._refine_trim_bounds(
+    result5: tuple = dims._refine_trim_bounds(
         sample_arrays["3dgray"], True, (2, 2), (2, 2), (2, 2)
     )
     assert result5[0] == (2, sample_arrays["3dgray"].shape[2] - 2)
     assert result5[1] == (2, sample_arrays["3dgray"].shape[1] - 2)
     assert result5[2] == (2, sample_arrays["3dgray"].shape[0] - 2)
 
-    result6: tuple = trimpad._refine_trim_bounds(
+    result6: tuple = dims._refine_trim_bounds(
         sample_arrays["2dgray"],
         False,
         (0, 0),
@@ -123,7 +123,7 @@ def test_refine_trim_bounds(sample_arrays) -> None:
     assert result6[1] == (0, sample_arrays["2dgray"].shape[0])
     assert result6[2] == (0, 0)
 
-    result7: tuple = trimpad._refine_trim_bounds(
+    result7: tuple = dims._refine_trim_bounds(
         sample_arrays["3dgray"],
         False,
         (0, 0),
@@ -134,10 +134,10 @@ def test_refine_trim_bounds(sample_arrays) -> None:
     assert result7[1] == (0, sample_arrays["3dgray"].shape[1])
     assert result7[2] == (0, sample_arrays["3dgray"].shape[0])
 
-    result8: tuple = trimpad._refine_trim_bounds(
+    result8: tuple = dims._refine_trim_bounds(
         sample_arrays["3dgray"], True, (1, 1), (1, 1), (1, 1)
     )
-    result9: tuple = trimpad._refine_trim_bounds(
+    result9: tuple = dims._refine_trim_bounds(
         sample_arrays["3dgray"],
         False,
         (0, sample_arrays["3dgray"].shape[2] - 2),
@@ -146,7 +146,7 @@ def test_refine_trim_bounds(sample_arrays) -> None:
     )
     assert result8 == result9
 
-    result10: tuple = trimpad._refine_trim_bounds(
+    result10: tuple = dims._refine_trim_bounds(
         sample_arrays["3drgb"], True, (0, 0), (4, 4), (2, 2)
     )
     assert result10 == (
@@ -158,20 +158,20 @@ def test_refine_trim_bounds(sample_arrays) -> None:
 
 def test_trim_pad(sample_arrays) -> None:
 
-    result1: np.ndarray = trimpad.trim_pad(
+    result1: np.ndarray = dims.trim_pad(
         sample_arrays["2dgray"], "Trim", True, (0, 0), (0, 0), (0, 0)
     )
     assert np.all(result1 == sample_arrays["2dgray"])
 
-    result2: np.ndarray = trimpad.trim_pad(
+    result2: np.ndarray = dims.trim_pad(
         sample_arrays["3dgray"], "Trim", True, (0, 0), (0, 0), (0, 0)
     )
     assert np.all(result2 == sample_arrays["3dgray"])
 
-    result3: np.ndarray = trimpad.trim_pad(
+    result3: np.ndarray = dims.trim_pad(
         sample_arrays["2dgray"], "Trim", True, (2, 2), (4, 4), (2, 2)
     )
-    result4: np.ndarray = trimpad.trim_pad(
+    result4: np.ndarray = dims.trim_pad(
         sample_arrays["2dgray"],
         "Trim",
         False,
@@ -181,10 +181,10 @@ def test_trim_pad(sample_arrays) -> None:
     )
     assert np.all(result3 == result4)
 
-    result5: np.ndarray = trimpad.trim_pad(
+    result5: np.ndarray = dims.trim_pad(
         sample_arrays["3dgray"], "Trim", True, (2, 2), (4, 4), (2, 2)
     )
-    result6: np.ndarray = trimpad.trim_pad(
+    result6: np.ndarray = dims.trim_pad(
         sample_arrays["3dgray"],
         "Trim",
         False,
@@ -194,20 +194,20 @@ def test_trim_pad(sample_arrays) -> None:
     )
     assert np.all(result5 == result6)
 
-    result7: np.ndarray = trimpad.trim_pad(
+    result7: np.ndarray = dims.trim_pad(
         sample_arrays["2dgray"], "Pad", True, (0, 0), (0, 0), (0, 0)
     )
     assert np.all(result7 == sample_arrays["2dgray"])
 
-    result8: np.ndarray = trimpad.trim_pad(
+    result8: np.ndarray = dims.trim_pad(
         sample_arrays["3dgray"], "Pad", True, (0, 0), (0, 0), (0, 0)
     )
     assert np.all(result8 == sample_arrays["3dgray"])
 
-    result9: np.ndarray = trimpad.trim_pad(
+    result9: np.ndarray = dims.trim_pad(
         sample_arrays["2dgray"], "Pad", True, (2, 2), (4, 4), (2, 2)
     )
-    result10: np.ndarray = trimpad.trim_pad(
+    result10: np.ndarray = dims.trim_pad(
         sample_arrays["2dgray"],
         "Pad",
         False,
@@ -217,10 +217,10 @@ def test_trim_pad(sample_arrays) -> None:
     )
     assert np.all(result9 == result10)
 
-    result11: np.ndarray = trimpad.trim_pad(
+    result11: np.ndarray = dims.trim_pad(
         sample_arrays["3dgray"], "Pad", True, (2, 2), (4, 4), (2, 2)
     )
-    result12: np.ndarray = trimpad.trim_pad(
+    result12: np.ndarray = dims.trim_pad(
         sample_arrays["3dgray"],
         "Pad",
         False,
@@ -231,7 +231,45 @@ def test_trim_pad(sample_arrays) -> None:
     assert np.all(result11 == result12)
 
     in_place_array: np.ndarray = np.copy(sample_arrays["2dgray"])
-    result13: np.ndarray = trimpad.trim_pad(
+    result13: np.ndarray = dims.trim_pad(
         in_place_array, "Pad", True, (2, 2), (4, 4), (0, 0), In_Place=True
     )
     assert result13.shape == (18, 14)
+
+    result14: np.ndarray = dims.trim_pad(
+        sample_arrays["3dgray"], "Trim", True, (0, 0), (0, 0), (4, 0)
+    )
+    assert result14.ndim == 2
+    assert result14.shape == sample_arrays["2dgray"].shape
+
+
+def test_make_3d(sample_arrays) -> None:
+
+    result1: np.ndarray = dims.make_3d(sample_arrays["2dgray"])
+    result2: np.ndarray = dims.make_3d(sample_arrays["3dgray"])
+    result3: np.ndarray = dims.make_3d(sample_arrays["2drgb"])
+    result4: np.ndarray = dims.make_3d(sample_arrays["3drgb"])
+    assert result1.shape == (10, 10, 10)
+    assert np.all(result2 == sample_arrays["3dgray"])
+    assert result3.shape == (10, 10, 10, 3)
+    assert np.all(result4 == sample_arrays["3drgb"])
+
+
+def test_join(sample_arrays) -> None:
+
+    result1: np.ndarray = dims.join(sample_arrays["2dgray"], sample_arrays["2dgray"])
+    result2: np.ndarray = dims.join(sample_arrays["3dgray"], sample_arrays["2dgray"])
+    result3: np.ndarray = dims.join(sample_arrays["2dgray"], sample_arrays["3dgray"])
+    result4: np.ndarray = dims.join(sample_arrays["3dgray"], sample_arrays["3dgray"])
+    result5: np.ndarray = dims.join(sample_arrays["2drgb"], sample_arrays["2drgb"])
+    result6: np.ndarray = dims.join(sample_arrays["3drgb"], sample_arrays["2drgb"])
+    result7: np.ndarray = dims.join(sample_arrays["2drgb"], sample_arrays["3drgb"])
+    result8: np.ndarray = dims.join(sample_arrays["3drgb"], sample_arrays["3drgb"])
+    assert result1.shape == (2, 10, 10)
+    assert result2.shape == (6, 10, 10)
+    assert result3.shape == (6, 10, 10)
+    assert result4.shape == (10, 10, 10)
+    assert result5.shape == (2, 10, 10, 3)
+    assert result6.shape == (6, 10, 10, 3)
+    assert result7.shape == (6, 10, 10, 3)
+    assert result8.shape == (10, 10, 10, 3)

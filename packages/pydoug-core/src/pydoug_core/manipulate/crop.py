@@ -25,8 +25,11 @@ def crop(
     In_Place: bool = False,
 ) -> np.ndarray:
     """
-    Crop an image with a mask. Convenience wrapper around numpy's boolean indexing:
+    Crop an image with a mask. Convenience wrapper around numpy's boolean indexing,
+    argwhere, and squeeze:
     https://numpy.org/doc/stable/user/basics.indexing.html#boolean-array-indexing
+    https://numpy.org/doc/stable/reference/generated/numpy.argwhere.html#numpy-argwhere
+    https://numpy.org/doc/stable/reference/generated/numpy.squeeze.html#numpy-squeeze
 
     Parameters
     ----------
@@ -82,7 +85,7 @@ def crop(
         else:
             imarray = imarray[r_start:r_end, c_start:c_end]
 
-        return imarray
+        return np.squeeze(imarray)
 
     croparray: np.ndarray = np.copy(imarray)
     croparray[np.logical_not(util.prep_mask(imarray, Mask))] = Masked_Color
@@ -94,4 +97,4 @@ def crop(
     else:
         croparray = croparray[r_start:r_end, c_start:c_end]
 
-    return croparray
+    return np.squeeze(croparray)

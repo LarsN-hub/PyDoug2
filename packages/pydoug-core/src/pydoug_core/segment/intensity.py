@@ -102,6 +102,47 @@ def manual_threshold(
     return threshold_array(imarray, Range)
 
 
+@register_operation(category="segmentation", display_name="Reassign Intensity")
+def reassign(
+    imarray: np.ndarray,
+    Intensity_Value: Annotated[
+        float, {"min": -32768, "max": 65535, "step": 0.0001}
+    ] = 0,
+    Reassign_Value: Annotated[float, {"min": -32768, "max": 65535, "step": 0.0001}] = 0,
+    All_Except_Input: bool = False,
+) -> np.ndarray:
+    """
+    Reassign a specific intensity (or all other intensities) to be a different value.
+    Convenience wrapper around numpy's boolean indexing:
+    https://numpy.org/doc/stable/user/basics.indexing.html#boolean-array-indexing
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to have an intensity value reassigned.
+    Intensity_Value: float
+        The intensity to be reassigned.
+    Reassign_Value: float
+        The value to reassign "Intensity Value" to.
+    All_Except_Input: bool
+        If True, will reassign all intensity values except "Intensity Value" to
+        "Reassign Value". If False, only reassigns "Intenstiy Value". Default is False.
+
+    Returns
+    -------
+    reassign_array: np.ndarray
+        The image after intensity reassignment.
+    """
+
+    reassign_array: np.ndarray = np.copy(imarray)
+    if All_Except_Input:
+        reassign_array[reassign_array != Intensity_Value] = Reassign_Value
+    else:
+        reassign_array[reassign_array == Intensity_Value] = Reassign_Value
+
+    return reassign_array
+
+
 @register_operation(
     category="segmentation",
     display_name="Histogram Threshold",

@@ -71,3 +71,8 @@ def test_crop(sample_arrays) -> None:
         sample_arrays["2dgray"], np.ones(sample_arrays["2dgray"].shape)
     )
     assert np.all(result13 == sample_arrays["2dgray"])
+
+    single_slice_mask: np.ndarray = np.zeros(sample_arrays["3dgray"].shape, np.bool)
+    single_slice_mask[3, :, :] = 1
+    result14: np.ndarray = crop.crop(sample_arrays["3dgray"], single_slice_mask)
+    assert result14.ndim == 2

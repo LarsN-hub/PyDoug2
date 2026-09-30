@@ -31,6 +31,14 @@ def test_manual_threshold(sample_3dgray_array) -> None:
     assert np.all(result1 == test1)
 
 
+def test_reassign(sample_3dgray_array) -> None:
+
+    result1: np.ndarray = intensity.reassign(sample_3dgray_array, 128, 0)
+    result2: np.ndarray = intensity.reassign(sample_3dgray_array, 128, 0, True)
+    assert np.all(np.logical_not(result1 == 128))
+    assert len(np.unique(result2)) <= 2
+
+
 def test_hist_threshold(sample_3dgray_array, sample_masks) -> None:
 
     mod_array1: np.ndarray = np.random.binomial(20, 0.5, (5, 10, 10)).astype(np.uint8)

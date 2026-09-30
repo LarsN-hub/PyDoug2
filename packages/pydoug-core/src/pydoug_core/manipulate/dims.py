@@ -1,5 +1,5 @@
 """
-Trim/pad dimensions of images.
+Manipulate the dimensions of images.
 """
 
 from typing import Annotated, Literal
@@ -130,9 +130,10 @@ def trim_pad(
     In_Place: bool = False,
 ) -> np.ndarray:
     """
-    Trim or pad the dimensions of an image. Convenience wrapper around numpy's pad and
-    slice indexing:
+    Trim or pad the dimensions of an image. Convenience wrapper around numpy's pad,
+    squeeze, and slice indexing:
     https://numpy.org/doc/stable/reference/generated/numpy.pad.html#numpy-pad
+    https://numpy.org/doc/stable/reference/generated/numpy.squeeze.html#numpy-squeeze
     https://numpy.org/doc/stable/user/basics.indexing.html
 
     Parameters
@@ -207,13 +208,84 @@ def trim_pad(
             imarray, Bounds_as_Slices, X_Bounds, Y_Bounds, Z_Bounds
         )
         if util.is3d(imarray):
-            return imarray[
-                Z_Bounds[0] : Z_Bounds[1],
-                Y_Bounds[0] : Y_Bounds[1],
-                X_Bounds[0] : X_Bounds[1],
-            ]
+            return np.squeeze(
+                imarray[
+                    Z_Bounds[0] : Z_Bounds[1],
+                    Y_Bounds[0] : Y_Bounds[1],
+                    X_Bounds[0] : X_Bounds[1],
+                ]
+            )
         else:
-            return imarray[
-                Y_Bounds[0] : Y_Bounds[1],
-                X_Bounds[0] : X_Bounds[1],
-            ]
+            return np.squeeze(
+                imarray[
+                    Y_Bounds[0] : Y_Bounds[1],
+                    X_Bounds[0] : X_Bounds[1],
+                ]
+            )
+
+
+@register_operation(category="manipulate", display_name="Make 3D")
+def make_3d(
+    imarray: np.ndarray, Slice_Count: Annotated[int, {"min": 2}] = 10
+) -> np.ndarray:
+    """
+    Extend a 2D image along the z-axis to a specified slice count. If the image is 3D
+    already then this returns the image as is. Convenience wrapper around numpy's
+    repeat and expand_dims:
+    https://numpy.org/doc/stable/reference/generated/numpy.repeat.html#numpy-repeat
+    https://numpy.org/doc/stable/reference/generated/numpy.expand_dims.html#numpy-expand-dims
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The 2D image to be extended.
+    Slice_Count: int
+        The number of slices the 3D image should have.
+
+    Returns
+    -------
+    im3d: np.ndarray
+        The 3D image.
+    """
+
+    if util.is3d(imarray):
+        return imarray
+
+    return np.repeat(np.expand_dims(imarray, 0), Slice_Count, axis=0)
+
+
+@register_operation(
+    category="manipulate",
+    display_name="Append",
+    array_params=("Append_Layer",),
+)
+def join(imarray: np.ndarray, Append_Layer: np.ndarray) -> np.ndarray:
+    """
+    Append an image to the back of an image (slicewise). Images may be 2D or 3D but must
+    have the same xy dimensions. Only appends along the z-axis.
+    Convenience wrapper around numpy's append and expand_dims:
+    https://numpy.org/doc/stable/reference/generated/numpy.append.html#numpy-append
+    https://numpy.org/doc/stable/reference/generated/numpy.expand_dims.html#numpy-expand-dims
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image that will be the front-most slices of the appended 3D stack.
+    Append_Layer: np.ndarray
+        The image array (2D or 3D) that will be appended behind the first image array.
+
+    Returns
+    -------
+    append_array: np.ndarray
+        The joined images.
+    """
+
+    if not util.is3d(imarray) and util.is3d(Append_Layer):
+        return np.append(np.expand_dims(imarray, 0), Append_Layer, axis=0)
+    elif util.is3d(imarray) and not util.is3d(Append_Layer):
+        return np.append(imarray, np.expand_dims(Append_Layer, 0), axis=0)
+    elif not util.is3d(imarray) and not util.is3d(Append_Layer):
+        return np.append(
+            np.expand_dims(imarray, axis=0), np.expand_dims(Append_Layer, 0), axis=0
+        )
+    return np.append(imarray, Append_Layer, axis=0)
