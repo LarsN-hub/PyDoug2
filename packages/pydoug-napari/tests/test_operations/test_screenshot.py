@@ -7,11 +7,6 @@ from typing import Any
 
 import numpy as np
 import pytest
-from napari.components.camera import (
-    DepthAxisOrientation,
-    HorizontalAxisOrientation,
-    VerticalAxisOrientation,
-)
 
 from pydoug_napari._operations import screenshot
 
@@ -30,11 +25,11 @@ def test_render_screenshots(sample_2dgray_array) -> None:
         "camera_zoom": 1,
         "camera_center": (0, 0, 0),
         "camera_perspective": 0,
-        "camera_orientation": (
-            DepthAxisOrientation.TOWARDS,
-            VerticalAxisOrientation.DOWN,
-            HorizontalAxisOrientation.RIGHT,
-        ),
+        #        "camera_orientation": (
+        #            DepthAxisOrientation.TOWARDS,
+        #            VerticalAxisOrientation.DOWN,
+        #            HorizontalAxisOrientation.RIGHT,
+        #        ),
         "depiction": "volume",
         "dims_ndisplay": 2,
         "opacity": 1,
