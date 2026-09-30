@@ -9,7 +9,8 @@ packages/pydoug-core/src/pydoug_core/batch/__pycache__/
 packages/pydoug-core/src/pydoug_core/filter/__pycache__/
 packages/pydoug-core/src/pydoug_core/hist/__pycache__/
 packages/pydoug-core/src/pydoug_core/io/__pycache__/
-packages/pydoug-core/src/pydoug_core/mask/__pycache__/
+packages/pydoug-core/src/pydoug_core/manipulate/__pycache__/
+packages/pydoug-core/src/pydoug_core/math/__pycache__/
 packages/pydoug-core/src/pydoug_core/restore/__pycache__/
 packages/pydoug-core/src/pydoug_core/segment/__pycache__/
 packages/pydoug-core/src/pydoug_core/trans/__pycache__/
@@ -20,7 +21,8 @@ packages/pydoug-core/tests/test_batch/__pycache__/
 packages/pydoug-core/tests/test_filter/__pycache__/
 packages/pydoug-core/tests/test_hist/__pycache__/
 packages/pydoug-core/tests/test_io/__pycache__/
-packages/pydoug-core/tests/test_mask/__pycache__/
+packages/pydoug-core/tests/test_manipulate/__pycache__/
+packages/pydoug-core/tests/test_math/__pycache__/
 packages/pydoug-core/tests/test_restore/__pycache__/
 packages/pydoug-core/tests/test_segment/__pycache__/
 packages/pydoug-core/tests/test_trans/__pycache__/

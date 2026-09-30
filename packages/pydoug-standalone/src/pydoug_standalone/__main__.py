@@ -1,5 +1,5 @@
 """
-Main entry point for PyDoug standalone executable app
+Main entry point for PyDoug's standalone executable app.
 """
 
 import sys
@@ -28,6 +28,16 @@ def main() -> None:
 
         render_main(sys.argv[2])
         return
+
+    if sys.platform == "win32":
+        import ctypes
+
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "PyDoug.ImageProcessing.Toolbox.1"
+            )
+        except Exception as exc:
+            print(f"could not set AppUserModelID: {exc}", file=sys.stderr)
 
     import napari
     from qtpy.QtGui import QIcon

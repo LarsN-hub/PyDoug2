@@ -230,12 +230,15 @@ recordable: bool
         - Will not record the widget's operation in the workflow.
 
 allow_in_place: bool
-    Whether or not to add a checkbox to the widget to toggle in-place operations.
+    Whether or not allow an "In_Place" checkbox to toggle in-place operations.
     In-place operations act on the layer without creating a new one.
     Useful for expensive operations (e.g., cropping a 30 GB dataset).
     IMPORTANT, cannot be undone (acts on the layer instead of making a new one).
+    Up to you to code logic for "In_Place" performing the operation in place on the
+    input "imarray" vs. not.
     Example: allow_in_place=True
-        - Adds a "Perform in Place" checkbox to toggle in-place operation.
+        - Requires "In_Place" boolean parameter to be present in the parameters.
+        - If "In_Place" is checked, rewrites the current layer with the new data.
 
 live_preview: bool
     DO NOT USE.

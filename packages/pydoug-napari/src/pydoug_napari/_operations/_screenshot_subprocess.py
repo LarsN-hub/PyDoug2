@@ -65,7 +65,10 @@ def main(config_path: str) -> None:  # pragma: no cover
         viewer.scene.camera.zoom = settings["camera_zoom"]
         viewer.scene.camera.center = settings["camera_center"]
         viewer.scene.camera.perspective = settings["camera_perspective"]
-        viewer.scene.camera.orientation = tuple(settings["camera_orientation"])
+        try:  # pragma: no cover
+            viewer.scene.camera.orientation = tuple(settings["camera_orientation"])
+        except Exception as exc:  # pragma: no cover
+            print(f"Could not set camera orientation: {exc}")
         viewer.dims.ndisplay = settings["dims_ndisplay"]
 
         qt_window = viewer.window._qt_window

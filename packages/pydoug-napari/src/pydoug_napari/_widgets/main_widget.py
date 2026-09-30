@@ -161,12 +161,15 @@ class MainWidget(QTabWidget):
         """
 
         sorted_categories: list[str] = []
+        if "manipulate" in categories:
+            sorted_categories.append("manipulate")
+            categories.remove("manipulate")
         if "transformations" in categories:
             sorted_categories.append("transformations")
             categories.remove("transformations")
-        if "mask" in categories:
-            sorted_categories.append("mask")
-            categories.remove("mask")
+        if "math" in categories:
+            sorted_categories.append("math")
+            categories.remove("math")
         if "histogram" in categories:
             sorted_categories.append("histogram")
             categories.remove("histogram")

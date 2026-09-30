@@ -49,12 +49,12 @@ def _render_screenshot_impl(
                 }
             )
         )
-        if getattr(sys, "frozen", False):
-            command = [  # pragma: no cover
-                sys.executable,  # pragma: no cover
-                "--render-screenshot",  # pragma: no cover
-                str(config_path),  # pragma: no cover
-            ]  # pragma: no cover
+        if getattr(sys, "frozen", False):  # pragma: no cover
+            command = [
+                sys.executable,
+                "--render-screenshot",
+                str(config_path),
+            ]
         else:
             command = [
                 sys.executable,
@@ -63,15 +63,13 @@ def _render_screenshot_impl(
                 str(config_path),
             ]
         result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode != 0:
-            raise RuntimeError(  # pragma: no cover
-                f"Screenshot rendering failed:\n{result.stderr}"  # pragma: no cover
-            )  # pragma: no cover
-        if not output_path.exists():
-            raise RuntimeError(  # pragma: no cover
-                "Screenshot subprocess exited successfully but "  # pragma: no cover
-                f"produced no output file.\nstderr: {result.stderr}"  # pragma: no cover
-            )  # pragma: no cover
+        if result.returncode != 0:  # pragma: no cover
+            raise RuntimeError(f"Screenshot rendering failed:\n{result.stderr}")
+        if not output_path.exists():  # pragma: no cover
+            raise RuntimeError(
+                "Screenshot subprocess exited successfully but "
+                f"produced no output file.\nstderr: {result.stderr}"
+            )
         return np.load(output_path)
 
 
