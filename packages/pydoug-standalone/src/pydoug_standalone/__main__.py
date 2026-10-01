@@ -51,7 +51,7 @@ def _get_icon_path() -> Path:
         base_dir: Path = Path(sys._MEIPASS)  # type: ignore
     else:
         base_dir: Path = Path(__file__).resolve().parents[3]
-    return base_dir / "assets" / "images" / "logo.png"
+    return base_dir / "assets" / "images" / "logo.ico"
 
 
 def main() -> None:
@@ -65,6 +65,7 @@ def main() -> None:
         render_main(sys.argv[2])
         return
 
+    """
     if sys.platform == "win32":
         import ctypes
 
@@ -74,6 +75,7 @@ def main() -> None:
             )
         except Exception as exc:
             print(f"could not set AppUserModelID: {exc}", file=sys.stderr)
+    """
 
     import napari
     from qtpy.QtGui import QIcon
@@ -92,6 +94,7 @@ def main() -> None:
     except Exception as exc:
         print(f"could not set window icon: {exc}", file=sys.stderr)
 
+    """
     try:
         hwnd = int(viewer.window._qt_window.winId())
         ico_path = _get_icon_path().with_suffix(".ico")
@@ -101,6 +104,7 @@ def main() -> None:
             print(f"icon file not found: {ico_path}", file=sys.stderr)
     except Exception as exc:
         print(f"could not set native window icon: {exc}", file=sys.stderr)
+    """
 
     viewer.window.add_dock_widget(
         MainWidget(viewer), name="PyDoug Image Processing Toolbox", area="right"
