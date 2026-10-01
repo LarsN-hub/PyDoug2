@@ -12,6 +12,8 @@ from skimage.morphology import ball, disk
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
+__all__ = ["smooth"]
+
 
 @register_operation(category="filters", display_name="Smooth")
 def smooth(

@@ -9,7 +9,7 @@ import numpy as np
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["trim_pad"]
+__all__ = ["trim_pad", "make_3d", "join"]
 
 
 def _refine_pad_bounds(

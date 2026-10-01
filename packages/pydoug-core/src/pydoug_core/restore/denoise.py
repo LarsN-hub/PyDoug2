@@ -20,7 +20,7 @@ from skimage.restoration import (
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["bilateral", "nl_means"]
+__all__ = ["bilateral", "nl_means", "tv_bregman", "tv_chambolle", "wavelet"]
 
 
 @register_operation(category="denoise", display_name="Bilateral Filter")
