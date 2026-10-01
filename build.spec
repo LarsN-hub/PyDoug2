@@ -16,21 +16,22 @@ from PyInstaller.utils.hooks import (
 datas, binaries, hiddenimports = [], [], []
 
 for pkg in (
+    "app_model",
     "cmasher",
     "imageio",
+    "magicgui",
+    "magicclass",
     "napari",
     "napari_builtins",
     "napari_console",
     "napari_metadata",
+    "napari_resources",
     "napari_svg",
-    "vispy",
     "npe2",
     "qtpy",
-    "app_model",
-    "magicgui",
-    "magicclass",
     "superqt",
     "urllib3",
+    "vispy",
 ):
     if find_spec(pkg) is not None:
         d, b, h = collect_all(pkg)
