@@ -212,7 +212,7 @@ def test_tidypath_returns(tmp_path) -> None:
 
 def test_prep_mask(sample_arrays) -> None:
 
-    maskarray: np.ndarray = sample_arrays["3dgray"]
+    maskarray: np.ndarray = np.copy(sample_arrays["3dgray"])
     maskarray[maskarray < 128] = 0
     maskarray[maskarray >= 128] = 255
     maskarrayrgb = np.stack([maskarray] * 3, 3)

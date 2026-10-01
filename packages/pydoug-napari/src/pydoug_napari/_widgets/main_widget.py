@@ -173,9 +173,9 @@ class MainWidget(QTabWidget):
         if "histogram" in categories:
             sorted_categories.append("histogram")
             categories.remove("histogram")
-        if "denoise" in categories:
-            sorted_categories.append("denoise")
-            categories.remove("denoise")
+        if "restore" in categories:
+            sorted_categories.append("restore")
+            categories.remove("restore")
         if "filters" in categories:
             sorted_categories.append("filters")
             categories.remove("filters")

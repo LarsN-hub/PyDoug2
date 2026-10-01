@@ -23,7 +23,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["bilateral", "nl_means", "tv_bregman", "tv_chambolle", "wavelet"]
 
 
-@register_operation(category="denoise", display_name="Bilateral Filter")
+@register_operation(category="restore", display_name="Bilateral Filter")
 def bilateral(
     imarray: np.ndarray,
     Window_Size: Annotated[int, {"min": 0}] = 0,
@@ -135,8 +135,8 @@ def bilateral(
             if util.isrgb(imarray):
                 dn_array: np.ndarray = np.empty(imarray.shape, dtype=imarray.dtype)
                 for cindex in range(0, imarray.shape[-1]):
-                    dn_array[:, :, cindex] = rank_bilateral(
-                        imarray[:, :, cindex],
+                    dn_array[..., cindex] = rank_bilateral(
+                        imarray[..., cindex],
                         fp,
                         s0=Rank_Interval[0],
                         s1=Rank_Interval[1],
@@ -165,7 +165,7 @@ def bilateral(
     return dn_array
 
 
-@register_operation(category="denoise", display_name="Non-Local Means Filter")
+@register_operation(category="restore", display_name="Non-Local Means Filter")
 def nl_means(
     imarray: np.ndarray,
     Patch_Size: Annotated[int, {"min": 1}] = 7,
@@ -242,7 +242,7 @@ def nl_means(
     return dnarray
 
 
-@register_operation(category="denoise", display_name="TV Bregman Filter")
+@register_operation(category="restore", display_name="TV Bregman Filter")
 def tv_bregman(
     imarray: np.ndarray,
     Weight: Annotated[float, {"min": 0}] = 5,
@@ -318,7 +318,7 @@ def tv_bregman(
     return dnarray
 
 
-@register_operation(category="denoise", display_name="TV Chambolle Filter")
+@register_operation(category="restore", display_name="TV Chambolle Filter")
 def tv_chambolle(
     imarray: np.ndarray,
     Weight: Annotated[float, {"min": 0}] = 0.1,
@@ -392,7 +392,7 @@ def tv_chambolle(
 
 
 @register_operation(
-    category="denoise",
+    category="restore",
     display_name="Wavelet Filter",
     widget_options={"Wavelet": {"choices": pywt.wavelist()}},  # type: ignore
 )
