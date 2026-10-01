@@ -43,7 +43,10 @@ for pkg in ("pydoug_core", "pydoug_napari", "pydoug_standalone"):
     hiddenimports += collect_submodules(pkg)
     datas += collect_data_files(pkg)
 datas += copy_metadata("pydoug-core") + copy_metadata("pydoug-napari")
-datas += [('assets/images/logo.png', 'assets/images')]
+datas += [
+    ('assets/images/logo.png', 'assets/images'),
+    ('assets/images/logo.ico', 'assets/images'),
+]
 
 a = Analysis(
     ['packages/pydoug-standalone/src/pydoug_standalone/__main__.py'],
