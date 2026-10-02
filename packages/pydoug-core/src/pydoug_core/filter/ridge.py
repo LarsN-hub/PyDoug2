@@ -69,9 +69,7 @@ def ridge(
     Black_Ridges: bool
         Whether the ridges are darker than the surroundings or not. Default is True.
     Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"]
-        How the algorithm should handle image borders. Ignored if "Method" is "Laplace"
-        or "Roberts". Ignored if "Horizontal" or "Vertical" are True.
-        Default is "Nearest".
+        How the algorithm should handle image borders. Default is "Nearest".
         - "Constant": The border is extended with a value defined in "Constant Value".
         - "Mirror": The border is extended by reflecting about the center of the pixel.
         - "Nearest": The border is extended by copying the edge pixel.

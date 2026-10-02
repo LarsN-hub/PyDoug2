@@ -14,7 +14,7 @@ from skimage.segmentation import chan_vese, morphological_chan_vese, random_walk
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["local_threshold"]
+__all__ = ["local_threshold", "rand_walk_image", "rand_walk_labels", "chan_vese_algs"]
 
 
 @register_operation(category="segmentation", display_name="Local Threshold")
