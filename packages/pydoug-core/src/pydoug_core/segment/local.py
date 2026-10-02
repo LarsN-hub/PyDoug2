@@ -14,7 +14,7 @@ from skimage.segmentation import chan_vese, morphological_chan_vese, random_walk
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["local_threshold", "rand_walk_image", "rand_walk_labels", "chan_vese_algs"]
+__all__ = ["local_threshold", "rand_walk", "chan_vese_algs"]
 
 
 @register_operation(category="segmentation", display_name="Local Threshold")
@@ -107,7 +107,7 @@ def local_threshold(
     display_name="Random Walker - Image Markers",
     array_params=("Markers",),
 )
-def rand_walk_image(
+def rand_walk(
     imarray: np.ndarray,
     Markers: np.ndarray,
     Mode: Literal[
@@ -160,68 +160,6 @@ def rand_walk_image(
     return random_walker(
         imarray, Markers, Beta, mode, Tolerance, channel_axis=util.chan_axis(imarray)
     )
-
-
-@register_operation(
-    category="segmentation",
-    display_name="Random Walker - Labels Markers",
-    array_params=("Markers",),
-    array_param_types={"Markers": "labels"},
-    output_kind="labels",
-)
-def rand_walk_labels(
-    imarray: np.ndarray,
-    Markers: np.ndarray,
-    Mode: Literal[
-        "Brute Force",
-        "Conjugate Gradient",
-        "Conjugate Gradient - Jacobi",
-    ] = "Conjugate Gradient - Jacobi",
-    Beta: Annotated[int, {"min": 1}] = 100,
-    Tolerance: Annotated[float, {"min": 0.001, "step": 0.001}] = 0.001,
-) -> np.ndarray:
-    """
-    Segment an image with a random walker algorithm starting from pre-defined image
-    markers. Good for segmenting visually distinct but noisy phases in an image.
-    Accepts a labels layer for "Markers" and returns a labels layer.
-    Convenience wrapper around scikit-image's segmentation.random_walker:
-    https://scikit-image.org/docs/stable/api/skimage.segmentation.html#skimage.segmentation.random_walker
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image to be segmented.
-    Markers: np.ndarray
-        The markers to use as seeds for the random walker algorithm. "Markers" must be
-        the same size as imarray (but must not be RGB even if imarray is RGB).
-    Mode: Literal["Brute Force", "Conjugate Gradient", "Conjugate Gradient - Jacobi"]
-        The mode for solvin the linear system of the algorithm
-        - "Brute Force": Fast for small images but very slow for large images.
-        - "Conjugate Gradient": Slow, but less memory consuming for large images.
-        - "Conjugate Gradient - Jacobi": Accelerated conjugate gradient.
-    Beta: int
-        The penalization coefficient for random walker motion. Higher = more difficult
-        diffusion for walker.
-    Tolerance: float
-        The tolerance to achieve when solving the linear system if "Method" is one of
-        the "Conjuage Gradient" options. Ignore for "Brute Force".
-
-    Returns
-    -------
-    seg_array: np.ndarray
-        The segmented image.
-    """
-
-    if Mode == "Brute Force":
-        mode = "bf"
-    elif Mode == "Conjugate Gradient":
-        mode = "cg"
-    else:
-        mode = "cg_j"
-
-    return random_walker(
-        imarray, Markers, Beta, mode, Tolerance, channel_axis=util.chan_axis(imarray)
-    ).astype(np.int32)
 
 
 @register_operation(category="segmentation", display_name="Chan-Vese")

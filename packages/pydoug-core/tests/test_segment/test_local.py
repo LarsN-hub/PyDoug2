@@ -39,7 +39,7 @@ def test_local_threshold(sample_2dgray_array, sample_3dgray_array) -> None:
     assert np.max(result7) == 255
 
 
-def test_rand_walk_image_and_labels(sample_arrays) -> None:
+def test_rand_walk(sample_arrays) -> None:
 
     markers1: np.ndarray = np.copy(sample_arrays["2dgray"])
     markers2: np.ndarray = np.copy(sample_arrays["3dgray"])
@@ -62,14 +62,10 @@ def test_rand_walk_image_and_labels(sample_arrays) -> None:
     markers4[markers4 <= 50] = 50
     markers4[(markers4 > 50) & (markers4 < 200)] = 0
 
-    result1: np.ndarray = local.rand_walk_image(sample_arrays["2dgray"], markers1)
-    result2: np.ndarray = local.rand_walk_image(sample_arrays["3dgray"], markers2)
-    result3: np.ndarray = local.rand_walk_image(
-        sample_arrays["2drgb"], markers3[..., 0]
-    )
-    result4: np.ndarray = local.rand_walk_image(
-        sample_arrays["3drgb"], markers4[..., 0]
-    )
+    result1: np.ndarray = local.rand_walk(sample_arrays["2dgray"], markers1)
+    result2: np.ndarray = local.rand_walk(sample_arrays["3dgray"], markers2)
+    result3: np.ndarray = local.rand_walk(sample_arrays["2drgb"], markers3[..., 0])
+    result4: np.ndarray = local.rand_walk(sample_arrays["3drgb"], markers4[..., 0])
     assert len(np.unique(result1)) == 2
     assert len(np.unique(result2)) == 2
     assert len(np.unique(result3)) == 2
@@ -79,10 +75,10 @@ def test_rand_walk_image_and_labels(sample_arrays) -> None:
     assert result3.dtype == np.uint8
     assert result4.dtype == np.uint8
 
-    result5: np.ndarray = local.rand_walk_image(
+    result5: np.ndarray = local.rand_walk(
         sample_arrays["2dgray"], markers1, "Brute Force"
     )
-    result6: np.ndarray = local.rand_walk_image(
+    result6: np.ndarray = local.rand_walk(
         sample_arrays["2dgray"], markers1, "Conjugate Gradient"
     )
     assert len(np.unique(result5)) == 2
@@ -90,49 +86,9 @@ def test_rand_walk_image_and_labels(sample_arrays) -> None:
     assert result5.dtype == np.uint8
     assert result6.dtype == np.uint8
 
-    result7: np.ndarray = local.rand_walk_image(sample_arrays["3dgray"], markers5)
+    result7: np.ndarray = local.rand_walk(sample_arrays["3dgray"], markers5)
     assert len(np.unique(result7)) == 3
     assert result7.dtype == np.uint8
-
-    result1_2: np.ndarray = local.rand_walk_labels(sample_arrays["2dgray"], markers1)
-    result2_2: np.ndarray = local.rand_walk_labels(sample_arrays["3dgray"], markers2)
-    result3_2: np.ndarray = local.rand_walk_labels(
-        sample_arrays["2drgb"], markers3[..., 0]
-    )
-    result4_2: np.ndarray = local.rand_walk_labels(
-        sample_arrays["3drgb"], markers4[..., 0]
-    )
-    assert len(np.unique(result1_2)) == 2
-    assert len(np.unique(result2_2)) == 2
-    assert len(np.unique(result3_2)) == 2
-    assert len(np.unique(result4_2)) == 2
-    assert result1_2.dtype == np.int32
-    assert result2_2.dtype == np.int32
-    assert result3_2.dtype == np.int32
-    assert result4_2.dtype == np.int32
-
-    result5_2: np.ndarray = local.rand_walk_labels(
-        sample_arrays["2dgray"], markers1, "Brute Force"
-    )
-    result6_2: np.ndarray = local.rand_walk_labels(
-        sample_arrays["2dgray"], markers1, "Conjugate Gradient"
-    )
-    assert len(np.unique(result5_2)) == 2
-    assert len(np.unique(result6_2)) == 2
-    assert result5_2.dtype == np.int32
-    assert result6_2.dtype == np.int32
-
-    result7_2: np.ndarray = local.rand_walk_labels(sample_arrays["3dgray"], markers5)
-    assert len(np.unique(result7_2)) == 3
-    assert result7_2.dtype == np.int32
-
-    assert np.all(result1 == result1_2)
-    assert np.all(result2 == result2_2)
-    assert np.all(result3 == result3_2)
-    assert np.all(result4 == result4_2)
-    assert np.all(result5 == result5_2)
-    assert np.all(result6 == result6_2)
-    assert np.all(result7 == result7_2)
 
 
 def test_chan_vese_algs(sample_arrays) -> None:

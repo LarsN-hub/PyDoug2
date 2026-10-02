@@ -13,3 +13,8 @@ def test_connectivity(sample_3dgray_array) -> None:
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.integer)
     assert len(np.unique(result)) > 1
+
+
+def test_watershed(sample_arrays) -> None:
+
+    pass
