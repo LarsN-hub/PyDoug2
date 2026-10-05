@@ -25,6 +25,7 @@ filterwarnings = [
     "ignore:.*writing zero-size array to nonconformant TIFF.*:UserWarning:tifffile.tifffile",
     "ignore:Module already imported so cannot be rewritten.*pydoug_core\\.testing.*:pytest.PytestAssertRewriteWarning",
     "ignore::UserWarning",
+    "ignore::RuntimeWarning",
 ]
 
 [tool.coverage.run]

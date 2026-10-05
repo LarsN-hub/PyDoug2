@@ -20,7 +20,9 @@ __all__ = ["arithmetic"]
 def arithmetic(
     imarray: np.ndarray,
     Method: Literal["Add", "Divide", "Multiply", "Subtract"] = "Add",
-    Arithmetic_Value: Annotated[float, {"step": 0.0001}] = 1,
+    Arithmetic_Value: Annotated[
+        float, {"step": 0.0001, "min": -32768, "max": 65535}
+    ] = 1,
     Use_Arithmetic_Layer: bool = False,
     Arithmetic_Layer: np.ndarray | None = None,
     Preserve_Dtype: bool = True,

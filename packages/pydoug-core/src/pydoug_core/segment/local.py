@@ -69,6 +69,8 @@ def local_threshold(
     """
 
     if Method == "Adaptive":
+        if Radius % 2 == 0:
+            Radius -= 1
         thresh_mask: np.ndarray = threshold_local(
             imarray,
             Radius,
@@ -104,7 +106,7 @@ def local_threshold(
 
 @register_operation(
     category="segmentation",
-    display_name="Random Walker - Image Markers",
+    display_name="Random Walker",
     array_params=("Markers",),
 )
 def rand_walk(

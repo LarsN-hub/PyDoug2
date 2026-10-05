@@ -6,6 +6,7 @@ packages/pydoug-core/src/pydoug_core/_manifest.py
 packages/pydoug-core/src/pydoug_core/__pycache__/
 packages/pydoug-core/src/pydoug_core/analyze/__pycache__/
 packages/pydoug-core/src/pydoug_core/batch/__pycache__/
+packages/pydoug-core/src/pydoug_core/features/__pycache__/
 packages/pydoug-core/src/pydoug_core/filter/__pycache__/
 packages/pydoug-core/src/pydoug_core/hist/__pycache__/
 packages/pydoug-core/src/pydoug_core/io/__pycache__/
@@ -18,6 +19,7 @@ packages/pydoug-core/src/pydoug_core/user/__pycache__/
 packages/pydoug-core/tests/__pycache__/
 packages/pydoug-core/tests/test_analyze/__pycache__/
 packages/pydoug-core/tests/test_batch/__pycache__/
+packages/pydoug-core/tests/test_features/__pycache__/
 packages/pydoug-core/tests/test_filter/__pycache__/
 packages/pydoug-core/tests/test_hist/__pycache__/
 packages/pydoug-core/tests/test_io/__pycache__/
