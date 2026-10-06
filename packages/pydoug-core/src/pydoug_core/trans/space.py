@@ -2,7 +2,7 @@
 Domain transformations of images.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 import numpy as np
 from scipy import fft as ft
@@ -12,12 +12,14 @@ from skimage import transform
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["radon", "invradon", "fft", "invfft", "euclidian_dt"]
+__all__ = ["euclidian_dt", "fft", "radon", "hough"]
 
 
 @register_operation(category="transform", display_name="Distance")
 def euclidian_dt(
-    imarray: np.ndarray, Pixel_Size: Annotated[float, {"step": 0.0001, "min": 0}] = 1
+    imarray: np.ndarray,
+    Pixel_Size: Annotated[float, {"step": 0.0001, "min": 0}] = 1,
+    Perform_Slicewise: bool = False,
 ) -> np.ndarray:
     """
     Transform a binary image into the distance domain by calculating the Euclidian
@@ -31,6 +33,9 @@ def euclidian_dt(
         The image array to be transformed.
     Pixel_Size: float
         The real-world length of a single pixel edge.
+    Perform_Slicewise: bool
+        Whether to perform the operation slicewise for 3D images (True) or in bulk
+        (False). Default is False.
 
     Returns
     -------
@@ -38,59 +43,30 @@ def euclidian_dt(
         The image array transformed into the distance domain.
     """
 
-    if util.isrgb(imarray):
-        return edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
-    return edt(imarray, Pixel_Size)  # type: ignore
+    if Perform_Slicewise and util.is3d(imarray):
+        edtarray: np.ndarray = np.empty(imarray.shape)
+        for index in range(0, imarray.shape[0]):
+            edtarray[index] = edt(util.rgb2gray(imarray[index]), Pixel_Size)
+
+        return edtarray
+
+    return edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
 
 
 @register_operation(category="transform", display_name="FFT")
-def fft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
+def fft(
+    imarray: np.ndarray, Inverse: bool = False, Perform_Slicewise: bool = False
+) -> np.ndarray:
     """
-    Transform a spatial domain image into the frequency domain. Convenience wrapper
-    around several functions from scipy's fft package (fft2, fftn, and fftshift). Note
-    Only returns the real component of the transform (using numpy's absolute):
+    Transform a spatial domain image into the frequency domain and vice versa. Converts
+    RGB to grayscale first. Only returns the real component of the transform (using
+    numpy's absolute). Convenience wrapper around functions from scipy's fft package
+    (fft2, ifft2, fftn, ifftn, fftshift, and ifftshift):
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft2.html#scipy.fft.fft2
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fftn.html#scipy.fft.fftn
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fftshift.html#scipy.fft.fftshift
-    https://numpy.org/doc/stable/reference/generated/numpy.absolute.html
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image array to be transformed.
-    Slicewise: bool
-        Whether to calcualte the fft of a 3D array as 2D slicewise or 3D total.
-        Default is False (calculates 3D fft of 3D array).
-
-    Returns
-    -------
-    fftarray: np.ndarray
-        The image array transformed into the frequency domain.
-    """
-
-    imarray = util.rgb2gray(imarray)
-    if util.is3d(imarray):
-        if Slicewise:
-            firstfft: np.ndarray = np.abs(ft.fftshift(ft.fft2(imarray[0])))
-            fftarray: np.ndarray = np.empty(
-                (imarray.shape[0], firstfft.shape[0], firstfft.shape[1]), firstfft.dtype
-            )
-            fftarray[0] = firstfft
-            for index in range(1, imarray.shape[0]):
-                fftarray[index] = np.abs(ft.fftshift(ft.fft2(imarray[index])))
-            return fftarray
-        return np.abs(ft.fftshift(ft.fftn(imarray)))
-    return np.abs(ft.fftshift(ft.fft2(imarray)))
-
-
-@register_operation(category="transform", display_name="Inverse FFT")
-def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
-    """
-    Transform a frequency domain image into the spatial domain. Convenience wrapper
-    around several functions from scipy's fft package (ifft2, ifftn, and ifftshift).
-    Only returns the real component of the transform (using numpy's absolute):
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.ifft2.html#scipy.fft.ifft2
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fftn.html#scipy.fft.fftn
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.ifftn.html#scipy.fft.ifftn
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fftshift.html#scipy.fft.fftshift
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.ifftshift.html#scipy.fft.ifftshift
     https://numpy.org/doc/stable/reference/generated/numpy.absolute.html
 
@@ -98,106 +74,127 @@ def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     ----------
     imarray: np.ndarray
         The image array to be transformed.
-    Slicewise: bool
-        Whether to calcualte the inverse fft of a 3D array as 2D slicewise or 3D total.
-        Default is False (calculates 3D inverse fft of 3D array).
+    Inverse: bool
+        Whether to perform an inverse FFT (True) or a forward FFT (False).
+        Default is False.
+    Perform_Slicewise: bool
+        Whether to calcualte the fft of a 3D array as 2D slicewise or 3D total.
+        Default is False (calculates 3D fft of 3D array).
 
     Returns
     -------
-    ifftarray: np.ndarray
-        The image array transformed into the spatial domain.
+    fftarray: np.ndarray
+        The transformed image array.
     """
 
-    imarray = util.rgb2gray(imarray)
+    if Inverse:
+        if util.is3d(imarray):
+            if Perform_Slicewise:
+                firstifft: np.ndarray = np.abs(
+                    ft.ifftshift(ft.ifft2(util.rgb2gray(imarray[0])))
+                )
+                ifftarray: np.ndarray = np.empty(
+                    (imarray.shape[0], firstifft.shape[0], firstifft.shape[1]),
+                    firstifft.dtype,
+                )
+                ifftarray[0] = firstifft
+                for index in range(1, imarray.shape[0]):
+                    ifftarray[index] = np.abs(
+                        ft.ifftshift(ft.ifft2(util.rgb2gray(imarray[index])))
+                    )
+
+                return ifftarray
+
+            return np.abs(ft.ifftshift(ft.ifftn(util.rgb2gray(imarray))))
+
+        return np.abs(ft.ifftshift(ft.ifft2(util.rgb2gray(imarray))))
+
     if util.is3d(imarray):
-        if Slicewise:
-            firstifft: np.ndarray = np.abs(ft.ifftshift(ft.ifft2(imarray[0])))
-            ifftarray: np.ndarray = np.empty(
-                (imarray.shape[0], firstifft.shape[0], firstifft.shape[1]),
-                firstifft.dtype,
+        if Perform_Slicewise:
+            firstfft: np.ndarray = np.abs(
+                ft.fftshift(ft.fft2(util.rgb2gray(imarray[0])))
             )
-            ifftarray[0] = firstifft
+            fftarray: np.ndarray = np.empty(
+                (imarray.shape[0], firstfft.shape[0], firstfft.shape[1]), firstfft.dtype
+            )
+            fftarray[0] = firstfft
             for index in range(1, imarray.shape[0]):
-                ifftarray[index] = np.abs(ft.ifftshift(ft.ifft2(imarray[index])))
-            return ifftarray
-        return np.abs(ft.ifftshift(ft.ifftn(imarray)))
-    return np.abs(ft.ifftshift(ft.ifft2(imarray)))
+                fftarray[index] = np.abs(
+                    ft.fftshift(ft.fft2(util.rgb2gray(imarray[index])))
+                )
+
+            return fftarray
+
+        return np.abs(ft.fftshift(ft.fftn(util.rgb2gray(imarray))))
+
+    return np.abs(ft.fftshift(ft.fft2(util.rgb2gray(imarray))))
 
 
 @register_operation(category="transform", display_name="Radon")
-def radon(imarray: np.ndarray) -> np.ndarray:
+def radon(imarray: np.ndarray, Inverse: bool = False) -> np.ndarray:
     """
     Transform a spatial domain image into the projection domain (i.e., a sinogram) about
-    a 180 degree rotation. Convenience wrapper around scikit-image's transform.radon:
+    a 180 degree rotation. Converts RGB to grayscale first. Performed slicewise for 3D.
+    Convenience wrapper around scikit-image's transform.radon:
     https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.radon
 
     Parameters
     ----------
     imarray: np.ndarray
         The image array to be transformed.
+    Inverse: bool
+        Whether to perform an inverse (True) or forward (False) Radon transform.
+        Default is False.
 
     Returns
     -------
     radarray: np.ndarray
-        The image array transformed into the projection domain.
+        The transformed image array.
     """
 
-    imarray = util.rgb2gray(imarray)
+    if Inverse:
+        if util.is3d(imarray):
+            firstirad: np.ndarray = transform.iradon(
+                util.rgb2gray(imarray[0]), circle=False
+            )
+            iradarray: np.ndarray = np.empty(
+                (imarray.shape[0], firstirad.shape[0], firstirad.shape[1]),
+                firstirad.dtype,
+            )
+            iradarray[0] = firstirad
+            for index in range(1, imarray.shape[0]):
+                iradarray[index] = transform.iradon(imarray[index], circle=False)
+
+            return iradarray
+
+        return transform.iradon(imarray, circle=False)
+
     if util.is3d(imarray):
-        firstrad: np.ndarray = transform.radon(imarray[0], circle=False)
+        firstrad: np.ndarray = transform.radon(util.rgb2gray(imarray[0]), circle=False)
         radarray: np.ndarray = np.empty(
             (imarray.shape[0], firstrad.shape[0], firstrad.shape[1]), firstrad.dtype
         )
         radarray[0] = firstrad
         for index in range(1, imarray.shape[0]):
-            radarray[index] = transform.radon(imarray[index], circle=False)
+            radarray[index] = transform.radon(
+                util.rgb2gray(imarray[index]), circle=False
+            )
+
         return radarray
-    else:
-        return transform.radon(imarray, circle=False)
+
+    return transform.radon(util.rgb2gray(imarray), circle=False)
 
 
-@register_operation(category="transform", display_name="Inverse Radon")
-def invradon(imarray: np.ndarray) -> np.ndarray:
-    """
-    Reconstruct a projection domain image (i.e., a sinogram) into the spatial domain.
-    Convenience wrapper around scikit-image's transform.iradon:
-    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.iradon
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image array to be transformed.
-
-    Returns
-    -------
-    iradarray: np.ndarray
-        The image array transformed into the spatial domain.
-    """
-
-    imarray = util.rgb2gray(imarray)
-    if util.is3d(imarray):
-        firstirad: np.ndarray = transform.iradon(imarray[0], circle=False)
-        iradarray: np.ndarray = np.empty(
-            (imarray.shape[0], firstirad.shape[0], firstirad.shape[1]), firstirad.dtype
-        )
-        iradarray[0] = firstirad
-        for index in range(1, imarray.shape[0]):
-            iradarray[index] = transform.iradon(imarray[index], circle=False)
-        return iradarray
-    else:
-        return transform.iradon(imarray, circle=False)
-
-
-# @register_operation(category="transform", display_name="Hough")
+@register_operation(category="transform", display_name="Hough")
 def hough(
     imarray: np.ndarray,
-    Mode: str = "line",
-    Radii: np.ndarray | None = None,
-    Full_Output: bool = False,
-) -> np.ndarray | tuple:
+    Mode: Literal["Circle", "Line"] = "Line",
+    Radius: Annotated[int, {"min": 1}] = 3,
+) -> np.ndarray:
     """
-    Transform an image from the spatial domain to the accumulator domain. Convenience
-    wrapper around hough_circle and hough_line from scikit-image's transform package:
+    Transform an image from the spatial domain to the accumulator domain. Performed
+    slicewise for 3D. Convenience wrapper around hough_circle and hough_line from
+    scikit-image's transform package:
     https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.hough_circle
     https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.hough_line
 
@@ -205,36 +202,23 @@ def hough(
     ----------
     imarray: np.ndarray
         The image array to be transformed.
-    Mode: str
-        The mode to accumulate votes. Default is "line" but can also be "circle".
-    Radii: np.ndarray | None
-        The radii to be tested if mode is "circle". Auto-filled if None.
-    Full_Output: bool
-        Whether or not to provide the full output of the hough transform functions
-        from skimage. Default is False (returns just the transformed array).
+    Mode: Literal["Circle", "Line"]
+        The mode to accumulate votes. Default is "Line".
+        - "Line": accumulate line responses.
+        - "Circle": accumulate circle responses.
+    Radius: int
+        If "Mode" is "Circle", the radius to use for accumulating circle responses.
 
     Returns
     -------
     harray: np.ndarray
-        The image array transformed into the accumulator domain if fullout is False or
-        mode is "circle".
-    (harray, angles, distances): tuple[
-        np.ndarray,
-        list[np.ndarray] | np.ndrarray,
-        list[np.ndarray] | np.ndarray
-    ]
-        If fullout is True and mode is "line", returns a tuple containing the
-        transformed image array, the measured angles (single array for 2D, list of
-        arrays for 3D), and the measured distances (single array for 2D, list of arrays
-        for 3D).
+        The image array transformed into the accumulator domain.
+
     """
 
-    imarray = util.rgb2gray(imarray)
-    if Mode == "circle":
-        if not np.any(Radii):
-            Radii = np.arange(min(5, min(imarray.shape) / 2), min(imarray.shape) / 2, 2)
+    if Mode == "Circle":
         if util.is3d(imarray):
-            firstarray = transform.hough_circle(imarray[0], Radii)
+            firstarray = transform.hough_circle(util.rgb2gray(imarray[0]), Radius)
             harray: np.ndarray = np.empty(
                 (
                     firstarray.shape[0],
@@ -246,26 +230,25 @@ def hough(
             )
             harray[:, :, :, 0] = firstarray
             for index in range(1, imarray.shape[0]):
-                harray[:, :, :, index] = transform.hough_circle(imarray[index], Radii)
+                harray[:, :, :, index] = transform.hough_circle(
+                    util.rgb2gray(imarray[index]), Radius
+                )
+
             return harray
-        return transform.hough_circle(imarray, Radii)
+
+        return transform.hough_circle(util.rgb2gray(imarray), Radius)
+
     else:
         if util.is3d(imarray):
-            firstarray, firstangles, firstdist = transform.hough_line(imarray[0])
+            firstarray = transform.hough_line(util.rgb2gray(imarray[0]))[0]
             harray: np.ndarray = np.empty(
                 (imarray.shape[0], firstarray.shape[0], firstarray.shape[1]),
                 firstarray.dtype,
             )
             harray[0] = firstarray
-            angles: list = [firstangles]
-            dist: list = [firstdist]
             for index in range(1, imarray.shape[0]):
-                harray[index], curangles, curdist = transform.hough_line(imarray[index])
-                angles.append(curangles)
-                dist.append(curdist)
-            if not Full_Output:
-                return harray
-            return (harray, angles, dist)
-        if not Full_Output:
-            return transform.hough_line(imarray)[0]
-        return transform.hough_line(imarray)
+                harray[index] = transform.hough_line(util.rgb2gray(imarray[index]))[0]
+
+            return harray
+
+        return transform.hough_line(util.rgb2gray(imarray))[0]

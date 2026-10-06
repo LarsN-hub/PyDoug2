@@ -67,6 +67,11 @@ def test_rgb2gray_returns(sample_arrays) -> None:
 
     assert util.rgb2gray(sample_arrays["2drgb"]).shape == sample_arrays["2dgray"].shape
     assert util.rgb2gray(sample_arrays["3drgb"]).shape == sample_arrays["3dgray"].shape
+    assert util.rgb2gray(sample_arrays["2drgb"]).dtype == sample_arrays["2dgray"].dtype
+    assert (
+        util.rgb2gray(sample_arrays["2drgb"], False).dtype
+        != sample_arrays["2dgray"].dtype
+    )
 
 
 def test_chan_axis_returns(sample_arrays) -> None:

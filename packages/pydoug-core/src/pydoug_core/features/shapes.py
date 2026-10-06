@@ -30,7 +30,7 @@ def blobs(
     Log_Scale: bool = False,
     Populate_with_Sizes: bool = False,
     Return_Diameters: bool = False,
-    Pixel_Size: Annotated[float, {"min": 0}] = 1,
+    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
     Perform_Slicewise: bool = False,
 ) -> np.ndarray:
     """

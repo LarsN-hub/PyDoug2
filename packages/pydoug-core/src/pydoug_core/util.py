@@ -151,14 +151,23 @@ def gray2rgb(imarray: np.ndarray) -> np.ndarray:
 
 
 @register_operation(category="color", display_name="RGB to Grayscale")
-def rgb2gray(imarray: np.ndarray) -> np.ndarray:
+def rgb2gray(imarray: np.ndarray, Preserve_Dtype: bool = True) -> np.ndarray:
     """
     Make an RGB image array a grayscale image array. Convenience wrapper around
     scikit-image's color.rgb2gray:
     https://scikit-image.org/docs/stable/api/skimage.color.html#skimage.color.rgb2gray
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to convert from RGB to grayscale.
+    Preserve_Dtype: bool
+        Whether or not to preserve the dtype of the original image. Default is True.
     """
 
     if isrgb(imarray):
+        if Preserve_Dtype:
+            return convert_dtype(skrgb2gray(imarray), dtype_2_str(imarray.dtype))  # type: ignore
         return skrgb2gray(imarray)
     return imarray
 
