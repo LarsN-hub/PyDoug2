@@ -5,6 +5,7 @@ Tests for PyDoug's features.shapes module.
 import numpy as np
 from skimage.color import rgb2gray
 from skimage.data import hubble_deep_field as hubble
+from skimage.draw import line
 
 from pydoug_core.features import shapes
 
@@ -48,3 +49,22 @@ def test_blobs(sample_2drgb_array) -> None:
     assert result11.dtype == np.float64
     assert result12.dtype == np.float64
     assert result13.dtype == np.bool
+
+
+def test_lines() -> None:
+
+    test_array: np.ndarray = np.zeros((25, 30), np.uint8)
+    test_array[line(2, 5, 20, 15)] = 255
+    test_array[line(8, 3, 13, 24)] = 255
+    test_array[line(20, 4, 5, 26)] = 255
+    test_array2 = np.fliplr(test_array)
+    test_array3 = np.flipud(test_array)
+    test_array3d = np.stack((test_array, test_array2, test_array3), axis=0)
+    test_array_rgb = np.stack([test_array] * 3, axis=2)
+
+    result0: np.ndarray = shapes.lines(test_array_rgb)
+    result1: np.ndarray = shapes.lines(test_array)
+    result2: np.ndarray = shapes.lines(test_array3d)
+    assert np.all(result0 == test_array_rgb)
+    assert result1.dtype == np.bool
+    assert result2.dtype == np.bool

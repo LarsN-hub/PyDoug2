@@ -96,7 +96,7 @@ def test_rand_walk(sample_arrays) -> None:
     assert result7.dtype == np.uint8
 
 
-def test_chan_vese_algs(sample_arrays) -> None:
+def test_chan_vese_algs() -> None:
 
     sample_2dgray_morph: np.ndarray = np.random.randint(
         150, 160, (10, 10), dtype=np.uint8

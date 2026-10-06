@@ -189,6 +189,7 @@ def radon(imarray: np.ndarray, Inverse: bool = False) -> np.ndarray:
 def hough(
     imarray: np.ndarray,
     Mode: Literal["Circle", "Line"] = "Line",
+    Angle_Step: Annotated[float, {"min": 0.1, "step": 0.1}] = 1,
     Radius: Annotated[int, {"min": 1}] = 3,
 ) -> np.ndarray:
     """
@@ -206,6 +207,10 @@ def hough(
         The mode to accumulate votes. Default is "Line".
         - "Line": accumulate line responses.
         - "Circle": accumulate circle responses.
+    Angle_Step: float
+        If "Mode" is "Line", the angle step to use in the range [-pi/2, pi/2]. For
+        example, 1 will test 180 angles and 0.5 will test 360 angles, both in the range
+        [-pi/2, pi/2].
     Radius: int
         If "Mode" is "Circle", the radius to use for accumulating circle responses.
 
@@ -239,16 +244,21 @@ def hough(
         return transform.hough_circle(util.rgb2gray(imarray), Radius)
 
     else:
+        angles: np.ndarray = np.linspace(
+            -np.pi / 2, np.pi / 2, round(180 / Angle_Step), endpoint=True
+        )
         if util.is3d(imarray):
-            firstarray = transform.hough_line(util.rgb2gray(imarray[0]))[0]
+            firstarray = transform.hough_line(util.rgb2gray(imarray[0]), angles)[0]
             harray: np.ndarray = np.empty(
                 (imarray.shape[0], firstarray.shape[0], firstarray.shape[1]),
                 firstarray.dtype,
             )
             harray[0] = firstarray
             for index in range(1, imarray.shape[0]):
-                harray[index] = transform.hough_line(util.rgb2gray(imarray[index]))[0]
+                harray[index] = transform.hough_line(
+                    util.rgb2gray(imarray[index]), angles
+                )[0]
 
             return harray
 
-        return transform.hough_line(util.rgb2gray(imarray))[0]
+        return transform.hough_line(util.rgb2gray(imarray), angles)[0]
