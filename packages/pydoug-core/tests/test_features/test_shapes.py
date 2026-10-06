@@ -65,6 +65,11 @@ def test_lines() -> None:
     result0: np.ndarray = shapes.lines(test_array_rgb)
     result1: np.ndarray = shapes.lines(test_array)
     result2: np.ndarray = shapes.lines(test_array3d)
+    result3: np.ndarray = shapes.lines(test_array, Probabilistic=True)
+    result4: np.ndarray = shapes.lines(test_array3d, Probabilistic=True)
+    result3: np.ndarray = shapes.lines(test_array, Threshold=2, Probabilistic=True)
     assert np.all(result0 == test_array_rgb)
     assert result1.dtype == np.bool
     assert result2.dtype == np.bool
+    assert result3.dtype == np.bool
+    assert result4.dtype == np.bool

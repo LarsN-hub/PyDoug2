@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 import numpy as np
 from skimage.draw import line
 from skimage.feature import blob_dog, blob_doh, blob_log
-from skimage.transform import hough_line, hough_line_peaks
+from skimage.transform import hough_line, hough_line_peaks, probabilistic_hough_line
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb
@@ -219,6 +219,9 @@ def lines(
     Minimum_Distance: Annotated[int, {"min": 1}] = 9,
     Minimum_Angle: Annotated[int, {"min": 0, "max": 180}] = 10,
     Threshold: Annotated[float, {"min": 0}] = 0,
+    Probabilistic: bool = False,
+    Line_Length: Annotated[int, {"min": 1}] = 20,
+    Line_Gap: Annotated[int, {"min": 1}] = 10,
 ) -> np.ndarray:
     """
     Detect lines in a grayscale image. Performed slicewise for 3D images. Convenience
@@ -240,6 +243,16 @@ def lines(
     Threshold: float
         The minimum intensity of corner response peaks. If 0, will be calculated
         automatically.
+    Probabilistic: bool
+        Whether or not to perform a probabilistic line transform (True) or not (False).
+        Probabilistic transform requires additional parameters but can identify line
+        endpoints. Default is False.
+    Line_Length: int
+        If "Probabilistic" is True, the minimum length of detected lines. Higher = more
+        lines.
+    Line_Gap: int
+        If "Probabilistic" is True, the maximum gap between pixels to form a line.
+        Higher = longer lines.
 
     Returns
     -------
@@ -260,40 +273,64 @@ def lines(
         -np.pi / 2, np.pi / 2, round(180 / Angle_Step), endpoint=True
     )
 
-    def _lines(imarray, angles, Minimum_Distance, Minimum_Angle, thresh) -> np.ndarray:
+    def _lines(
+        imarray,
+        angles,
+        Minimum_Distance,
+        Minimum_Angle,
+        thresh,
+        Probabilistic,
+        Line_Length,
+        Line_Gap,
+    ) -> np.ndarray:
 
         lines_array: np.ndarray = np.zeros(imarray.shape, np.bool)
-        hough_response, tested_angles, distances = hough_line(imarray, angles)
-        for _, angle, d in zip(
-            *hough_line_peaks(
-                hough_response,
-                tested_angles,
-                distances,
-                Minimum_Distance,
-                Minimum_Angle,
-                thresh,
+
+        if Probabilistic:
+            if thresh:
+                thresh = round(thresh)
+            else:
+                thresh = 10
+            lines: list = probabilistic_hough_line(
+                imarray, thresh, Line_Length, Line_Gap, angles
             )
-        ):
-            x0: float = d * np.cos(angle)
-            y0: float = d * np.sin(angle)
-            m: float = np.tan(angle + np.pi / 2)
-            b: float = y0 - x0 * m
-            x_int: float = -b / m
-            if b > 0 and b < imarray.shape[0]:
-                y1: int = round(b)
-                x1: int = 0
-            else:
-                y1: int = 0
-                x1: int = round(x_int)
-            y_opp: float = m * (imarray.shape[1] - 1) + b
-            x_opp: float = ((imarray.shape[0] - 1) - b) / m
-            if y_opp > 0 and y_opp < imarray.shape[0]:
-                y2: int = round(y_opp)
-                x2: int = round((y_opp - b) / m)
-            else:
-                y2: int = round(m * x_opp + b)
-                x2: int = round(x_opp)
-            lines_array[line(y1, x1, y2, x2)] = True
+            for cur_line in lines:
+                lines_array[
+                    line(cur_line[0][1], cur_line[0][0], cur_line[1][1], cur_line[1][0])
+                ] = True
+
+        else:
+            hough_response, tested_angles, distances = hough_line(imarray, angles)
+            for _, angle, d in zip(
+                *hough_line_peaks(
+                    hough_response,
+                    tested_angles,
+                    distances,
+                    Minimum_Distance,
+                    Minimum_Angle,
+                    thresh,
+                )
+            ):
+                x0: float = d * np.cos(angle)
+                y0: float = d * np.sin(angle)
+                m: float = np.tan(angle + np.pi / 2)
+                b: float = y0 - x0 * m
+                x_int: float = -b / m
+                if b > 0 and b < imarray.shape[0]:
+                    y1: int = round(b)
+                    x1: int = 0
+                else:
+                    y1: int = 0
+                    x1: int = round(x_int)
+                y_opp: float = m * (imarray.shape[1] - 1) + b
+                x_opp: float = ((imarray.shape[0] - 1) - b) / m
+                if y_opp > 0 and y_opp < imarray.shape[0]:
+                    y2: int = round(y_opp)
+                    x2: int = round((y_opp - b) / m)
+                else:
+                    y2: int = round(m * x_opp + b)
+                    x2: int = round(x_opp)
+                lines_array[line(y1, x1, y2, x2)] = True
 
         return lines_array
 
@@ -301,9 +338,25 @@ def lines(
         harray: np.ndarray = np.empty(imarray.shape, np.bool)
         for index in range(0, imarray.shape[0]):
             harray[index] = _lines(
-                imarray[index], angles, Minimum_Distance, Minimum_Angle, thresh
+                imarray[index],
+                angles,
+                Minimum_Distance,
+                Minimum_Angle,
+                thresh,
+                Probabilistic,
+                Line_Length,
+                Line_Gap,
             )
 
         return harray
 
-    return _lines(imarray, angles, Minimum_Distance, Minimum_Angle, thresh)
+    return _lines(
+        imarray,
+        angles,
+        Minimum_Distance,
+        Minimum_Angle,
+        thresh,
+        Probabilistic,
+        Line_Length,
+        Line_Gap,
+    )
