@@ -23,7 +23,7 @@ def test_get_operation_and_unregister() -> None:
     assert isinstance(result1, registry.OperationSpec)
     assert result1.name == "reslice"
     assert result1.display_name == "Reslice"
-    assert result1.category == "transformations"
+    assert result1.category == "transform"
     assert result1.func == geom.reslice
     assert result1.signature == inspect.signature(geom.reslice)
     registry.unregister_operation("reslice")
@@ -33,9 +33,9 @@ def test_get_operation_and_unregister() -> None:
 def test_list_operations() -> None:
 
     result1: list[registry.OperationSpec] = registry.list_operations()
-    result2: list[registry.OperationSpec] = registry.list_operations("transformations")
+    result2: list[registry.OperationSpec] = registry.list_operations("transform")
     assert isinstance(result1, list)
     assert isinstance(result1[0], registry.OperationSpec)
     assert isinstance(result2, list)
     assert isinstance(result2[0], registry.OperationSpec)
-    assert result2[0].category == "transformations"
+    assert result2[0].category == "transform"
