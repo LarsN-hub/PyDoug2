@@ -17,7 +17,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["local_threshold", "rand_walk", "chan_vese_algs"]
 
 
-@register_operation(category="segmentation", display_name="Local Threshold")
+@register_operation(category="segment", display_name="Local Threshold")
 def local_threshold(
     imarray: np.ndarray,
     Method: Literal["Adaptive", "Mean", "Niblack", "Sauvola", "Otsu"] = "Otsu",
@@ -105,7 +105,7 @@ def local_threshold(
 
 
 @register_operation(
-    category="segmentation",
+    category="segment",
     display_name="Random Walker",
     array_params=("Markers",),
 )
@@ -164,7 +164,7 @@ def rand_walk(
     )
 
 
-@register_operation(category="segmentation", display_name="Chan-Vese")
+@register_operation(category="segment", display_name="Chan-Vese")
 def chan_vese_algs(
     imarray: np.ndarray,
     Initial_Level_Set: Literal["Checkerboard", "Disk"] = "Checkerboard",

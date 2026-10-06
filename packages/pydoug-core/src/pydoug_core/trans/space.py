@@ -15,7 +15,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["radon", "invradon", "fft", "invfft", "euclidian_dt"]
 
 
-@register_operation(category="transformations", display_name="Distance")
+@register_operation(category="transform", display_name="Distance")
 def euclidian_dt(
     imarray: np.ndarray, Pixel_Size: Annotated[float, {"step": 0.0001, "min": 0}] = 1
 ) -> np.ndarray:
@@ -43,7 +43,7 @@ def euclidian_dt(
     return edt(imarray, Pixel_Size)  # type: ignore
 
 
-@register_operation(category="transformations", display_name="FFT")
+@register_operation(category="transform", display_name="FFT")
 def fft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     """
     Transform a spatial domain image into the frequency domain. Convenience wrapper
@@ -83,7 +83,7 @@ def fft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     return np.abs(ft.fftshift(ft.fft2(imarray)))
 
 
-@register_operation(category="transformations", display_name="Inverse FFT")
+@register_operation(category="transform", display_name="Inverse FFT")
 def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     """
     Transform a frequency domain image into the spatial domain. Convenience wrapper
@@ -124,7 +124,7 @@ def invfft(imarray: np.ndarray, Slicewise: bool = False) -> np.ndarray:
     return np.abs(ft.ifftshift(ft.ifft2(imarray)))
 
 
-@register_operation(category="transformations", display_name="Radon")
+@register_operation(category="transform", display_name="Radon")
 def radon(imarray: np.ndarray) -> np.ndarray:
     """
     Transform a spatial domain image into the projection domain (i.e., a sinogram) about
@@ -156,7 +156,7 @@ def radon(imarray: np.ndarray) -> np.ndarray:
         return transform.radon(imarray, circle=False)
 
 
-@register_operation(category="transformations", display_name="Inverse Radon")
+@register_operation(category="transform", display_name="Inverse Radon")
 def invradon(imarray: np.ndarray) -> np.ndarray:
     """
     Reconstruct a projection domain image (i.e., a sinogram) into the spatial domain.
@@ -188,7 +188,7 @@ def invradon(imarray: np.ndarray) -> np.ndarray:
         return transform.iradon(imarray, circle=False)
 
 
-# @register_operation(category="transformations", display_name="Hough")
+# @register_operation(category="transform", display_name="Hough")
 def hough(
     imarray: np.ndarray,
     Mode: str = "line",

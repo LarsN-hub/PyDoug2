@@ -18,7 +18,7 @@ __all__ = ["connectivity", "watershed"]
 
 
 @register_operation(
-    category="segmentation",
+    category="segment",
     display_name="Connectivity Label",
     output_kind="labels",
 )
@@ -60,7 +60,7 @@ def connectivity(
 
 
 @register_operation(
-    category="segmentation",
+    category="segment",
     display_name="Watershed Label",
     array_params=("Markers",),
     array_param_types={"Markers": "labels"},

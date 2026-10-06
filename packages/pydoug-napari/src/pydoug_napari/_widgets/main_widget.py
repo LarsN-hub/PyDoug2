@@ -164,9 +164,9 @@ class MainWidget(QTabWidget):
         if "manipulate" in categories:
             sorted_categories.append("manipulate")
             categories.remove("manipulate")
-        if "transformations" in categories:
-            sorted_categories.append("transformations")
-            categories.remove("transformations")
+        if "transform" in categories:
+            sorted_categories.append("transform")
+            categories.remove("transform")
         if "math" in categories:
             sorted_categories.append("math")
             categories.remove("math")
@@ -182,9 +182,9 @@ class MainWidget(QTabWidget):
         if "features" in categories:
             sorted_categories.append("features")
             categories.remove("features")
-        if "segmentation" in categories:
-            sorted_categories.append("segmentation")
-            categories.remove("segmentation")
+        if "segment" in categories:
+            sorted_categories.append("segment")
+            categories.remove("segment")
         # if "morphology" in categories:
         #    sorted_categories.append("morphology")
         #    categories.remove("morphology")

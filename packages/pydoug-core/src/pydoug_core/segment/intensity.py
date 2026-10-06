@@ -41,7 +41,7 @@ def threshold_array(
 
 
 @register_operation(
-    category="segmentation",
+    category="segment",
     display_name="Interactive Threshold",
     live_preview=True,
     widget_options={"Range": {"widget_type": "RangeSlider", "min": 0, "max": 255}},
@@ -72,7 +72,7 @@ def interactive_threshold(
 
 
 @register_operation(
-    category="segmentation",
+    category="segment",
     display_name="Manual Threshold",
 )
 def manual_threshold(
@@ -102,7 +102,7 @@ def manual_threshold(
     return threshold_array(imarray, Range)
 
 
-@register_operation(category="segmentation", display_name="Reassign Intensity")
+@register_operation(category="segment", display_name="Reassign Intensity")
 def reassign(
     imarray: np.ndarray,
     Intensity_Value: Annotated[
@@ -144,7 +144,7 @@ def reassign(
 
 
 @register_operation(
-    category="segmentation",
+    category="segment",
     display_name="Histogram Threshold",
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
@@ -221,7 +221,7 @@ def hist_threshold(
     return thresh_array
 
 
-@register_operation(category="segmentation", display_name="Hysteresis Threshold")
+@register_operation(category="segment", display_name="Hysteresis Threshold")
 def hysteresis(
     imarray: np.ndarray,
     Thresholds: tuple[
