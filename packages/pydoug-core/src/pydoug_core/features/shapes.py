@@ -6,14 +6,20 @@ from math import sqrt
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.draw import line
+from skimage.draw import circle_perimeter, line
 from skimage.feature import blob_dog, blob_doh, blob_log
-from skimage.transform import hough_line, hough_line_peaks, probabilistic_hough_line
+from skimage.transform import (
+    hough_circle,
+    hough_circle_peaks,
+    hough_line,
+    hough_line_peaks,
+    probabilistic_hough_line,
+)
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb
 
-__all__ = ["blobs", "lines"]
+__all__ = ["blobs", "lines", "circles"]
 
 
 @register_operation(category="features", display_name="Blobs")
@@ -237,11 +243,11 @@ def lines(
         The angle step to use in the range [-pi/2, pi/2]. For example, 1 will test 180
         angles and 0.5 will test 360 angles, both in the range [-pi/2, pi/2].
     Minimum_Distance: int
-        The minimum distance between corner response peaks.
+        The minimum distance between line response peaks.
     Minimum_Angle: float
         The minimum angle separating lines.
     Threshold: float
-        The minimum intensity of corner response peaks. If 0, will be calculated
+        The minimum intensity of line response peaks. If 0, will be calculated
         automatically.
     Probabilistic: bool
         Whether or not to perform a probabilistic line transform (True) or not (False).
@@ -359,4 +365,87 @@ def lines(
         Probabilistic,
         Line_Length,
         Line_Gap,
+    )
+
+
+@register_operation(category="features", display_name="Circles")
+def circles(
+    imarray: np.ndarray,
+    Radii: tuple[
+        Annotated[int, {"min": 1}],
+        Annotated[int, {"min": 1}],
+        Annotated[int, {"min": 1}],
+    ] = (10, 50, 10),
+    Minimum_Distance: Annotated[int, {"min": 1}] = 9,
+    Threshold: Annotated[float, {"min": 0}] = 0,
+) -> np.ndarray:
+    """
+    Detect circles in a grayscale image. Performed slicewise for 3D images. Convenience
+    wrapper around hough_circle and hough_circle_peaks in scikit-image's transform:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.hough_circle
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.hough_circle_peaks
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to detect circles in.
+    Radii: tuple[int, int, int]
+        The radii to test for circle identification where:
+        - Left-Most: The lowest radius.
+        - Middle: The highest radius.
+        - Right-Most: The step interval between the two.
+    Minimum_Distance: int
+        The minimum distance between line response peaks.
+    Threshold: float
+        The minimum intensity of line response peaks. If 0, will be calculated
+        automatically.
+
+    Returns
+    -------
+    circle_array: np.ndarray
+        The circle response image.
+    """
+
+    if isrgb(imarray):
+        print("Image is RGB, lines detection not performed!")
+        return imarray
+
+    radii: np.ndarray = np.arange(Radii[0], Radii[1] + 1, Radii[2])
+    if Threshold == 0:
+        thresh: float | None = None
+    else:
+        thresh = Threshold
+
+    def _circles(imarray, radii, Minimum_Distance, thresh) -> np.ndarray:
+        circle_array: np.ndarray = np.zeros(
+            (imarray.shape[0] + (2 * max(radii)), imarray.shape[1] + (2 * max(radii))),
+            np.bool,
+        )
+        hough_res: np.ndarray = hough_circle(imarray, radii, full_output=True)
+        _, cx, cy, measured_radii = hough_circle_peaks(
+            hough_res, radii, Minimum_Distance, Minimum_Distance, thresh
+        )
+        for center_y, center_x, radius in zip(cy, cx, measured_radii):
+            circy, circx = circle_perimeter(
+                center_y, center_x, radius, shape=circle_array.shape
+            )
+            circle_array[circy, circx] = True
+
+        return circle_array[
+            max(radii) : max(radii) + imarray.shape[0],
+            max(radii) : max(radii) + imarray.shape[1],
+        ]
+
+    if is3d(imarray):
+        harray: np.ndarray = np.empty(imarray.shape, np.bool)
+        for index in range(0, imarray.shape[0]):
+            harray[index] = _circles(imarray[index], radii, Minimum_Distance, thresh)
+
+        return harray
+
+    return _circles(
+        imarray,
+        radii,
+        Minimum_Distance,
+        thresh,
     )

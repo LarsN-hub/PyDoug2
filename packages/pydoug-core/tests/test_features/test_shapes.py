@@ -5,7 +5,7 @@ Tests for PyDoug's features.shapes module.
 import numpy as np
 from skimage.color import rgb2gray
 from skimage.data import hubble_deep_field as hubble
-from skimage.draw import line
+from skimage.draw import circle_perimeter, line
 
 from pydoug_core.features import shapes
 
@@ -73,3 +73,27 @@ def test_lines() -> None:
     assert result2.dtype == np.bool
     assert result3.dtype == np.bool
     assert result4.dtype == np.bool
+
+
+def test_circles() -> None:
+
+    test_array: np.ndarray = np.zeros((25, 30), np.uint8)
+    test_array[circle_perimeter(10, 12, 4, shape=test_array.shape)] = 255
+    test_array[circle_perimeter(20, 25, 2, shape=test_array.shape)] = 255
+    test_array[circle_perimeter(15, 15, 10, shape=test_array.shape)] = 255
+    test_array2 = np.fliplr(test_array)
+    test_array3 = np.flipud(test_array)
+    test_array3d = np.stack((test_array, test_array2, test_array3), axis=0)
+    test_array_rgb = np.stack([test_array] * 3, axis=2)
+
+    result0: np.ndarray = shapes.circles(test_array_rgb)
+    result1: np.ndarray = shapes.circles(test_array, (2, 15, 1), 3)
+    result2: np.ndarray = shapes.circles(test_array3d, (2, 15, 1), 3)
+    result3: np.ndarray = shapes.circles(test_array, (2, 15, 1), 3, 2)
+    assert np.all(result0 == test_array_rgb)
+    assert result1.dtype == np.bool
+    assert result2.dtype == np.bool
+    assert result3.dtype == np.bool
+    assert result1.shape == test_array.shape
+    assert result2.shape == test_array3d.shape
+    assert result3.shape == test_array.shape
