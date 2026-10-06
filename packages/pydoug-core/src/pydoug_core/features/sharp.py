@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 
 import numpy as np
 from skimage.feature import (
+    canny,
     corner_fast,
     corner_harris,
     corner_kitchen_rosenfeld,
@@ -19,7 +20,87 @@ from skimage.morphology import ball, disk
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["peaks"]
+__all__ = ["edges", "peaks", "corners"]
+
+
+@register_operation(category="features", display_name="Edges")
+def edges(
+    imarray: np.ndarray,
+    Sigma: Annotated[float, {"min": 0}] = 1,
+    Thresholds: tuple[
+        Annotated[float, {"min": -32768, "max": 65535}],
+        Annotated[float, {"min": -32768, "max": 65535}],
+    ] = (0, 0),
+    Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"] = "Nearest",
+    Constant_Value: Annotated[int, {"min": -32768, "max": 65535}] = 0,
+) -> np.ndarray:
+    """
+    Identify edges in an image with the Canny algorithm. Only works on grayscale images.
+    Performed slicewise for 3D images. Convenience wrapper around scikit-image's
+    feature.canny:
+    https://scikit-image.org/docs/stable/api/skimage.feature.html#skimage.feature.canny
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to detect edges in.
+    Sigma: float
+        The standard deviation of the Gaussian blur applied to the image.
+    Thresholds: tuple[float, float]
+        The low and high thresholds applied to the hysteresis thresholding to identify
+        the edges. Automatically calculated if set to 0.
+    Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"]
+        If "Method" is "Kitchen-Rosenfeld", how the algorithm should handle image
+        borders. Default is "Nearest". Ignored for other methods.
+        - "Constant": The border is extended with a value defined in "Constant Value".
+        - "Mirror": The border is extended by reflecting about the center of the pixel.
+        - "Nearest": The border is extended by copying the edge pixel.
+        - "Reflect": The border is extended by reflecting about the edge of the pixel.
+        - "Wrap": The border is extended by wrapping around to the opposite border.
+    Constant_Value: float
+        If "Edge Mode" is "Constant", the constant value to use. Default is 0.
+
+    Returns
+    -------
+    edge_array: np.ndarray
+        The image after filtering with the Canny edge algorithm.
+    """
+
+    if util.isrgb(imarray):
+        print("Image is RGB, edge detection not performed!")
+        return imarray
+
+    if Thresholds[0] > Thresholds[1]:
+        thresholds: tuple = (Thresholds[1], Thresholds[0])
+    else:
+        thresholds: tuple = (Thresholds[0], Thresholds[1])
+    if thresholds[0] == 0:
+        thresholds = (None, thresholds[1])
+    if thresholds[1] == 0:
+        thresholds = (thresholds[0], None)
+
+    if util.is3d(imarray):
+        edge_array: np.ndarray = np.empty(imarray.shape, np.bool)
+        for index in range(0, imarray.shape[0]):
+            edge_array[index] = canny(
+                imarray[index],
+                Sigma,
+                thresholds[0],
+                thresholds[1],
+                mode=Edge_Mode.lower(),
+                cval=Constant_Value,
+            )
+
+        return edge_array
+
+    return canny(
+        imarray,
+        Sigma,
+        thresholds[0],
+        thresholds[1],
+        mode=Edge_Mode.lower(),
+        cval=Constant_Value,
+    )
 
 
 @register_operation(category="features", display_name="Peaks")
@@ -166,8 +247,8 @@ def corners(
     Harris_Normalization: float
         If "Method" is "Harris", the normalization factor for the corner response.
     Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"]
-        If "Method" is "Adaptive", how the algorithm should handle image borders.
-        Default is "Nearest". Ignored for other methods.
+        If "Method" is "Kitchen-Rosenfeld", how the algorithm should handle image
+        borders. Default is "Nearest". Ignored for other methods.
         - "Constant": The border is extended with a value defined in "Constant Value".
         - "Mirror": The border is extended by reflecting about the center of the pixel.
         - "Nearest": The border is extended by copying the edge pixel.
