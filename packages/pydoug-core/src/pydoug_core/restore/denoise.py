@@ -398,7 +398,7 @@ def tv_chambolle(
 )
 def wavelet(
     imarray: np.ndarray,
-    Wavelet: str = "db1",
+    Wavelet: str = "db9",
     Sigma: Annotated[float, {"min": 0}] = 0,
     Wavelet_Levels: Annotated[int, {"min": 0}] = 0,
     Mode: Literal["Soft", "Hard"] = "Soft",
@@ -418,7 +418,7 @@ def wavelet(
     imarray: np.ndarray
         The image to denoise.
     Wavelet: str
-        The wavelet to use for denoising. Default is "db1".
+        The wavelet to use for denoising. Default is "db9".
     Sigma: float
         The standard deviation to use when finding the wavelet detail coefficient
         thresholds. If 0 is provided, this is calculated automatically.

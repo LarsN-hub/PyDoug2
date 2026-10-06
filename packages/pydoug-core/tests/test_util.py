@@ -39,6 +39,20 @@ def test_isrgb_returns(
     assert not util.isrgb()
 
 
+def test_is_square(sample_2dgray_array, sample_3dgray_array):
+
+    assert util.is_square(sample_2dgray_array)
+    assert not util.is_square(sample_2dgray_array[:, :-1])
+    assert util.is_square(sample_3dgray_array)
+    assert not util.is_square(sample_3dgray_array[:, :, :-1])
+    assert util.is_square(sample_2dgray_array, False)
+    assert not util.is_square(sample_2dgray_array[:, :-1], False)
+    assert util.is_square(
+        np.append(sample_3dgray_array, sample_3dgray_array, axis=0), False
+    )
+    assert not util.is_square(sample_3dgray_array, False)
+
+
 def test_gray2rgb_returns(
     sample_2dgray_array, sample_3dgray_array, sample_2drgb_array, sample_3drgb_array
 ) -> None:

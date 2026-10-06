@@ -15,7 +15,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["smooth"]
 
 
-@register_operation(category="filters", display_name="Smooth")
+@register_operation(category="filter", display_name="Smooth")
 def smooth(
     imarray: np.ndarray,
     Method: Literal["Gaussian", "Mean", "Median", "Mode"] = "Gaussian",

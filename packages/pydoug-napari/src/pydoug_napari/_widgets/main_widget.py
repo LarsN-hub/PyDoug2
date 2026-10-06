@@ -176,9 +176,9 @@ class MainWidget(QTabWidget):
         if "restore" in categories:
             sorted_categories.append("restore")
             categories.remove("restore")
-        if "filters" in categories:
-            sorted_categories.append("filters")
-            categories.remove("filters")
+        if "filter" in categories:
+            sorted_categories.append("filter")
+            categories.remove("filter")
         if "features" in categories:
             sorted_categories.append("features")
             categories.remove("features")

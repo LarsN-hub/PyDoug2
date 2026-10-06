@@ -13,7 +13,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["butter", "dog", "gab"]
 
 
-@register_operation(category="filters", display_name="Butterworth")
+@register_operation(category="filter", display_name="Butterworth")
 def butter(
     imarray: np.ndarray,
     Cutoff_Frequency_Ratio: Annotated[
@@ -79,7 +79,7 @@ def butter(
     )  # type: ignore
 
 
-@register_operation(category="filters", display_name="Difference of Gaussians")
+@register_operation(category="filter", display_name="Difference of Gaussians")
 def dog(
     imarray: np.ndarray,
     Sigmas: tuple[Annotated[float, {"min": 0}], Annotated[float, {"min": 0}]] = (2, 5),
@@ -147,7 +147,7 @@ def dog(
     )
 
 
-@register_operation(category="filters", display_name="Gabor")
+@register_operation(category="filter", display_name="Gabor")
 def gab(
     imarray: np.ndarray,
     Frequency: Annotated[float, {"min": 0}] = 0.1,

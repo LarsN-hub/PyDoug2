@@ -17,8 +17,8 @@ from skimage.feature import (
 )
 from skimage.morphology import ball, disk
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
+from pydoug_core.util import is3d, isrgb
 
 __all__ = ["edges", "peaks", "corners"]
 
@@ -66,7 +66,7 @@ def edges(
         The image after filtering with the Canny edge algorithm.
     """
 
-    if util.isrgb(imarray):
+    if isrgb(imarray):
         print("Image is RGB, edge detection not performed!")
         return imarray
 
@@ -79,7 +79,7 @@ def edges(
     if thresholds[1] == 0:
         thresholds = (thresholds[0], None)
 
-    if util.is3d(imarray):
+    if is3d(imarray):
         edge_array: np.ndarray = np.empty(imarray.shape, np.bool)
         for index in range(0, imarray.shape[0]):
             edge_array[index] = canny(
@@ -153,16 +153,16 @@ def peaks(
     if Radius == 0:
         footprint = None
     else:
-        if Perform_Slicewise or not util.is3d(imarray):
+        if Perform_Slicewise or not is3d(imarray):
             footprint = disk(Radius)
         else:
             footprint = ball(Radius)
 
-    if util.isrgb(imarray):
+    if isrgb(imarray):
         peak_array: np.ndarray = np.zeros(imarray.shape[:-1], np.bool)
     else:
         peak_array: np.ndarray = np.zeros(imarray.shape, np.bool)
-    if Perform_Slicewise and util.is3d(imarray):
+    if Perform_Slicewise and is3d(imarray):
         for index in range(0, imarray.shape[0]):
             peak_coords = peak_local_max(
                 imarray[index],
@@ -171,14 +171,14 @@ def peaks(
                 rel_thresh,
                 footprint=footprint,
             )
-            if util.isrgb(imarray):
+            if isrgb(imarray):
                 peak_coords = peak_coords[:, :-1]
             peak_array[index][tuple(peak_coords.T)] = True
 
     peak_coords: np.ndarray = peak_local_max(
         imarray, Minimum_Distance, abs_thresh, rel_thresh, footprint=footprint
     )
-    if util.isrgb(imarray):
+    if isrgb(imarray):
         peak_coords = peak_coords[:, :-1]
     peak_array[tuple(peak_coords.T)] = True
     return peak_array
@@ -282,7 +282,7 @@ def corners(
         The corner response image.
     """
 
-    if util.isrgb(imarray):
+    if isrgb(imarray):
         print("Image is RGB, corner identification not performed!")
         return imarray
 
@@ -353,7 +353,7 @@ def corners(
             )
         return corner_response
 
-    if util.is3d(imarray):
+    if is3d(imarray):
         if Return_Peaks:
             corner_array: np.ndarray = np.empty(imarray.shape, np.bool)
         else:

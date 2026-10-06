@@ -45,3 +45,24 @@ def test_inpaint(sample_arrays, sample_masks) -> None:
     assert result2.dtype == sample_arrays["3dgray"].dtype
     assert result3.dtype == sample_arrays["2drgb"].dtype
     assert result4.dtype == sample_arrays["3drgb"].dtype
+
+
+def test_ring_removal(sample_arrays) -> None:
+
+    large_array: np.ndarray = np.vstack([sample_arrays["2dgray"]] * 5)
+    large_array = np.hstack([large_array] * 5)
+    large_array3d: np.ndarray = np.stack([large_array] * 5, axis=0)
+    result0: np.ndarray = misc.ring_removal(sample_arrays["2drgb"])
+    half_array = sample_arrays["2dgray"][:, :-2]
+    result0_2: np.ndarray = misc.ring_removal(half_array)
+    result1: np.ndarray = misc.ring_removal(large_array)
+    result2: np.ndarray = misc.ring_removal(large_array3d)
+    result3: np.ndarray = misc.ring_removal(large_array, "Wavelet")
+    result4: np.ndarray = misc.ring_removal(large_array3d, "Wavelet")
+
+    assert np.all(result0 == sample_arrays["2drgb"])
+    assert np.all(result0_2 == half_array)
+    assert result1.dtype == large_array.dtype
+    assert result2.dtype == large_array3d.dtype
+    assert result3.dtype == large_array.dtype
+    assert result4.dtype == large_array3d.dtype

@@ -11,8 +11,8 @@ from skimage.measure import label as conn_label
 from skimage.morphology import ball, disk
 from skimage.segmentation import watershed as ws
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
+from pydoug_core.util import is3d, isrgb
 
 __all__ = ["connectivity", "watershed"]
 
@@ -130,11 +130,11 @@ def watershed(
         The image after watershed labeling.
     """
 
-    if util.isrgb(imarray):
+    if isrgb(imarray):
         print("Image is RGB, watershed not performed!")
         return imarray
 
-    if Connectivity > 2 and Perform_Slicewise or not util.is3d(imarray):
+    if Connectivity > 2 and Perform_Slicewise or not is3d(imarray):
         Connectivity = 2
 
     def _watershed(
@@ -168,7 +168,7 @@ def watershed(
                     watershed_line=Watershed_Line,
                 )
 
-        if util.is3d(imarray):
+        if is3d(imarray):
             footprint = ball(Automatic_Radius)
         else:
             footprint = disk(Automatic_Radius)
@@ -187,7 +187,7 @@ def watershed(
             watershed_line=Watershed_Line,
         )
 
-    if Perform_Slicewise and util.is3d(imarray):
+    if Perform_Slicewise and is3d(imarray):
         wsarray: np.ndarray = np.empty(imarray.shape, np.int32)
         for index in range(0, imarray.shape[0]):
             if User_Defined_Markers and Markers is not None:

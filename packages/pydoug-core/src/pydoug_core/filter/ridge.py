@@ -7,13 +7,13 @@ from typing import Annotated, Literal
 import numpy as np
 from skimage.filters import frangi, hessian, meijering, sato
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
+from pydoug_core.util import is3d, isrgb
 
 __all__ = ["ridge"]
 
 
-@register_operation(category="filters", display_name="Ridges")
+@register_operation(category="filter", display_name="Ridges")
 def ridge(
     imarray: np.ndarray,
     Method: Literal["Frangi", "Hessian", "Meijering", "Sato"] = "Sato",
@@ -103,7 +103,7 @@ def ridge(
                 gamma = None
             else:
                 gamma = Gamma
-            if util.isrgb(imarray):
+            if isrgb(imarray):
                 ridge_array: np.ndarray = np.empty(imarray.shape)
                 for cindex in range(0, imarray.shape[-1]):
                     ridge_array[..., cindex] = frangi(
@@ -135,7 +135,7 @@ def ridge(
                 gamma = 15
             else:
                 gamma = int(round(Gamma))
-            if util.isrgb(imarray):
+            if isrgb(imarray):
                 ridge_array: np.ndarray = np.empty(imarray.shape)
                 for cindex in range(0, imarray.shape[-1]):
                     ridge_array[..., cindex] = hessian(
@@ -163,7 +163,7 @@ def ridge(
             )
 
         elif Method == "Meijering":
-            if util.isrgb(imarray):
+            if isrgb(imarray):
                 ridge_array: np.ndarray = np.empty(imarray.shape)
                 for cindex in range(0, imarray.shape[-1]):
                     ridge_array[..., cindex] = meijering(
@@ -187,7 +187,7 @@ def ridge(
             )
 
         else:
-            if util.isrgb(imarray):
+            if isrgb(imarray):
                 ridge_array: np.ndarray = np.empty(imarray.shape)
                 for cindex in range(0, imarray.shape[-1]):
                     ridge_array[..., cindex] = sato(
@@ -208,7 +208,7 @@ def ridge(
                 Constant_Value,
             )
 
-    if Perform_Slicewise and util.is3d(imarray):
+    if Perform_Slicewise and is3d(imarray):
         ridge_array: np.ndarray = np.empty(imarray.shape)
         for index in range(0, imarray.shape[0]):
             ridge_array[index] = _ridge(
