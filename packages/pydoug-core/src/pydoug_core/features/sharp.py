@@ -1,5 +1,5 @@
 """
-Detect features in images like corners, blobs, and edges.
+Detect sharp features in images like corners, edges, and peaks.
 """
 
 from typing import Annotated, Literal
@@ -127,7 +127,7 @@ def peaks(
     Minimum_Distance: int
         The minimum distance between peaks.
     Absolute_Threshold: float
-        The abolsute minimum intensity of peaks. If 0, will be calculated automaticall.
+        The absolute minimum intensity of peaks. If 0, will be calculated automatically.
     Relative_Threshold: float
         The relative minimum intensity of peaks (found as this value * image max).
         If 0, will be calculated automatically. Overwrites "Absolute_Threshold" if both
@@ -267,8 +267,8 @@ def corners(
     Minimum_Distance: int
         If "Return_Peaks" is True, the minimum distance between peaks.
     Absolute_Threshold: float
-        If "Return_Peaks" is True, the abolsute minimum intensity of peaks.
-        If 0, will be calculated automaticall.
+        If "Return_Peaks" is True, the absolute minimum intensity of peaks.
+        If 0, will be calculated automatically.
     Relative_Threshold: float
         If "Return_Peaks" is True, the relative minimum intensity of peaks (found as
         this value * image max). If 0, will be calculated automatically. Overwrites

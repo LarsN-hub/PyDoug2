@@ -15,7 +15,7 @@ from skimage.restoration import inpaint_biharmonic, rolling_ball
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["rolling", "inpaint"]
+__all__ = ["rolling", "inpaint", "ring_removal"]
 
 
 @register_operation(category="restore", display_name="Rolling Ball")
