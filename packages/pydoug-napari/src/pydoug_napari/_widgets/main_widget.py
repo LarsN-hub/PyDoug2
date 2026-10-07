@@ -193,6 +193,9 @@ class MainWidget(QTabWidget):
         # if "plots" in categories:
         #    sorted_categories.append("plots")
         #    categories.remove("plots")
+        # if "generate" in categories:
+        #     sorted_categories.append("generate")
+        #     categories.remove("generate")
         if "color" in categories:
             sorted_categories.append("color")
             categories.remove("color")

@@ -6,6 +6,7 @@ from math import sqrt
 from typing import Annotated, Literal
 
 import numpy as np
+from porespy.filters import local_thickness
 from skimage.draw import circle_perimeter, line
 from skimage.feature import blob_dog, blob_doh, blob_log
 from skimage.measure import centroid as ctrd
@@ -20,7 +21,85 @@ from skimage.transform import (
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb, rgb2gray
 
-__all__ = ["blobs", "lines", "circles", "centroid"]
+__all__ = ["mis", "blobs", "lines", "circles", "centroid"]
+
+
+@register_operation(category="features", display_name="Maximum Inscribed Spheres")
+def mis(
+    imarray: np.ndarray,
+    Method: Literal[
+        "Brute Force", "Convolution", "Distance Transform", "ImageJ"
+    ] = "Distance Transform",
+    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
+    Smooth: bool = True,
+    Return_Diameters: bool = False,
+    Perform_Slicewise: bool = False,
+) -> np.ndarray:
+    """
+    Find the maximum inscribed spheres for a binary image. Image must be 2D/3D binary.
+    Convenience wrapper around porespy's filters.local_thickness:
+    https://porespy.org/autoapi/porespy/filters/local_thickness.html#
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to find maximum inscribed spheres in.
+    Method: Literal
+        The method for finding the inscribed spheres. Default is "Distance Transform".
+        - "Brute Force": Brute force algorithm.
+        - "Distance Transform": Uses distance transforms to dilate/erode each radius.
+        - "ImageJ": Uses ImageJ's algorithm (faster "Brute Force", less accurate).
+        - "Convolution": FFT-based convolution to dilate/erode each radius.
+    Pixel_Size: float
+        The edge length of pixels in real-world units.
+    Smooth: bool
+        Whether to remove small facets at borders (True) or not (False). Default True.
+    Return_Diameters: bool
+        Whether to return the diameter of the spheres (True) or the radii (False).
+        Default is False.
+    Perform_Slicewise: bool
+        Whether or not to perform the operation slicewise. Default is False.
+
+    Returns
+    -------
+    mis_array: np.ndarray
+        The maximum inscribed spheres image.
+    """
+
+    if isrgb(imarray):
+        print("Image is RGB, MIS not found!")
+        return imarray
+
+    def _mis(imarray, Method, Pixel_Size, Smooth, Return_Diameters) -> np.ndarray:
+
+        if Method == "Brute Force":
+            method: str = "bf"
+        elif Method == "Distance Transform":
+            method = "dt"
+        elif Method == "ImageJ":
+            method = "imj"
+        else:
+            method = "conv"
+
+        rad_array: np.ndarray = (
+            local_thickness(imarray.astype(np.bool), method=method, smooth=Smooth)
+            * Pixel_Size
+        )
+
+        if Return_Diameters:
+            return rad_array * 2
+        return rad_array
+
+    if Perform_Slicewise and is3d(imarray):
+        mis_array: np.ndarray = np.empty(imarray.shape)
+        for index in range(0, imarray.shape[0]):
+            mis_array[index] = _mis(
+                imarray[index], Method, Pixel_Size, Smooth, Return_Diameters
+            )
+
+        return mis_array
+
+    return _mis(imarray, Method, Pixel_Size, Smooth, Return_Diameters)
 
 
 @register_operation(category="features", display_name="Blobs")
