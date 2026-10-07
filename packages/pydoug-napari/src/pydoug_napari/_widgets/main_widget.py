@@ -45,6 +45,7 @@ class MainWidget(QTabWidget):
         self.operation_widgets: dict[str, CollapsibleContainer] = {}
         self.results_log: ResultsLog = ResultsLog()
 
+        self.addTab(make_batch_widget(self.recorder), "Batch")
         categories: list[str] = self._specify_category_order(
             {spec.category for spec in list_operations()}
         )
@@ -52,8 +53,6 @@ class MainWidget(QTabWidget):
             self.addTab(
                 self._build_category_tab(category, viewer).native, category.title()
             )
-
-        self.addTab(make_batch_widget(self.recorder), "Batch")
 
         viewer.window.add_dock_widget(
             RecordingLogWidget(self.recorder), name="Workflow Log", area="bottom"
@@ -185,9 +184,9 @@ class MainWidget(QTabWidget):
         if "segment" in categories:
             sorted_categories.append("segment")
             categories.remove("segment")
-        # if "morphology" in categories:
-        #    sorted_categories.append("morphology")
-        #    categories.remove("morphology")
+        if "morphology" in categories:
+            sorted_categories.append("morphology")
+            categories.remove("morphology")
         if "measurements" in categories:
             sorted_categories.append("measurements")
             categories.remove("measurements")

@@ -26,6 +26,7 @@ filterwarnings = [
     "ignore:Module already imported so cannot be rewritten.*pydoug_core\\.testing.*:pytest.PytestAssertRewriteWarning",
     "ignore::UserWarning",
     "ignore::RuntimeWarning",
+    "ignore::DeprecationWarning",
 ]
 
 [tool.coverage.run]
