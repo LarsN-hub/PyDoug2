@@ -97,3 +97,24 @@ def test_circles() -> None:
     assert result1.shape == test_array.shape
     assert result2.shape == test_array3d.shape
     assert result3.shape == test_array.shape
+
+
+def test_centroid(sample_arrays) -> None:
+
+    result1: np.ndarray = shapes.centroid(sample_arrays["2dgray"])
+    result2: np.ndarray = shapes.centroid(sample_arrays["3dgray"])
+    result3: np.ndarray = shapes.centroid(sample_arrays["2drgb"])
+    result4: np.ndarray = shapes.centroid(sample_arrays["3drgb"])
+
+    assert result1.dtype == np.bool
+    assert result2.dtype == np.bool
+    assert result3.dtype == np.bool
+    assert result4.dtype == np.bool
+    assert result1.shape == sample_arrays["2dgray"].shape
+    assert result2.shape == sample_arrays["3dgray"].shape
+    assert result3.shape == sample_arrays["2dgray"].shape
+    assert result4.shape == sample_arrays["3dgray"].shape
+    assert np.count_nonzero(result1) == 1
+    assert np.count_nonzero(result2) == 1
+    assert np.count_nonzero(result3) == 1
+    assert np.count_nonzero(result4) == 1

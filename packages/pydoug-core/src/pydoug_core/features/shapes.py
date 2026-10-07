@@ -8,6 +8,7 @@ from typing import Annotated, Literal
 import numpy as np
 from skimage.draw import circle_perimeter, line
 from skimage.feature import blob_dog, blob_doh, blob_log
+from skimage.measure import centroid as ctrd
 from skimage.transform import (
     hough_circle,
     hough_circle_peaks,
@@ -17,9 +18,9 @@ from skimage.transform import (
 )
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import is3d, isrgb
+from pydoug_core.util import is3d, isrgb, rgb2gray
 
-__all__ = ["blobs", "lines", "circles"]
+__all__ = ["blobs", "lines", "circles", "centroid"]
 
 
 @register_operation(category="features", display_name="Blobs")
@@ -449,3 +450,28 @@ def circles(
         Minimum_Distance,
         thresh,
     )
+
+
+@register_operation(category="features", display_name="Centroid")
+def centroid(imarray: np.ndarray) -> np.ndarray:
+    """
+    Find the centroid of an image. RGB images are converted to grayscale first.
+    Convenience wrapper around scikit-image's measure.centroid:
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.centroid
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to find the centroid for.
+
+    Returns
+    -------
+    centroid_array: np.ndarray
+        An image with the same shape as the input with only the centroid.
+    """
+
+    coords: tuple = ctrd(rgb2gray(imarray))
+    centroid_array: np.ndarray = np.zeros(rgb2gray(imarray).shape, np.bool)
+    centroid_array[tuple(np.round(coords).astype(np.int32))] = True
+
+    return centroid_array
