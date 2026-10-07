@@ -82,7 +82,9 @@ class Recorder:
             The uuid step_id reference or None if N/A.
         """
 
-        return self._layer_to_step.get(layer)
+        if layer is not None:
+            return self._layer_to_step.get(layer)
+        return None
 
     def get_or_create_array_ref(self, layer: Any) -> str:
         """
@@ -399,16 +401,16 @@ class Recorder:
         outputs: dict[str, np.ndarray] = {}
         for step in self.steps:
             spec: OperationSpec = get_operation(step.operation_name)
-            primary_ref: str = step.input_refs.get("layer", "primary")
-            primary_arg: np.ndarray | None = self._resolve(
-                primary_ref, imarray, outputs
-            )
             other_kwargs = {
                 name: self._resolve(ref, imarray, outputs)
                 for name, ref in step.input_refs.items()
                 if name != "layer"
             }
-            result: Any = spec.func(primary_arg, **other_kwargs, **step.params)
+            if "layer" in step.input_refs:
+                primary_arg = self._resolve(step.input_refs["layer"], imarray, outputs)
+                result = spec.func(primary_arg, **other_kwargs, **step.params)
+            else:
+                result = spec.func(**other_kwargs, **step.params)
             outputs[step.step_id] = result
             yield step, spec, result
 

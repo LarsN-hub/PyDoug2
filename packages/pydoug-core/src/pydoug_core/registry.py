@@ -50,8 +50,10 @@ class OperationSpec:
         Whether or not to allow a live preview of the operation.
     layer_type: Literal["image", "labels"]
         The layer type to be added if a numpy array is produced.
-    captures_viewer_settings: bool = False
+    captures_viewer_settings: bool
         Whether or not the operation should capture viewer sttings (for screenshots).
+    requires_layer: bool
+        Whether or not the operation requires an input layer.
     signature: inspect.Signature
         The function's signature.
     """
@@ -74,6 +76,7 @@ class OperationSpec:
     live_preview: bool = False
     layer_type: Literal["image", "labels"] = "image"
     captures_viewer_settings: bool = False
+    requires_layer: bool = True
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -99,6 +102,7 @@ def register_operation(
     live_preview: bool = False,
     layer_type: Literal["image", "labels"] = "image",
     captures_viewer_settings: bool = False,
+    requires_layer: bool = True,
     allow_in_place: bool = False,
 ) -> Callable:
     """
@@ -139,6 +143,8 @@ def register_operation(
         The layer type to be added if a numpy array is produced.
     captures_viewer_settings: bool = False
         Whether or not the operation should capture viewer sttings (for screenshots).
+    requires_layer: bool
+        Whether or not the operation requires an input layer.
 
     Returns
     -------
@@ -191,6 +197,18 @@ def register_operation(
                 "isn't consumed downstream as an image/mask input."
             )
 
+        if not requires_layer and allow_in_place:
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: allow_in_place requires requires_layer=True."
+                "Otherewise there's no existing layer to overwrite."
+            )
+
+        if not requires_layer and captures_viewer_settings:
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: captures_viewer_settings reads display settings"
+                "from the selected layer, which requires_layer=False has none of."
+            )
+
         valid: set[str] = {"image", "labels"}
         if layer_type not in valid:
             raise ValueError(  # pragma: no cover
@@ -223,6 +241,7 @@ def register_operation(
             live_preview=live_preview,
             layer_type=layer_type,
             captures_viewer_settings=captures_viewer_settings,
+            requires_layer=requires_layer,
         )
         return func
 

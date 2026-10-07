@@ -236,15 +236,18 @@ def test_Recorder_replay_and_iter_replay(
     sample_2dgray_array,
     tmp_path,
     registered_nothing,
+    registered_nothing_no_layer,
 ) -> None:
 
     alt_array1: np.ndarray = np.copy(sample_2dgray_array)
     alt_array2: np.ndarray = np.copy(sample_2dgray_array)
     alt_array3: np.ndarray = np.copy(sample_2dgray_array)
+    alt_array4: np.ndarray = np.copy(sample_2dgray_array)
     record: recorder.Recorder = recorder.Recorder()
     layer1: DummyLayer = DummyLayer(alt_array1)
     layer2: DummyLayer = DummyLayer(alt_array2)
     layer3: DummyLayer = DummyLayer(alt_array3)
+    layer4: DummyLayer = DummyLayer(alt_array4)
     record.record("_nothing", {}, {"layer": "primary"}, layer1)
     record.record(
         "_nothing",
@@ -255,10 +258,16 @@ def test_Recorder_replay_and_iter_replay(
         },
         layer3,
     )
+    record.record(
+        "_nothing_no_layer",
+        {},
+        {},
+        layer4,
+    )
     record.save(Path(tmp_path / "test_workflow_replay"))
     record2: recorder.Recorder = recorder.Recorder()
     record2.load(Path(tmp_path / "test_workflow_replay"))
     result: np.ndarray | dict | Any = record2.replay(sample_2dgray_array)
     assert result is not None
     assert isinstance(result, np.ndarray)
-    assert np.all(result == sample_2dgray_array)
+    assert not np.all(result == sample_2dgray_array)

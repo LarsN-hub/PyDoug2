@@ -29,6 +29,24 @@ def registered_nothing():
 
 
 @pytest.fixture
+def registered_nothing_no_layer():
+    """
+    Fixture to create a registered "nothing_no_layer" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Nothing No Layer",
+        requires_layer=False,
+    )
+    def _nothing_no_layer() -> np.ndarray:
+        return np.random.randint(0, 256, (10, 10), dtype=np.uint8)  # pragma: no cover
+
+    yield "_nothing_no_layer"
+    unregister_operation("_nothing_no_layer")
+
+
+@pytest.fixture
 def registered_nothing_plot():
     """
     Fixture to create a registered "nothing_plot" operation.

@@ -190,6 +190,24 @@ def registered_capture_screen_labels():
     unregister_operation("_capture_screen_labels")
 
 
+@pytest.fixture
+def registered_generator():
+    """
+    Fixture to create a registered "dummy generator" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Dummy Generator",
+        requires_layer=False,
+    )
+    def _dummy_generator() -> np.ndarray:
+        return np.random.randint(0, 256, (10, 10), dtype=np.uint8)  # pragma: no cover
+
+    yield "_dummy_generator"
+    unregister_operation("_dummy_generator")
+
+
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield

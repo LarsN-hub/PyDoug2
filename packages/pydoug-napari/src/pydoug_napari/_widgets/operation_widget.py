@@ -55,14 +55,12 @@ def make_operation_widget(
     array_names: set[str] = set(operation_spec.array_params)
     is_running: dict[str, bool] = {"value": False}
 
-    def _dispatch(layer: Image, **params) -> None:
+    def _dispatch(**params) -> None:
         """
         Record an operation in the parameters log.
 
         Parameters
         ----------
-        layer: Image
-            napari Image layer
         **params
             The parameters for the function.
             The keyword arguments are passed to "Recorder.record()."
@@ -76,6 +74,7 @@ def make_operation_widget(
             widget.call_button.native.setEnabled(False)
             widget.call_button.text = "Running..."
 
+        layer = params.pop("layer", None) if operation_spec.requires_layer else None
         record_in_workflow: bool = params.pop("Record_in_Workflow", True)
         live_preview: bool = params.pop("Preview", False)
 
@@ -104,6 +103,12 @@ def make_operation_widget(
         if operation_spec.captures_viewer_settings:
             call_params["Settings"] = dict(captured_settings)
             recorded_params["Settings"] = dict(captured_settings)
+
+        if operation_spec.requires_layer:
+            layer_step_id = recorder.step_id_for_layer(layer)
+            input_refs["layer"] = (
+                f"step:{layer_step_id}" if layer_step_id else "primary"
+            )
 
         layer_step_id: str | None = recorder.step_id_for_layer(layer)
         input_refs["layer"] = f"step:{layer_step_id}" if layer_step_id else "primary"
@@ -150,8 +155,10 @@ def make_operation_widget(
                 widget.Preview.value = False
 
             if operation_spec.output_kind in ("image", "labels"):
-                in_place: bool = operation_spec.allow_in_place and call_params.get(
-                    "In_Place", False
+                in_place: bool = (
+                    operation_spec.requires_layer
+                    and operation_spec.allow_in_place
+                    and call_params.get("In_Place", False)
                 )
                 if in_place:
                     layer.data = result  # type: ignore
@@ -208,21 +215,22 @@ def make_operation_widget(
             raise exc
 
         @thread_worker(ignore_errors=True)
-        def _run() -> Any:
+        def _run() -> Any:  # pragma: no cover
             """
             Run the operation widget's function and return its results.
             """
-
-            return operation_spec.func(layer.data, **call_params)  # pragma: no cover
-            # covered in a separate Qt threading event
+            if operation_spec.requires_layer:
+                return operation_spec.func(layer.data, **call_params)  # type: ignore
+            return operation_spec.func(**call_params)
 
         worker = _run()  # type: ignore
         worker.returned.connect(_on_done)
         worker.errored.connect(_on_error)
         worker.start()
 
+    start_index: int = 1 if operation_spec.requires_layer else 0
     params_only: list = []
-    for p in list(operation_spec.signature.parameters.values())[1:]:
+    for p in list(operation_spec.signature.parameters.values())[start_index:]:
         if operation_spec.captures_viewer_settings and p.name == "Settings":
             continue
         if p.name in array_names:
@@ -254,17 +262,18 @@ def make_operation_widget(
             )
         )
 
+    sig_params: list = []
+    if operation_spec.requires_layer:
+        layer_type = _LAYER_TYPE_MAP[operation_spec.layer_type]
+        sig_params.append(
+            inspect.Parameter(
+                "layer", inspect.Parameter.KEYWORD_ONLY, annotation=layer_type
+            )
+        )
+    sig_params += params_only + extra_params
     layer_type = _LAYER_TYPE_MAP[operation_spec.layer_type]
     _dispatch.__doc__ = operation_spec.func.__doc__
-    _dispatch.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
-        [
-            inspect.Parameter(
-                "layer", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=layer_type
-            )
-        ]
-        + params_only
-        + extra_params
-    )
+    _dispatch.__signature__ = inspect.Signature(sig_params)
 
     extra_widget_options: dict[str, dict[str, str]] = {}
     if operation_spec.recordable_toggle:
@@ -276,13 +285,16 @@ def make_operation_widget(
             "tooltip": "Check to see a preview of the thresholding segmentation."
         }
 
+    widget_layer_kwargs: dict = {}
+    if operation_spec.requires_layer:
+        widget_layer_kwargs["layer"] = {
+            "label": "Layer",
+            "tooltip": f"The {operation_spec.layer_type} layer to process.",
+        }
     widget: FunctionGui = magicgui(
         _dispatch,
         call_button=f"Run {operation_spec.display_name}",
-        layer={
-            "label": "Layer",
-            "tooltip": f"The {layer_type.__name__.lower()} layer to process.",
-        },
+        **widget_layer_kwargs,
         **extra_widget_options,
         **operation_spec.widget_options,
     )
@@ -297,7 +309,7 @@ def make_operation_widget(
 
         def _current_real_params() -> dict:
             real_names = [p.name for p in operation_spec.signature.parameters.values()][
-                1:
+                start_index:
             ]
             return {
                 name: getattr(widget, name).value
@@ -308,9 +320,12 @@ def make_operation_widget(
         def _update_preview(event=None):
             if not widget.Preview.value or widget.layer.value is None:
                 return
-            result = operation_spec.func(
-                widget.layer.value.data, **_current_real_params()
-            )
+            if operation_spec.requires_layer:
+                result = operation_spec.func(
+                    widget.layer.value.data, **_current_real_params()
+                )
+            else:  # pragma: no cover
+                result = operation_spec.func(**_current_real_params())
             if preview_layer_ref["layer"] is None:
                 preview_layer_ref["layer"] = viewer.add_labels(  # type: ignore
                     result, name=f"{operation_spec.display_name} (preview)", opacity=0.5
@@ -394,7 +409,8 @@ def make_operation_widget(
         for method_name, arg in native_calls.items():
             getattr(field_widget.native, method_name)(arg)
 
-    connect_layer_autoselect(viewer, widget, "layer", autoselect=True)
+    if operation_spec.requires_layer:
+        connect_layer_autoselect(viewer, widget, "layer", autoselect=True)
     for array_name in array_names:
         connect_layer_autoselect(viewer, widget, array_name, autoselect=False)
 

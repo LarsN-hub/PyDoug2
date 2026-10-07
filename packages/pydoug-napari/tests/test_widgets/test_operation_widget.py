@@ -458,3 +458,34 @@ def test_captures_viewer_settings(
     qtbot.waitUntil(lambda: len(viewer.layers) == 4, timeout=5000)
     assert len(recorder.steps) == 2
     json.dumps(recorder.steps[1].params)
+
+
+def test_no_layer_behavior(
+    make_napari_viewer, qtbot, registered_generator, registered_half
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    recorder: Recorder = Recorder()
+    results_log: ResultsLog = ResultsLog()
+    spec1: OperationSpec = get_operation(registered_generator)
+    spec2: OperationSpec = get_operation(registered_half)
+    widget1: CollapsibleContainer = make_operation_widget(
+        spec1, viewer, recorder, results_log
+    )
+    widget2: CollapsibleContainer = make_operation_widget(
+        spec2, viewer, recorder, results_log
+    )
+    qtbot.addWidget(widget1.native)
+    qtbot.addWidget(widget2.native)
+    subwidget1: FunctionGui | None = widget1.get_widget("_dispatch")
+    subwidget2: FunctionGui | None = widget2.get_widget("_dispatch")
+    assert subwidget1 is not None
+    assert subwidget2 is not None
+    assert len(viewer.layers) == 0
+    qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 1, timeout=5000)
+    assert len(viewer.layers) == 1
+    subwidget2.layer.value = viewer.layers[-1]
+    qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
+    assert len(viewer.layers) == 2
