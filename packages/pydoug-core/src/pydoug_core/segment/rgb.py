@@ -12,7 +12,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["fz", "qs", "sl"]
 
 
-@register_operation(category="segmentation", display_name="Felzenszwalb")
+@register_operation(category="segment", display_name="Felzenszwalb")
 def fz(
     imarray: np.ndarray,
     Scale: Annotated[float, {"min": 0}] = 1,
@@ -44,7 +44,7 @@ def fz(
     return felzenszwalb(imarray, Scale, Sigma, Minimum_Size)
 
 
-@register_operation(category="segmentation", display_name="Quickshift")
+@register_operation(category="segment", display_name="Quickshift")
 def qs(
     imarray: np.ndarray,
     Ratio: Annotated[float, {"min": 0, "max": 1}] = 1.0,
@@ -81,7 +81,7 @@ def qs(
     return quickshift(imarray, Ratio, Kernel_Size, Maximum_Distance, sigma=Sigma)
 
 
-@register_operation(category="segmentation", display_name="SLIC")
+@register_operation(category="segment", display_name="SLIC")
 def sl(
     imarray: np.ndarray,
     Label_Count: Annotated[int, {"min": 0}] = 100,

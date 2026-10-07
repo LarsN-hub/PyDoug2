@@ -26,11 +26,13 @@ from skimage.filters import (
 from skimage.filters.rank import gradient as rank_grad
 from skimage.morphology import ball, disk
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
+from pydoug_core.util import is3d, isrgb
+
+__all__ = ["gradient"]
 
 
-@register_operation(category="filters", display_name="Gradient")
+@register_operation(category="filter", display_name="Gradient")
 def gradient(
     imarray: np.ndarray,
     Method: Literal[
@@ -118,14 +120,14 @@ def gradient(
 
         if Method == "Farid":
             if Horizontal and not Vertical:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = farid_h(imarray[..., cindex])
                     return grad_array
                 return farid_h(imarray)
             elif Vertical and not Horizontal:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = farid_v(imarray[..., cindex])
@@ -137,11 +139,11 @@ def gradient(
             return laplace(imarray, K_Size)
 
         elif Method == "Local":
-            if util.is3d(imarray):
+            if is3d(imarray):
                 fp = ball(Radius)
             else:
                 fp = disk(Radius)
-            if util.isrgb(imarray):
+            if isrgb(imarray):
                 grad_array: np.ndarray = np.empty(imarray.shape)
                 for cindex in range(0, imarray.shape[-1]):
                     grad_array[..., cindex] = rank_grad(imarray[..., cindex], fp)
@@ -150,14 +152,14 @@ def gradient(
 
         elif Method == "Prewitt":
             if Horizontal and not Vertical:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = prewitt_h(imarray[..., cindex])
                     return grad_array
                 return prewitt_h(imarray)
             elif Vertical and not Horizontal:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = prewitt_v(imarray[..., cindex])
@@ -167,20 +169,20 @@ def gradient(
 
         elif Method == "Roberts":
             if Horizontal and not Vertical:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = roberts_neg_diag(imarray[..., cindex])
                     return grad_array
                 return roberts_neg_diag(imarray)
             elif Vertical and not Horizontal:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = roberts_pos_diag(imarray[..., cindex])
                     return grad_array
                 return roberts_pos_diag(imarray)
-            if util.isrgb(imarray):
+            if isrgb(imarray):
                 grad_array: np.ndarray = np.empty(imarray.shape)
                 for cindex in range(0, imarray.shape[-1]):
                     grad_array[..., cindex] = roberts(imarray[..., cindex])
@@ -189,14 +191,14 @@ def gradient(
 
         elif Method == "Scharr":
             if Horizontal and not Vertical:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = scharr_h(imarray[..., cindex])
                     return grad_array
                 return scharr_h(imarray)
             elif Vertical and not Horizontal:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = scharr_h(imarray[..., cindex])
@@ -206,14 +208,14 @@ def gradient(
 
         else:
             if Horizontal and not Vertical:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = sobel_h(imarray[..., cindex])
                     return grad_array
                 return sobel_h(imarray)
             elif Vertical and not Horizontal:
-                if util.isrgb(imarray):
+                if isrgb(imarray):
                     grad_array: np.ndarray = np.empty(imarray.shape)
                     for cindex in range(0, imarray.shape[-1]):
                         grad_array[..., cindex] = sobel_v(imarray[..., cindex])
@@ -228,7 +230,7 @@ def gradient(
     if Vertical and not Horizontal:
         Perform_Slicewise = True
 
-    if Perform_Slicewise and util.is3d(imarray):
+    if Perform_Slicewise and is3d(imarray):
         grad_array: np.ndarray = np.empty(imarray.shape)
         for index in range(0, imarray.shape[0]):
             grad_array[index] = _grad(

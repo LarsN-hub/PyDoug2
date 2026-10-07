@@ -7,117 +7,71 @@ import numpy as np
 from pydoug_core.trans import space
 
 
-def test_radon(sample_arrays) -> None:
+def test_euclidian_dt_returns(sample_arrays) -> None:
 
-    result1: np.ndarray = space.radon(sample_arrays["2dgray"])
-    result2: np.ndarray = space.radon(sample_arrays["3dgray"])
-    result3: np.ndarray = space.radon(sample_arrays["3drgb"])
-    assert result1.shape[1] == 180
-    assert result2.shape[0] == sample_arrays["3dgray"].shape[0]
-    assert result2.shape[2] == 180
-    assert result2.shape[0] == sample_arrays["3drgb"].shape[0]
-    assert result3.shape[2] == 180
-
-
-def test_invradon(sample_arrays) -> None:
-
-    result1: np.ndarray = space.invradon(space.radon(sample_arrays["2dgray"]))
-    result2: np.ndarray = space.invradon(space.radon(sample_arrays["3dgray"]))
-    result3: np.ndarray = space.invradon(space.radon(sample_arrays["3drgb"]))
-    assert result1.shape == sample_arrays["2dgray"].shape
-    assert result2.shape == sample_arrays["3dgray"].shape
-    assert result3.shape[:] == sample_arrays["3drgb"].shape[:-1]
+    result1: np.ndarray = space.euclidian_dt(sample_arrays["2dgray"])
+    result2: np.ndarray = space.euclidian_dt(sample_arrays["2dgray"], 2)
+    result3: np.ndarray = space.euclidian_dt(sample_arrays["2drgb"])
+    result4: np.ndarray = space.euclidian_dt(
+        sample_arrays["2dgray"], Perform_Slicewise=True
+    )
+    result5: np.ndarray = space.euclidian_dt(
+        sample_arrays["3dgray"], 2, Perform_Slicewise=True
+    )
+    assert np.all(result1 * 2 == result2)
+    assert result3.shape == result1.shape
+    assert np.all(result4 == result1)
+    assert result5.shape == sample_arrays["3dgray"].shape
 
 
 def test_fft(sample_arrays) -> None:
 
     result1: np.ndarray = space.fft(sample_arrays["2dgray"])
     result2: np.ndarray = space.fft(sample_arrays["3dgray"])
-    result3: np.ndarray = space.fft(sample_arrays["3dgray"], True)
+    result3: np.ndarray = space.fft(sample_arrays["3dgray"], Perform_Slicewise=True)
     result4: np.ndarray = space.fft(sample_arrays["3drgb"])
+    result5: np.ndarray = space.fft(result1, True)
+    result6: np.ndarray = space.fft(result2, True)
+    result7: np.ndarray = space.fft(result2, True, True)
     assert result1.shape == sample_arrays["2dgray"].shape
     assert result2.shape == sample_arrays["3dgray"].shape
     assert result3.shape == sample_arrays["3dgray"].shape
     assert not np.all(result2 == result3)
     assert result4.shape[:] == sample_arrays["3drgb"].shape[:-1]
+    assert result5.shape == sample_arrays["2dgray"].shape
+    assert result6.shape == sample_arrays["3dgray"].shape
+    assert result7.shape == sample_arrays["3dgray"].shape
 
 
-def test_invfft(sample_arrays) -> None:
+def test_radon(sample_arrays) -> None:
 
-    result1: np.ndarray = space.invfft(space.fft(sample_arrays["2dgray"]))
-    result2: np.ndarray = space.invfft(space.fft(sample_arrays["3dgray"]))
-    result3: np.ndarray = space.invfft(space.fft(sample_arrays["3dgray"], True))
-    result4: np.ndarray = space.invfft(space.fft(sample_arrays["3dgray"]), True)
-    result5: np.ndarray = space.invfft(space.fft(sample_arrays["3drgb"]))
-    assert result1.shape == sample_arrays["2dgray"].shape
-    assert result2.shape == sample_arrays["3dgray"].shape
-    assert result3.shape == sample_arrays["3dgray"].shape
-    assert result4.shape == sample_arrays["3dgray"].shape
-    assert not np.all(result2 == result3)
-    assert not np.all(result3 == result4)
-    assert not np.all(result2 == result4)
-    assert result5.shape[:] == sample_arrays["3drgb"].shape[:-1]
-
-
-def test_hough_line_returns(sample_arrays) -> None:
-
-    result1: np.ndarray | tuple = space.hough(sample_arrays["2dgray"])
-    result2: np.ndarray | tuple = space.hough(sample_arrays["2dgray"], Full_Output=True)
-    result3: np.ndarray | tuple = space.hough(sample_arrays["3dgray"])
-    result4: np.ndarray | tuple = space.hough(sample_arrays["3dgray"], Full_Output=True)
-    result5: np.ndarray | tuple = space.hough(sample_arrays["3drgb"])
-    if isinstance(result1, np.ndarray):
-        assert result1.shape != sample_arrays["2dgray"].shape
-    if isinstance(result2, tuple):
-        assert result2[0].shape != sample_arrays["2dgray"].shape
-        if isinstance(result1, np.ndarray):
-            assert result2[0].shape == result1.shape
-        assert isinstance(result2[1], np.ndarray)
-        assert isinstance(result2[2], np.ndarray)
-    if isinstance(result3, np.ndarray):
-        assert result3.shape != sample_arrays["3dgray"].shape
-        assert result3.shape[0] == sample_arrays["3dgray"].shape[0]
-        if isinstance(result5, np.ndarray):
-            assert result3.shape == result5.shape
-    if isinstance(result4, tuple):
-        assert result4[0].shape != sample_arrays["3dgray"].shape
-        assert result4[0].shape[0] == sample_arrays["3dgray"].shape[0]
-        if isinstance(result3, np.ndarray):
-            assert result4[0].shape == result3.shape
-        assert isinstance(result4[1], list)
-        assert isinstance(result4[2], list)
-        assert isinstance(result4[1][0], np.ndarray)
-        assert isinstance(result4[2][0], np.ndarray)
+    result1: np.ndarray = space.radon(sample_arrays["2dgray"])
+    result2: np.ndarray = space.radon(sample_arrays["3dgray"])
+    result3: np.ndarray = space.radon(sample_arrays["3drgb"])
+    result4: np.ndarray = space.radon(result1, True)
+    result5: np.ndarray = space.radon(result2, True)
+    result6: np.ndarray = space.radon(result3, True)
+    assert result1.shape[1] == 180
+    assert result2.shape[0] == sample_arrays["3dgray"].shape[0]
+    assert result2.shape[2] == 180
+    assert result2.shape[0] == sample_arrays["3drgb"].shape[0]
+    assert result3.shape[2] == 180
+    assert result4.shape == sample_arrays["2dgray"].shape
+    assert result5.shape == sample_arrays["3dgray"].shape
+    assert result6.shape == sample_arrays["3dgray"].shape
 
 
-def test_hough_circle_returns(sample_arrays) -> None:
+def test_hough(sample_arrays) -> None:
 
-    result1: np.ndarray | tuple = space.hough(sample_arrays["2dgray"], "circle")
-    result2: np.ndarray | tuple = space.hough(
-        sample_arrays["2dgray"], "circle", Radii=np.arange(2, 4)
-    )
-    result3: np.ndarray | tuple = space.hough(sample_arrays["3dgray"], "circle")
-    result4: np.ndarray | tuple = space.hough(
-        sample_arrays["3dgray"], "circle", Radii=np.arange(2, 4)
-    )
-    result5: np.ndarray | tuple = space.hough(sample_arrays["3drgb"], "circle")
-    if isinstance(result1, np.ndarray):
-        assert len(result1.shape) > len(sample_arrays["2dgray"].shape)
-    if isinstance(result2, np.ndarray):
-        assert result2.shape[0] == len(np.arange(2, 4))
-    if isinstance(result3, np.ndarray):
-        assert len(result3.shape) > len(sample_arrays["3dgray"].shape)
-        if isinstance(result5, np.ndarray):
-            assert result3.shape == result5.shape
-    if isinstance(result4, np.ndarray):
-        assert result4.shape[0] == len(np.arange(2, 4))
-        assert result4.shape[-1] == sample_arrays["3dgray"].shape[0]
-
-
-def test_euclidian_dt_returns(sample_arrays) -> None:
-
-    result1: np.ndarray = space.euclidian_dt(sample_arrays["2dgray"])
-    result2: np.ndarray = space.euclidian_dt(sample_arrays["2dgray"], 2)
-    result3: np.ndarray = space.euclidian_dt(sample_arrays["2drgb"])
-    assert np.all(result1 * 2 == result2)
-    assert result3.shape == result1.shape
+    result1: np.ndarray = space.hough(sample_arrays["2dgray"])
+    result2: np.ndarray = space.hough(sample_arrays["3dgray"])
+    result3: np.ndarray = space.hough(sample_arrays["2drgb"])
+    result4: np.ndarray = space.hough(sample_arrays["3drgb"])
+    result5: np.ndarray = space.hough(sample_arrays["2dgray"], "Circle")
+    result6: np.ndarray = space.hough(sample_arrays["3dgray"], "Circle")
+    result7: np.ndarray = space.hough(sample_arrays["2drgb"], "Circle")
+    result8: np.ndarray = space.hough(sample_arrays["3drgb"], "Circle")
+    assert result1.shape == result3.shape
+    assert result2.shape == result4.shape
+    assert result5.shape == result7.shape
+    assert result6.shape == result8.shape

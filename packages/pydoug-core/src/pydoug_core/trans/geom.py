@@ -13,7 +13,7 @@ from pydoug_core.registry import register_operation
 __all__ = ["mirror", "reslice", "rotate", "rescale", "resize"]
 
 
-@register_operation(category="transformations", display_name="Mirror")
+@register_operation(category="transform", display_name="Mirror")
 def mirror(
     imarray: np.ndarray, Direction: Literal["X", "Y", "Z", "C"] = "Z"
 ) -> np.ndarray:
@@ -41,7 +41,7 @@ def mirror(
     return np.flip(imarray, axis)
 
 
-@register_operation(category="transformations", display_name="Reslice")
+@register_operation(category="transform", display_name="Reslice")
 def reslice(
     imarray: np.ndarray,
     Orientation: Literal["Top", "Bottom", "Left", "Right", "Back"] = "Top",
@@ -84,7 +84,7 @@ def reslice(
         return imarray
 
 
-@register_operation(category="transformations", display_name="Rotate")
+@register_operation(category="transform", display_name="Rotate")
 def rotate(
     imarray: np.ndarray,
     Angle: Annotated[float, {"max": 360, "min": 0}] = 0,
@@ -153,7 +153,7 @@ def rotate(
         )
 
 
-@register_operation(category="transformations", display_name="Rescale")
+@register_operation(category="transform", display_name="Rescale")
 def rescale(
     imarray: np.ndarray,
     Scale: Annotated[float, {"step": 0.001, "min": 0.001}] = 1,
@@ -209,7 +209,7 @@ def rescale(
     ).astype(outdtype, copy=False)
 
 
-@register_operation(category="transformations", display_name="Resize")
+@register_operation(category="transform", display_name="Resize")
 def resize(
     imarray: np.ndarray,
     X_Length: Annotated[int | None, {"max": 10000, "min": 0}] = None,

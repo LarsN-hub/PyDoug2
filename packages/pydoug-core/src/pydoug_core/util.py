@@ -94,6 +94,37 @@ def isrgb(imarray: np.ndarray | None = None, imshape: None | tuple = None) -> bo
             return False
 
 
+def is_square(imarray: np.ndarray, along_z: bool = True) -> bool:
+    """
+    Determine if an image is square/cubic in bulk or along the z-axis.
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to determine squareness for.
+    along_z: bool
+        If the image is 3D, whether or not to determine squareness along the z-axis
+        (True) or determine cubicness in bulk (False). Default is True.
+
+    Returns
+    -------
+    issquare: bool
+        True if the image is square (2D) or square along its z-axis (3D). Else False.
+    """
+
+    if is3d(imarray):
+        if along_z:
+            if imarray.shape[1] == imarray.shape[2]:
+                return True
+            return False
+        if imarray.shape[0] == imarray.shape[1] == imarray.shape[2]:
+            return True
+        return False
+    if imarray.shape[0] == imarray.shape[1]:
+        return True
+    return False
+
+
 @register_operation(category="color", display_name="Grayscale to RGB")
 def gray2rgb(imarray: np.ndarray) -> np.ndarray:
     """
@@ -120,14 +151,23 @@ def gray2rgb(imarray: np.ndarray) -> np.ndarray:
 
 
 @register_operation(category="color", display_name="RGB to Grayscale")
-def rgb2gray(imarray: np.ndarray) -> np.ndarray:
+def rgb2gray(imarray: np.ndarray, Preserve_Dtype: bool = True) -> np.ndarray:
     """
     Make an RGB image array a grayscale image array. Convenience wrapper around
     scikit-image's color.rgb2gray:
     https://scikit-image.org/docs/stable/api/skimage.color.html#skimage.color.rgb2gray
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to convert from RGB to grayscale.
+    Preserve_Dtype: bool
+        Whether or not to preserve the dtype of the original image. Default is True.
     """
 
     if isrgb(imarray):
+        if Preserve_Dtype:
+            return convert_dtype(skrgb2gray(imarray), dtype_2_str(imarray.dtype))  # type: ignore
         return skrgb2gray(imarray)
     return imarray
 

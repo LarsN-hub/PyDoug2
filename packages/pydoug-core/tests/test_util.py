@@ -39,6 +39,20 @@ def test_isrgb_returns(
     assert not util.isrgb()
 
 
+def test_is_square(sample_2dgray_array, sample_3dgray_array):
+
+    assert util.is_square(sample_2dgray_array)
+    assert not util.is_square(sample_2dgray_array[:, :-1])
+    assert util.is_square(sample_3dgray_array)
+    assert not util.is_square(sample_3dgray_array[:, :, :-1])
+    assert util.is_square(sample_2dgray_array, False)
+    assert not util.is_square(sample_2dgray_array[:, :-1], False)
+    assert util.is_square(
+        np.append(sample_3dgray_array, sample_3dgray_array, axis=0), False
+    )
+    assert not util.is_square(sample_3dgray_array, False)
+
+
 def test_gray2rgb_returns(
     sample_2dgray_array, sample_3dgray_array, sample_2drgb_array, sample_3drgb_array
 ) -> None:
@@ -53,6 +67,11 @@ def test_rgb2gray_returns(sample_arrays) -> None:
 
     assert util.rgb2gray(sample_arrays["2drgb"]).shape == sample_arrays["2dgray"].shape
     assert util.rgb2gray(sample_arrays["3drgb"]).shape == sample_arrays["3dgray"].shape
+    assert util.rgb2gray(sample_arrays["2drgb"]).dtype == sample_arrays["2dgray"].dtype
+    assert (
+        util.rgb2gray(sample_arrays["2drgb"], False).dtype
+        != sample_arrays["2dgray"].dtype
+    )
 
 
 def test_chan_axis_returns(sample_arrays) -> None:
@@ -212,7 +231,7 @@ def test_tidypath_returns(tmp_path) -> None:
 
 def test_prep_mask(sample_arrays) -> None:
 
-    maskarray: np.ndarray = sample_arrays["3dgray"]
+    maskarray: np.ndarray = np.copy(sample_arrays["3dgray"])
     maskarray[maskarray < 128] = 0
     maskarray[maskarray >= 128] = 255
     maskarrayrgb = np.stack([maskarray] * 3, 3)

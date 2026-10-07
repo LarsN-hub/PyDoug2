@@ -36,8 +36,11 @@ def stats(
     ----------
     imarray: np.ndarray
         The image array to calculate grayscale statistics for.
-    Mask: np.ndarray | None:
-        (Optional) the mask to be applied before statistics calculation.
+    Apply_Mask: bool = False
+        Whether or not to apply a mask to the operation. Default is False.
+    Mask: np.ndarray | None
+        (Optional) the mask to be applied before statistics calculation if "Apply_Mask"
+        is True.
 
     Returns
     -------
@@ -59,7 +62,7 @@ def stats(
         imdmax = 1
         boolarray: bool = True
 
-    if Mask is not None:
+    if Mask is not None and Apply_Mask:
         Mask = util.prep_mask(imarray, Mask)
         immean: float = np.mean(imarray[Mask])
         immedian: float | int = np.median(imarray[Mask])

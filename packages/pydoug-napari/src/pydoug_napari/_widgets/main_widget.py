@@ -45,6 +45,7 @@ class MainWidget(QTabWidget):
         self.operation_widgets: dict[str, CollapsibleContainer] = {}
         self.results_log: ResultsLog = ResultsLog()
 
+        self.addTab(make_batch_widget(self.recorder), "Batch")
         categories: list[str] = self._specify_category_order(
             {spec.category for spec in list_operations()}
         )
@@ -52,8 +53,6 @@ class MainWidget(QTabWidget):
             self.addTab(
                 self._build_category_tab(category, viewer).native, category.title()
             )
-
-        self.addTab(make_batch_widget(self.recorder), "Batch")
 
         viewer.window.add_dock_widget(
             RecordingLogWidget(self.recorder), name="Workflow Log", area="bottom"
@@ -164,36 +163,39 @@ class MainWidget(QTabWidget):
         if "manipulate" in categories:
             sorted_categories.append("manipulate")
             categories.remove("manipulate")
-        if "transformations" in categories:
-            sorted_categories.append("transformations")
-            categories.remove("transformations")
+        if "transform" in categories:
+            sorted_categories.append("transform")
+            categories.remove("transform")
         if "math" in categories:
             sorted_categories.append("math")
             categories.remove("math")
         if "histogram" in categories:
             sorted_categories.append("histogram")
             categories.remove("histogram")
-        if "denoise" in categories:
-            sorted_categories.append("denoise")
-            categories.remove("denoise")
-        if "filters" in categories:
-            sorted_categories.append("filters")
-            categories.remove("filters")
-        # if "features" in categories:
-        #    sorted_categories.append("features")
-        #    categories.remove("features")
-        if "segmentation" in categories:
-            sorted_categories.append("segmentation")
-            categories.remove("segmentation")
-        # if "morphology" in categories:
-        #    sorted_categories.append("morphology")
-        #    categories.remove("morphology")
+        if "restore" in categories:
+            sorted_categories.append("restore")
+            categories.remove("restore")
+        if "filter" in categories:
+            sorted_categories.append("filter")
+            categories.remove("filter")
+        if "features" in categories:
+            sorted_categories.append("features")
+            categories.remove("features")
+        if "segment" in categories:
+            sorted_categories.append("segment")
+            categories.remove("segment")
+        if "morphology" in categories:
+            sorted_categories.append("morphology")
+            categories.remove("morphology")
         if "measurements" in categories:
             sorted_categories.append("measurements")
             categories.remove("measurements")
         # if "plots" in categories:
         #    sorted_categories.append("plots")
         #    categories.remove("plots")
+        # if "generate" in categories:
+        #     sorted_categories.append("generate")
+        #     categories.remove("generate")
         if "color" in categories:
             sorted_categories.append("color")
             categories.remove("color")
