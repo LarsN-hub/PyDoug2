@@ -23,6 +23,7 @@ __all__ = [
     "tidypath",
     "prep_mask",
     "dtype_2_str",
+    "str_2_dtype",
 ]
 
 
@@ -470,7 +471,7 @@ def prep_mask(imarray: np.ndarray, maskarray: np.ndarray) -> np.ndarray:
 
 def dtype_2_str(dtype: np.dtype) -> str:
     """
-    Convert a numpy dtype to a string usable by pydoug_core.hist.convert_dtype.
+    Convert a numpy dtype to a string usable by pydoug_core.util.convert_dtype.
 
     Parameters
     ----------
@@ -494,3 +495,31 @@ def dtype_2_str(dtype: np.dtype) -> str:
     if dtype == np.float32:
         return "Float32"
     return "Float64"
+
+
+def str_2_dtype(dtype_str: str) -> np.dtype:
+    """
+    Convert a string to a numpy dtype.
+
+    Parameters
+    ----------
+    dtype_str: str
+        The dtype string to convert.
+
+    Returns
+    -------
+    dtype_str: np.dtype
+        The dtype.
+    """
+
+    if dtype_str.lower() == "uint8":
+        return np.dtype(np.uint8)
+    if dtype_str.lower() == "uint16":
+        return np.dtype(np.uint16)
+    if dtype_str.lower() == "int16":
+        return np.dtype(np.int16)
+    if dtype_str.lower() == "bool":
+        return np.dtype(np.bool)
+    if dtype_str.lower() == "float32":
+        return np.dtype(np.float32)
+    return np.dtype(np.float64)

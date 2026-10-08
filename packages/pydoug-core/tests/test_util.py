@@ -309,3 +309,13 @@ def test_dtype_2_str() -> None:
     assert result5 == "Float64"
     assert result6 == "Bool"
     assert result7 == "Float64"
+
+
+def test_str_2_dtype() -> None:
+
+    assert util.str_2_dtype("Uint8") == np.uint8
+    assert util.str_2_dtype("Uint16") == np.uint16
+    assert util.str_2_dtype("Int16") == np.int16
+    assert util.str_2_dtype("Float32") == np.float32
+    assert util.str_2_dtype("Bool") == np.bool
+    assert util.str_2_dtype("Float64") == np.float64

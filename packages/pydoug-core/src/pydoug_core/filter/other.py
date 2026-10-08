@@ -2,13 +2,13 @@
 Other miscellaneous filters.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 import numpy as np
 
 from pydoug_core.registry import register_operation
 
-__all__ = ["entropy"]
+__all__ = ["entropy", "noise"]
 
 
 @register_operation(category="filter", display_name="Entropy")
@@ -72,3 +72,52 @@ def entropy(
         return entropy_array
 
     return rank_entropy(imarray, footprint)
+
+
+@register_operation(category="filter", display_name="Add Noise")
+def noise(
+    imarray: np.ndarray,
+    Method: Literal[
+        "Gaussian", "Poisson", "Salt", "Pepper", "S&P", "Speckle"
+    ] = "Gaussian",
+    Preserve_Dtype: bool = True,
+) -> np.ndarray:
+    """
+    Add random noise to an image. Convenience wrapper around scikit-image's
+    util.random_noise:
+    https://scikit-image.org/docs/stable/api/skimage.util.html#skimage.util.random_noise
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to add noise to.
+    Method: Literal
+        The method to use for adding noise to the image. Default is "Gaussian".
+        - "Gaussian": Adds Gaussian-distributed additive noise.
+        - "Poisson": Adds Poisson-distributed noise generated from the image's values.
+        - "Salt": Replaces random pixels with the brightest value in the dtype.
+        - "Pepper": Replaces random pixels with the darkest value in the dtype.
+        - "S&P": Combines "Salt" and "Pepper" methods.
+        - "Speckle": Multiplicative Gaussian-distributed noise.
+    Preserve_Dtype: bool
+        Whether to preserve the image's dtype (True) or not (False). Default is True.
+
+    Returns
+    -------
+    noise_array: np.ndarray
+        The image with noise added.
+    """
+
+    from skimage.util import random_noise
+
+    from pydoug_core.util import convert_dtype, dtype_2_str
+
+    method = Method.lower()
+    if Method == "S&P":
+        method = "s&p"
+    noise_array: np.ndarray = random_noise(imarray, method)
+
+    if Preserve_Dtype:
+        return convert_dtype(noise_array, dtype_2_str(imarray.dtype))  # type: ignore
+
+    return noise_array

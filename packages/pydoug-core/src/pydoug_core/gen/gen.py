@@ -4,15 +4,94 @@ Generate image data.
 
 from typing import Annotated, Literal
 
-from numpy import ndarray
+import numpy as np
 
 from pydoug_core.registry import register_operation
 
-__all__ = ["gen_structures"]
+__all__ = ["blank_image", "gen_structures", "scikit_data"]
 
 
 @register_operation(
-    category="generate", display_name="Random Structures", requires_layer=False
+    category="generate",
+    display_name="Blank Image",
+    requires_layer=False,
+    recordable=False,
+)
+def blank_image(
+    Dimensions: tuple[
+        Annotated[int, {"min": 1}],
+        Annotated[int, {"min": 1}],
+        Annotated[int, {"min": 0}],
+    ] = (100, 100, 0),
+    Dtype: Literal["Uint8", "Uint16", "Int16", "Float32", "Float64", "Bool"] = "Uint8",
+    Value: Annotated[float, {"step": 0.0001}] = 0,
+) -> np.ndarray:
+    """
+    Generate a blank image of a specified dtype filled with a single value. Covnenience
+    wrapper around numpy's empty:
+    https://numpy.org/doc/stable/reference/generated/numpy.empty.html
+
+    Parameters
+    ----------
+    Dimensions: tuple[int, int, int]
+        The dimensions of the image in the format [X, Y, Z]. If Z is 0, a 2D image is
+        returned.
+    Dtype: Literal
+        The data type of the image. Default is "Uint8". Note, the range for floating
+        point images is large, but most operations with floating point images assume a
+        range of [0, 1].
+        - Uint8: 8-bit unsigned integer format [0, 255]
+        - Uint16: 16-bit unsigned integer format [0, 65,535]
+        - Int16: 16-bit signed integer format [-32,768, 32,767]
+        - Float32: 32-bit (single-precision) floating-point format [-3.4e+38, 3.4e+38]
+        - Float64: 64-bit (double-precision) floating-point format [-1.8e+308, 1.8e+308]
+        - Bool: Boolean True/False format
+    Value: float
+        The value to populate the blank image with. If the value is outside the dtype's
+        range it will be clipped to the nearest boundary. If an integer data type is
+        chosen and a decimal value is provided, it will be round to the nearest integer.
+
+    Returns
+    -------
+    array: np.ndarray
+        The blank image.
+    """
+
+    from pydoug_core.util import str_2_dtype
+
+    if Dtype in {"Uint8", "Uint16", "Int16"}:
+        dtype_max: bool | float | int = np.iinfo(str_2_dtype(Dtype)).max
+        dtype_min: bool | float | int = np.iinfo(str_2_dtype(Dtype)).min
+    elif Dtype in {"Float32", "Float64"}:
+        dtype_max = np.finfo(str_2_dtype(Dtype)).max
+        dtype_min = np.finfo(str_2_dtype(Dtype)).min
+    else:
+        dtype_max = 1
+        dtype_min = 0
+
+    if Value > dtype_max:
+        Value = dtype_max
+    elif Value < dtype_min:
+        Value = dtype_min
+
+    if Dtype in {"Bool", "Uint8", "Uint16", "Int16"}:
+        Value = round(Value)
+
+    if Dimensions[2] == 0:
+        dims: tuple = (Dimensions[1], Dimensions[0])
+    else:
+        dims: tuple = (Dimensions[2], Dimensions[1], Dimensions[0])
+
+    array = np.empty(dims, str_2_dtype(Dtype))
+    array[...] = Value
+    return array
+
+
+@register_operation(
+    category="generate",
+    display_name="Random Structures",
+    requires_layer=False,
+    recordable=False,
 )
 def gen_structures(
     Method: Literal[
@@ -32,7 +111,7 @@ def gen_structures(
     Radius: Annotated[int, {"min": 1}] = 5,
     Standard_Deviation: Annotated[int, {"min": 1}] = 2,
     Lattice: Literal["SC", "Triangular", "FCC", "BCC"] = "SC",
-) -> ndarray:
+) -> np.ndarray:
     """
     Generate an image of specified dimensions with randomized structures. Convenience
     wrapper around functions from porespy's generators package, namely blobs,
@@ -122,3 +201,100 @@ def gen_structures(
         )
 
     return random_spheres(dims, r=Radius, phi=Porosity, edges="extended")
+
+
+@register_operation(
+    category="generate",
+    display_name="Scikit-Image Data",
+    requires_layer=False,
+    recordable=False,
+)
+def scikit_data(
+    Data: Literal[
+        "Brain",
+        "Cell",
+        "Cells3D",
+        "Hubble Deep Field",
+        "Immunohistochemistry",
+        "Kidney",
+        "Lily",
+        "Microaneurysms",
+        "Moon",
+        "Nickel Solidification",
+        "Protein Transport",
+        "Retina",
+        "Shepp Logan Phantom",
+        "Skin",
+    ] = "Hubble Deep Field",
+) -> np.ndarray:
+    """
+    Generate a sample data image from scikit-image's data package:
+    https://scikit-image.org/docs/stable/api/skimage.data.html#
+
+    Parameters
+    ----------
+    Data: Literal
+        The data option.
+
+    Returns
+    -------
+    data_array: np.ndarray
+        The data image.
+    """
+
+    if Data == "Brain":
+        from skimage.data import brain
+
+        return brain()
+    elif Data == "Cell":
+        from skimage.data import cell
+
+        return cell()
+    elif Data == "Cells3D":
+        from skimage.data import cells3d
+
+        return cells3d()
+    elif Data == "Immunohistochemistry":
+        from skimage.data import immunohistochemistry
+
+        return immunohistochemistry()
+    elif Data == "Kidney":
+        from skimage.data import kidney
+
+        return kidney()
+    elif Data == "Lily":
+        from skimage.data import lily
+
+        return lily()
+    elif Data == "Microaneurysms":
+        from skimage.data import microaneurysms
+
+        return microaneurysms()
+    elif Data == "Moon":
+        from skimage.data import moon
+
+        return moon()
+    elif Data == "Nickel Solidification":
+        from skimage.data import nickel_solidification
+
+        return nickel_solidification()
+    elif Data == "Protein Transport":
+        from skimage.data import protein_transport
+
+        return protein_transport()
+    elif Data == "Retina":
+        from skimage.data import retina
+
+        return retina()
+    elif Data == "Shepp Logan Phantom":
+        from skimage.data import shepp_logan_phantom
+
+        return shepp_logan_phantom()
+    elif Data == "Skin":
+        from skimage.data import skin
+
+        return skin()
+    else:
+        from skimage.data import hubble_deep_field
+
+        return hubble_deep_field()
