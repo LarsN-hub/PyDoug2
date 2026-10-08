@@ -5,13 +5,7 @@ Headless batch runner to apply a workflow to multiple image datasets.
 from collections.abc import Iterator
 from pathlib import Path
 
-from numpy import ndarray
-
-from pydoug_core.batch._result_save import default_save_result
-from pydoug_core.batch.recorder import OperationSpec, Recorder
-from pydoug_core.io.imreader import imread, seqread
 from pydoug_core.io.imwriter import imwrite
-from pydoug_core.registry import get_operation
 
 
 def run_batch(
@@ -40,6 +34,13 @@ def run_batch(
     total: int
         The total number of images to be processed.
     """
+
+    from numpy import ndarray
+
+    from pydoug_core.batch._result_save import default_save_result
+    from pydoug_core.batch.recorder import OperationSpec, Recorder
+    from pydoug_core.io.imreader import imread, seqread
+    from pydoug_core.registry import get_operation
 
     recorder: Recorder = Recorder()
     recorder.load(Path(workflow_dir))

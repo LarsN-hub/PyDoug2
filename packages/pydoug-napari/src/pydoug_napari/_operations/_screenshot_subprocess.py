@@ -2,15 +2,7 @@
 Standalone entry point to render a screenshot off the main Qt thread.
 """
 
-import json
 import sys
-from pathlib import Path
-from typing import Any
-
-import numpy as np
-from napari import Viewer
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication
 
 
 def main(config_path: str) -> None:  # pragma: no cover
@@ -23,6 +15,15 @@ def main(config_path: str) -> None:  # pragma: no cover
     config_path: str
         The path to the configuration json file.
     """
+
+    import json
+    from pathlib import Path
+    from typing import Any
+
+    import numpy as np
+    from napari import Viewer
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QApplication
 
     config: Any = json.loads(Path(config_path).read_text())
     imarray: np.ndarray = np.load(config["array_path"])

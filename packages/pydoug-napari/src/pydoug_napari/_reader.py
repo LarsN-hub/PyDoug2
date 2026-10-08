@@ -6,8 +6,6 @@ import os
 from collections.abc import Callable
 from pathlib import Path
 
-from pydoug_core.io.imreader import imread, seqread
-
 READABLE_EXTENSIONS: set[str] = {
     ".tif",
     ".tiff",
@@ -64,6 +62,8 @@ def _reader_function(path: list[str | Path] | Path | str) -> list[tuple]:
         naming the type of layer. Both "meta" and "layer_type" are optional. napari will
         default to layer_type=="image" if not provided.
     """
+
+    from pydoug_core.io.imreader import imread, seqread
 
     layer_data: list[tuple] = []
     if not isinstance(path, list):

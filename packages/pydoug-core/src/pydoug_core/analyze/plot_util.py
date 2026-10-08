@@ -7,7 +7,6 @@ from typing import Literal
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
-from skimage.exposure import histogram
 
 __all__ = ["hist_ax"]
 
@@ -45,6 +44,8 @@ def hist_ax(
     hist_ax: plt.Axes
         The input axis with the histogram plot generated.
     """
+
+    from skimage.exposure import histogram
 
     input_range: str = source_range
     if source_range == "values":

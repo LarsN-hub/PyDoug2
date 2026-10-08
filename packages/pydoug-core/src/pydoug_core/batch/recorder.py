@@ -13,7 +13,6 @@ from weakref import WeakKeyDictionary
 import numpy as np
 from psygnal import Signal
 
-from pydoug_core.io import imreader, imwriter
 from pydoug_core.registry import OperationSpec, get_operation
 
 
@@ -35,6 +34,8 @@ def _write_payload(payload: Any, arrays_dir: Path, tag: str) -> str:
     name: str
         The file name (with extension).
     """
+
+    from pydoug_core.io import imwriter
 
     if isinstance(payload, np.ndarray):
         name = f"{tag}.tiff"
@@ -63,6 +64,8 @@ def _read_payload(path: Path) -> np.ndarray | tuple:
     payload: np.ndarray | tuple
         The data.
     """
+
+    from pydoug_core.io import imreader
 
     if path.suffix.lower() == ".npz":
         with np.load(path) as stored:

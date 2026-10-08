@@ -5,16 +5,6 @@ Utilities for segmenting images.
 from typing import Annotated, Any, Literal
 
 import numpy as np
-from skimage.filters import (
-    threshold_isodata,
-    threshold_li,
-    threshold_mean,
-    threshold_minimum,
-    threshold_multiotsu,
-    threshold_otsu,
-    threshold_triangle,
-    threshold_yen,
-)
 
 __all__ = ["calc_thresholds"]
 
@@ -52,6 +42,17 @@ def calc_thresholds(
     thresh_vals: float | int | np.ndarray
         The threshold value(s).
     """
+
+    from skimage.filters import (
+        threshold_isodata,
+        threshold_li,
+        threshold_mean,
+        threshold_minimum,
+        threshold_multiotsu,
+        threshold_otsu,
+        threshold_triangle,
+        threshold_yen,
+    )
 
     thresh_vals: Any = None
     if Method == "Isodata":

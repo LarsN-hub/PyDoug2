@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 import pytest
 from matplotlib.figure import Figure
+from napari.layers import Shapes
 from skimage.measure import marching_cubes
 from skimage.morphology import ball
 
@@ -252,6 +253,25 @@ def registered_surface_calc():
 
     yield "_dummy_surface_calc"
     unregister_operation("_dummy_surface_calc")
+
+
+@pytest.fixture
+def registered_shapes():
+    """
+    Fixture to create a registered "dummy shapes" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Dummy Shapes",
+        layer_type="shapes",
+        recordable=False,
+    )
+    def _dummy_shapes(shapes: Shapes) -> np.ndarray:  # pragma: no cover
+        return shapes.to_labels(labels_shape=(10, 10)) > 1
+
+    yield "_dummy_shapes"
+    unregister_operation("_dummy_shapes")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)

@@ -5,14 +5,6 @@ Generate image data.
 from typing import Annotated, Literal
 
 from numpy import ndarray
-from porespy.generators import (
-    blobs,
-    lattice_spheres,
-    overlapping_spheres,
-    polydisperse_spheres,
-    random_spheres,
-)
-from scipy.stats import norm
 
 from pydoug_core.registry import register_operation
 
@@ -87,10 +79,19 @@ def gen_structures(
         The generated image.
     """
 
+    from porespy.generators import (
+        blobs,
+        lattice_spheres,
+        overlapping_spheres,
+        polydisperse_spheres,
+        random_spheres,
+    )
+    from scipy.stats import norm
+
     if Dimensions[-1] == 0:
-        dims: list[int] = list(Dimensions[:-1])
+        dims: list[int] = [Dimensions[1], Dimensions[0]]
     else:
-        dims = list(Dimensions)
+        dims = [Dimensions[2], Dimensions[1], Dimensions[0]]
 
     if Method == "Blobs":
         return blobs(dims, Porosity, Blobiness)

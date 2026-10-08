@@ -6,7 +6,6 @@ from typing import Annotated, Literal
 
 import numpy as np
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
 
 __all__ = ["apply_mask", "logic"]
@@ -57,17 +56,19 @@ def apply_mask(
         The masked image array.
     """
 
+    from pydoug_core.util import prep_mask
+
     if In_Place:
         if Method == "In":
-            imarray[util.prep_mask(imarray, Mask)] = Masked_Color
+            imarray[prep_mask(imarray, Mask)] = Masked_Color
         else:
-            imarray[np.logical_not(util.prep_mask(imarray, Mask))] = Masked_Color
+            imarray[np.logical_not(prep_mask(imarray, Mask))] = Masked_Color
         return imarray
     masked_array: np.ndarray = np.copy(imarray)
     if Method == "In":
-        masked_array[util.prep_mask(masked_array, Mask)] = Masked_Color
+        masked_array[prep_mask(masked_array, Mask)] = Masked_Color
     else:
-        masked_array[np.logical_not(util.prep_mask(masked_array, Mask))] = Masked_Color
+        masked_array[np.logical_not(prep_mask(masked_array, Mask))] = Masked_Color
     return masked_array
 
 
@@ -106,21 +107,21 @@ def logic(
         The image after the logical operation.
     """
 
+    from pydoug_core.util import convert_dtype
+
     log_array: np.ndarray = np.zeros(imarray.shape, np.bool)
     if Method == "Intersect":
         log_array[
-            util.convert_dtype(imarray, "Bool")
-            & util.convert_dtype(Logic_Layer, "Bool")
+            convert_dtype(imarray, "Bool") & convert_dtype(Logic_Layer, "Bool")
         ] = True
     elif Method == "Subtract":
         log_array[
-            util.convert_dtype(imarray, "Bool")
-            & np.logical_not(util.convert_dtype(Logic_Layer, "Bool"))
+            convert_dtype(imarray, "Bool")
+            & np.logical_not(convert_dtype(Logic_Layer, "Bool"))
         ] = True
     else:
         log_array[
-            util.convert_dtype(imarray, "Bool")
-            | util.convert_dtype(Logic_Layer, "Bool")
+            convert_dtype(imarray, "Bool") | convert_dtype(Logic_Layer, "Bool")
         ] = True
 
     return log_array

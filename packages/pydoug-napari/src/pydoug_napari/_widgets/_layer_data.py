@@ -2,7 +2,6 @@
 Convert napari layers into plain data for non-napari operations.
 """
 
-import numpy as np
 from napari.layers import Image, Labels, Shapes, Surface
 
 LAYER_TYPE_MAP: dict = {
@@ -27,6 +26,8 @@ def layer_payload(layer):
     data: Any
         The layer data.
     """
+
+    import numpy as np
 
     if isinstance(layer, Shapes):
         return layer

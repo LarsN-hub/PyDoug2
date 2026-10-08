@@ -5,17 +5,6 @@ Detect sharp features in images like corners, edges, peaks, and surfaces.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.feature import (
-    canny,
-    corner_fast,
-    corner_harris,
-    corner_kitchen_rosenfeld,
-    corner_moravec,
-    corner_peaks,
-    corner_shi_tomasi,
-    peak_local_max,
-)
-from skimage.morphology import ball, disk
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb
@@ -69,6 +58,8 @@ def edges(
     if isrgb(imarray):
         print("Image is RGB, edge detection not performed!")
         return imarray
+
+    from skimage.feature import canny
 
     if Thresholds[0] > Thresholds[1]:
         thresholds: tuple = (Thresholds[1], Thresholds[0])
@@ -140,6 +131,9 @@ def peaks(
     peak_array: np.ndarray
         A binary image where True values are local peaks in the original image.
     """
+
+    from skimage.feature import peak_local_max
+    from skimage.morphology import ball, disk
 
     abs_thresh: float | None = Absolute_Threshold
     if abs_thresh == 0:
@@ -285,6 +279,16 @@ def corners(
     if isrgb(imarray):
         print("Image is RGB, corner identification not performed!")
         return imarray
+
+    from skimage.feature import (
+        corner_fast,
+        corner_harris,
+        corner_kitchen_rosenfeld,
+        corner_moravec,
+        corner_peaks,
+        corner_shi_tomasi,
+    )
+    from skimage.morphology import disk
 
     abs_thresh: float | None = Absolute_Threshold
     if abs_thresh == 0:

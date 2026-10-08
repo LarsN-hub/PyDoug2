@@ -529,3 +529,25 @@ def test_surface_behavior(
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(recorder.steps) == 3, timeout=5000)
     assert len(recorder.steps) == 3
+
+
+def test_shapes_behavior(make_napari_viewer, qtbot, registered_shapes) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    recorder: Recorder = Recorder()
+    results_log: ResultsLog = ResultsLog()
+    spec: OperationSpec = get_operation(registered_shapes)
+    widget: CollapsibleContainer = make_operation_widget(
+        spec, viewer, recorder, results_log
+    )
+    qtbot.addWidget(widget.native)
+    subwidget: FunctionGui | None = widget.get_widget("_dispatch")
+    assert subwidget is not None
+    viewer.add_shapes(  # type: ignore
+        np.array([[3, 3], [7, 3], [7, 7], [7, 3]]), shape_type="rectangle"
+    )
+    assert len(viewer.layers) == 1
+    subwidget.layer.value = viewer.layers[-1]
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
+    assert len(viewer.layers) == 2

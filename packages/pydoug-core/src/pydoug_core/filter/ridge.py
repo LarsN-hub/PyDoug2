@@ -5,10 +5,8 @@ Filters that detect ridges.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.filters import frangi, hessian, meijering, sato
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import is3d, isrgb
 
 __all__ = ["ridge"]
 
@@ -85,6 +83,10 @@ def ridge(
     ridge_array: np.ndarray
         The image after ridge filtering.
     """
+
+    from skimage.filters import frangi, hessian, meijering, sato
+
+    from pydoug_core.util import is3d, isrgb
 
     def _ridge(
         imarray,

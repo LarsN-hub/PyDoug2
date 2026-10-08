@@ -4,23 +4,7 @@ The batch script mechanics for the batch widget of PyDoug's napari plugin.
 
 from pathlib import Path
 
-from napari.qt.threading import GeneratorWorker, thread_worker
-from napari.utils.notifications import show_error, show_info
-from qtpy.QtWidgets import (
-    QCheckBox,
-    QFileDialog,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QListWidget,
-    QProgressBar,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
-
-from pydoug_core.batch.runner import run_batch
-from pydoug_napari._widgets.multi_folder_dialog_widget import MultiFolderDialog
+from qtpy.QtWidgets import QListWidget, QVBoxLayout, QWidget
 
 
 def build_run_batch_widget() -> QWidget:
@@ -28,6 +12,21 @@ def build_run_batch_widget() -> QWidget:
     layout: QVBoxLayout = QVBoxLayout()
     image_paths: list[Path] = []
     image_list: QListWidget = QListWidget()
+
+    from napari.qt.threading import GeneratorWorker, thread_worker
+    from napari.utils.notifications import show_error, show_info
+    from qtpy.QtWidgets import (
+        QCheckBox,
+        QFileDialog,
+        QHBoxLayout,
+        QLabel,
+        QLineEdit,
+        QProgressBar,
+        QPushButton,
+    )
+
+    from pydoug_core.batch.runner import run_batch
+    from pydoug_napari._widgets.multi_folder_dialog_widget import MultiFolderDialog
 
     def _select_files():
         files, _ = QFileDialog.getOpenFileNames(container, "Select image files")

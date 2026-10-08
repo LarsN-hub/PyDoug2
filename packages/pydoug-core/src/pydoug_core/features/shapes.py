@@ -2,21 +2,9 @@
 Detect shapes in images like blobs, lines, and circles.
 """
 
-from math import sqrt
 from typing import Annotated, Literal
 
 import numpy as np
-from porespy.filters import local_thickness
-from skimage.draw import circle_perimeter, line
-from skimage.feature import blob_dog, blob_doh, blob_log
-from skimage.measure import centroid as ctrd
-from skimage.transform import (
-    hough_circle,
-    hough_circle_peaks,
-    hough_line,
-    hough_line_peaks,
-    probabilistic_hough_line,
-)
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb, rgb2gray
@@ -65,6 +53,8 @@ def mis(
     mis_array: np.ndarray
         The maximum inscribed spheres image.
     """
+
+    from porespy.filters import local_thickness
 
     if isrgb(imarray):
         print("Image is RGB, MIS not found!")
@@ -183,6 +173,10 @@ def blobs(
     if isrgb(imarray):
         print("Image is RGB, blob identification not performed!")
         return imarray
+
+    from math import sqrt
+
+    from skimage.feature import blob_dog, blob_doh, blob_log
 
     abs_thresh: float | None = Absolute_Threshold
     if abs_thresh == 0:
@@ -350,6 +344,13 @@ def lines(
         print("Image is RGB, lines detection not performed!")
         return imarray
 
+    from skimage.draw import line
+    from skimage.transform import (
+        hough_line,
+        hough_line_peaks,
+        probabilistic_hough_line,
+    )
+
     if Threshold == 0:
         thresh: float | None = None
     else:
@@ -490,6 +491,9 @@ def circles(
         print("Image is RGB, lines detection not performed!")
         return imarray
 
+    from skimage.draw import circle_perimeter
+    from skimage.transform import hough_circle, hough_circle_peaks
+
     radii: np.ndarray = np.arange(Radii[0], Radii[1] + 1, Radii[2])
     if Threshold == 0:
         thresh: float | None = None
@@ -548,6 +552,8 @@ def centroid(imarray: np.ndarray) -> np.ndarray:
     centroid_array: np.ndarray
         An image with the same shape as the input with only the centroid.
     """
+
+    from skimage.measure import centroid as ctrd
 
     coords: tuple = ctrd(rgb2gray(imarray))
     centroid_array: np.ndarray = np.zeros(rgb2gray(imarray).shape, np.bool)

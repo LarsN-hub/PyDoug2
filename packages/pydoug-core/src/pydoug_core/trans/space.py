@@ -5,9 +5,6 @@ Domain transformations of images.
 from typing import Annotated, Literal
 
 import numpy as np
-from scipy import fft as ft
-from scipy.ndimage import distance_transform_edt as edt
-from skimage import transform
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -42,6 +39,8 @@ def euclidian_dt(
     edtarray: np.ndarray
         The image array transformed into the distance domain.
     """
+
+    from scipy.ndimage import distance_transform_edt as edt
 
     if Perform_Slicewise and util.is3d(imarray):
         edtarray: np.ndarray = np.empty(imarray.shape)
@@ -86,6 +85,8 @@ def fft(
     fftarray: np.ndarray
         The transformed image array.
     """
+
+    from scipy import fft as ft
 
     if Inverse:
         if util.is3d(imarray):
@@ -152,37 +153,36 @@ def radon(imarray: np.ndarray, Inverse: bool = False) -> np.ndarray:
         The transformed image array.
     """
 
+    from skimage.transform import iradon
+    from skimage.transform import radon as skiradon
+
     if Inverse:
         if util.is3d(imarray):
-            firstirad: np.ndarray = transform.iradon(
-                util.rgb2gray(imarray[0]), circle=False
-            )
+            firstirad: np.ndarray = iradon(util.rgb2gray(imarray[0]), circle=False)
             iradarray: np.ndarray = np.empty(
                 (imarray.shape[0], firstirad.shape[0], firstirad.shape[1]),
                 firstirad.dtype,
             )
             iradarray[0] = firstirad
             for index in range(1, imarray.shape[0]):
-                iradarray[index] = transform.iradon(imarray[index], circle=False)
+                iradarray[index] = iradon(imarray[index], circle=False)
 
             return iradarray
 
-        return transform.iradon(imarray, circle=False)
+        return iradon(imarray, circle=False)
 
     if util.is3d(imarray):
-        firstrad: np.ndarray = transform.radon(util.rgb2gray(imarray[0]), circle=False)
+        firstrad: np.ndarray = skiradon(util.rgb2gray(imarray[0]), circle=False)
         radarray: np.ndarray = np.empty(
             (imarray.shape[0], firstrad.shape[0], firstrad.shape[1]), firstrad.dtype
         )
         radarray[0] = firstrad
         for index in range(1, imarray.shape[0]):
-            radarray[index] = transform.radon(
-                util.rgb2gray(imarray[index]), circle=False
-            )
+            radarray[index] = skiradon(util.rgb2gray(imarray[index]), circle=False)
 
         return radarray
 
-    return transform.radon(util.rgb2gray(imarray), circle=False)
+    return skiradon(util.rgb2gray(imarray), circle=False)
 
 
 @register_operation(category="transform", display_name="Hough")
@@ -221,9 +221,11 @@ def hough(
 
     """
 
+    from skimage.transform import hough_circle, hough_line
+
     if Mode == "Circle":
         if util.is3d(imarray):
-            firstarray = transform.hough_circle(util.rgb2gray(imarray[0]), Radius)
+            firstarray = hough_circle(util.rgb2gray(imarray[0]), Radius)
             harray: np.ndarray = np.empty(
                 (
                     firstarray.shape[0],
@@ -235,30 +237,28 @@ def hough(
             )
             harray[:, :, :, 0] = firstarray
             for index in range(1, imarray.shape[0]):
-                harray[:, :, :, index] = transform.hough_circle(
+                harray[:, :, :, index] = hough_circle(
                     util.rgb2gray(imarray[index]), Radius
                 )
 
             return harray
 
-        return transform.hough_circle(util.rgb2gray(imarray), Radius)
+        return hough_circle(util.rgb2gray(imarray), Radius)
 
     else:
         angles: np.ndarray = np.linspace(
             -np.pi / 2, np.pi / 2, round(180 / Angle_Step), endpoint=True
         )
         if util.is3d(imarray):
-            firstarray = transform.hough_line(util.rgb2gray(imarray[0]), angles)[0]
+            firstarray = hough_line(util.rgb2gray(imarray[0]), angles)[0]
             harray: np.ndarray = np.empty(
                 (imarray.shape[0], firstarray.shape[0], firstarray.shape[1]),
                 firstarray.dtype,
             )
             harray[0] = firstarray
             for index in range(1, imarray.shape[0]):
-                harray[index] = transform.hough_line(
-                    util.rgb2gray(imarray[index]), angles
-                )[0]
+                harray[index] = hough_line(util.rgb2gray(imarray[index]), angles)[0]
 
             return harray
 
-        return transform.hough_line(util.rgb2gray(imarray), angles)[0]
+        return hough_line(util.rgb2gray(imarray), angles)[0]

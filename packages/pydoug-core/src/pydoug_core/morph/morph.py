@@ -5,27 +5,8 @@ Morphological filters.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.morphology import (
-    convex_hull_image,
-    convex_hull_object,
-    h_maxima,
-    h_minima,
-    local_maxima,
-    local_minima,
-    remove_objects_by_distance,
-    remove_small_holes,
-    remove_small_objects,
-    skeletonize,
-)
-from skimage.morphology import (
-    dilation as ski_dilation,
-)
-from skimage.morphology import (
-    erosion as ski_erosion,
-)
-from skimage.morphology import (
-    thin as ski_thin,
-)
+from skimage.morphology import dilation as ski_dilation
+from skimage.morphology import erosion as ski_erosion
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb
@@ -480,6 +461,8 @@ def remove_labeled_objects(
         The image after object removal.
     """
 
+    from skimage.morphology import remove_objects_by_distance, remove_small_objects
+
     if Method == "Distance":
         if Distance == 0:
             return imarray
@@ -525,6 +508,8 @@ def remove_holes(
 
     if Size == 0:
         return imarray
+
+    from skimage.morphology import remove_small_holes
 
     if Perform_Slicewise and is3d(imarray):
         rem_array: np.ndarray = np.empty(imarray.shape, np.bool)
@@ -573,6 +558,8 @@ def convex_hull(
     if isrgb(imarray):
         print("Image is RGB, convex hull not found!")
         return imarray
+
+    from skimage.morphology import convex_hull_image, convex_hull_object
 
     def _convex_hull(imarray, Entire_Image, Connectivity):
         if Entire_Image:
@@ -634,6 +621,9 @@ def thin(
     if isrgb(imarray):
         print("Image is RGB, thinning not performed!")
         return imarray
+
+    from skimage.morphology import skeletonize
+    from skimage.morphology import thin as ski_thin
 
     def _thin(
         imarray, Fully_Skeletonize, Skeletonize_Method, Thinning_Iterations
@@ -698,6 +688,8 @@ def extrema(
     if isrgb(imarray):
         print("Image is RGB, local extrema not found!")
         return imarray
+
+    from skimage.morphology import h_maxima, h_minima, local_maxima, local_minima
 
     def _extrema(imarray, Maxima, Minimum_Difference) -> np.ndarray:
 

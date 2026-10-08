@@ -6,7 +6,6 @@ from typing import Annotated
 
 import numpy as np
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
 
 __all__ = ["crop"]
@@ -57,10 +56,12 @@ def crop(
         The cropped image.
     """
 
+    from pydoug_core.util import is3d, prep_mask
+
     if np.all(Mask):
         return imarray
 
-    if util.is3d(Mask):
+    if is3d(Mask):
         z_start: np.int64 | None = np.min(np.argwhere(Mask)[:, 0])
         z_end: np.int64 | None = np.max(np.argwhere(Mask)[:, 0]) + 1
         r_start: np.int64 = np.min(np.argwhere(Mask)[:, 1])
@@ -76,8 +77,8 @@ def crop(
         c_end = np.max(np.argwhere(Mask)[:, 1]) + 1
 
     if In_Place:
-        imarray[np.logical_not(util.prep_mask(imarray, Mask))] = Masked_Color
-        if util.is3d(imarray):
+        imarray[np.logical_not(prep_mask(imarray, Mask))] = Masked_Color
+        if is3d(imarray):
             if z_start is not None and z_end is not None:
                 imarray = imarray[z_start:z_end, r_start:r_end, c_start:c_end]
             else:
@@ -88,8 +89,8 @@ def crop(
         return np.squeeze(imarray)
 
     croparray: np.ndarray = np.copy(imarray)
-    croparray[np.logical_not(util.prep_mask(imarray, Mask))] = Masked_Color
-    if util.is3d(imarray):
+    croparray[np.logical_not(prep_mask(imarray, Mask))] = Masked_Color
+    if is3d(imarray):
         if z_start is not None and z_end is not None:
             croparray = croparray[z_start:z_end, r_start:r_end, c_start:c_end]
         else:

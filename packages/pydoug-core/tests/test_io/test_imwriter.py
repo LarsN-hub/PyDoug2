@@ -13,12 +13,13 @@ import pytest
 from pydoug_core.io import imwriter as imw
 
 
-def test_imwrite_2d3d_grayrgb_combos(tmp_path, sample_arrays) -> None:
+def test_imwrite_2d3d_grayrgb_combos(tmp_path, sample_arrays, sample_masks) -> None:
 
     imw.imwrite(sample_arrays["2dgray"], tmp_path, "2dgraywrite", "tiff")
     imw.imwrite(sample_arrays["3dgray"], tmp_path, "3dgraywrite", "tiff")
     imw.imwrite(sample_arrays["2drgb"], tmp_path, "2drgbwrite", "tiff")
     imw.imwrite(sample_arrays["3drgb"], tmp_path, "3drgbwrite", "tiff")
+    imw.imwrite(sample_masks["2dgray"], tmp_path, "2dboolwrite", "tiff")
     assert np.all(iio.imread(tmp_path / "2dgraywrite.tiff") == sample_arrays["2dgray"])
     assert np.all(iio.imread(tmp_path / "3dgraywrite.tiff") == sample_arrays["3dgray"])
     assert np.all(iio.imread(tmp_path / "2drgbwrite.tiff") == sample_arrays["2drgb"])

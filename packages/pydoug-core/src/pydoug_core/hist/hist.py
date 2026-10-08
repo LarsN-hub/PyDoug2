@@ -5,20 +5,10 @@ Plot and modify an image array's histogram.
 from typing import Annotated, Literal
 
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from skimage import exposure
-from skimage import util as skutil
-from skimage.filters.rank import (
-    autolevel,
-    enhance_contrast,
-)
-from skimage.filters.rank import equalize as equalize_rank
 from skimage.morphology import ball, disk
 
 from pydoug_core import util
-from pydoug_core.analyze import plot_util
 from pydoug_core.registry import register_operation
 
 __all__ = [
@@ -30,9 +20,6 @@ __all__ = [
     "adjust",
     "local_contrast",
 ]
-
-plt.rcParams["font.family"] = "sans-serif"
-plt.rcParams["font.sans-serif"] = "Arial"
 
 
 @register_operation(
@@ -75,13 +62,21 @@ def plot_histogram(
         The figure containing the histogram plot.
     """
 
+    from matplotlib import pyplot as plt
+    from matplotlib.axes import Axes
+
+    from pydoug_core.analyze.plot_util import hist_ax
+
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = "Arial"
+
     if Apply_Mask and Mask is not None:
         values: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         values = np.copy(imarray)
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
-    ax = plot_util.hist_ax(values, ax, Bin_Count, normalize=Normalize)
+    ax = hist_ax(values, ax, Bin_Count, normalize=Normalize)
     ax.set_xlabel("Gray Value", fontsize=15)
     if Normalize:
         ax.set_ylabel("Probability", fontsize=15)
@@ -109,7 +104,9 @@ def invert(imarray: np.ndarray) -> np.ndarray:
         The ivnerted image array.
     """
 
-    return skutil.invert(imarray)
+    from skimage.util import invert as skinvert
+
+    return skinvert(imarray)
 
 
 @register_operation(category="histogram", display_name="Normalize")
@@ -159,6 +156,8 @@ def normalize(
     if Input_Range == "Image" and Output_Range == "Image":
         return imarray
 
+    from skimage.exposure import rescale_intensity
+
     if Input_Range == "Manual":
         input: str | tuple[float, float] = Manual_Input
     else:
@@ -168,7 +167,7 @@ def normalize(
     else:
         output = Output_Range.lower()
 
-    return exposure.rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
+    return rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
 
 
 @register_operation(category="histogram", display_name="Saturate")
@@ -266,6 +265,9 @@ def equalize(
         The histogram-equalized image array.
     """
 
+    from skimage.exposure import equalize_adapthist, equalize_hist
+    from skimage.filters.rank import equalize as equalize_rank
+
     def _equalize(
         imarray: np.ndarray,
         Method: Literal["Global", "CLAHE", "Rank"],
@@ -280,14 +282,14 @@ def equalize(
         if Method == "Global":
             if Apply_Mask and Mask is not None:
                 return util.convert_dtype(
-                    exposure.equalize_hist(imarray, mask=Mask),
+                    equalize_hist(imarray, mask=Mask),
                     input_dtype,  # type: ignore
                 )
-            return util.convert_dtype(exposure.equalize_hist(imarray), input_dtype)  # type: ignore
+            return util.convert_dtype(equalize_hist(imarray), input_dtype)  # type: ignore
 
         if Method == "CLAHE":
             return util.convert_dtype(
-                exposure.equalize_adapthist(imarray, Radius * 2, CLAHE_Clip_Limit),
+                equalize_adapthist(imarray, Radius * 2, CLAHE_Clip_Limit),
                 input_dtype,  # type: ignore
             )
 
@@ -376,14 +378,16 @@ def adjust(
         The contrast-adjusted image array.
     """
 
+    from skimage.exposure import adjust_gamma, adjust_log, adjust_sigmoid
+
     if Method == "Gamma":
-        return exposure.adjust_gamma(imarray, Gamma, Gain)
+        return adjust_gamma(imarray, Gamma, Gain)
 
     if Method == "Log":
-        return exposure.adjust_log(imarray, Gain, Inverse)
+        return adjust_log(imarray, Gain, Inverse)
 
     if Method == "Sigmoid":
-        return exposure.adjust_sigmoid(imarray, Sigmoid_Cutoff, Gain, Inverse)
+        return adjust_sigmoid(imarray, Sigmoid_Cutoff, Gain, Inverse)
 
 
 @register_operation(
@@ -424,6 +428,8 @@ def local_contrast(
     enhanced_array: np.ndarray
         The contrast-enhanced image array.
     """
+
+    from skimage.filters.rank import autolevel, enhance_contrast
 
     if util.is3d(imarray):
         footprint = ball(Radius)

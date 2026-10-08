@@ -2,10 +2,7 @@
 Convert captured viewer settings to json-serializable formats.
 """
 
-from enum import Enum
 from typing import Any
-
-import numpy as np
 
 
 def to_jsonable(value: Any) -> Any:
@@ -22,6 +19,10 @@ def to_jsonable(value: Any) -> Any:
     value: Any
         The value in json-serializable format.
     """
+
+    from enum import Enum
+
+    import numpy as np
 
     if isinstance(value, Enum):
         return value.value

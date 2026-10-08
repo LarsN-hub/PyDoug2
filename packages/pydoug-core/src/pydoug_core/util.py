@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-import skimage.util as skutil
-from skimage.color import rgb2gray as skrgb2gray
 
 from pydoug_core.registry import register_operation
 
@@ -165,6 +163,8 @@ def rgb2gray(imarray: np.ndarray, Preserve_Dtype: bool = True) -> np.ndarray:
         Whether or not to preserve the dtype of the original image. Default is True.
     """
 
+    from skimage.color import rgb2gray as skrgb2gray
+
     if isrgb(imarray):
         if Preserve_Dtype:
             return convert_dtype(skrgb2gray(imarray), dtype_2_str(imarray.dtype))  # type: ignore
@@ -224,18 +224,27 @@ def convert_dtype(
         The converted image array.
     """
 
+    from skimage.util import (
+        img_as_bool,
+        img_as_float32,
+        img_as_float64,
+        img_as_int,
+        img_as_ubyte,
+        img_as_uint,
+    )
+
     if New_Type == "Bool" and imarray.dtype != np.bool:
-        return skutil.img_as_bool(imarray)
+        return img_as_bool(imarray)
     if New_Type == "Uint8" and imarray.dtype != np.uint8:
-        return skutil.img_as_ubyte(imarray)
+        return img_as_ubyte(imarray)
     if New_Type == "Uint16" and imarray.dtype != np.uint16:
-        return skutil.img_as_uint(imarray)
+        return img_as_uint(imarray)
     if New_Type == "Int16" and imarray.dtype != np.int16:
-        return skutil.img_as_int(imarray)
+        return img_as_int(imarray)
     if New_Type == "Float32" and imarray.dtype != np.float32:
-        return skutil.img_as_float32(imarray)
+        return img_as_float32(imarray)
     if New_Type == "Float64" and imarray.dtype != np.float64:
-        return skutil.img_as_float64(imarray)
+        return img_as_float64(imarray)
     return imarray
 
 

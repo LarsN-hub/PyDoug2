@@ -5,7 +5,6 @@ Band-pass filters.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.filters import butterworth, difference_of_gaussians, gabor
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -54,6 +53,8 @@ def butter(
     bparray: np.ndarray
         The band-pass filtered image.
     """
+
+    from skimage.filters import butterworth
 
     if Perform_Slicewise and util.is3d(imarray):
         bparray: np.ndarray = np.empty(imarray.shape)
@@ -120,6 +121,8 @@ def dog(
     bparray: np.ndarray
         The band-pass filtered image.
     """
+
+    from skimage.filters import difference_of_gaussians
 
     if Perform_Slicewise and util.is3d(imarray):
         bparray: np.ndarray = np.empty(imarray.shape)
@@ -194,6 +197,8 @@ def gab(
     bparray: np.ndarray
         The real result of the band-pass filtered image.
     """
+
+    from skimage.filters import gabor
 
     if util.isrgb(imarray):
         bparray: np.ndarray = np.empty(imarray.shape, imarray.dtype)

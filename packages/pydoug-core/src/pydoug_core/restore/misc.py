@@ -6,11 +6,6 @@ from typing import Annotated, Literal
 
 import numpy as np
 import pywt
-from algotom.post.postprocessing import (
-    remove_ring_based_fft,
-    remove_ring_based_wavelet_fft,
-)
-from skimage.restoration import inpaint_biharmonic, rolling_ball
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -44,6 +39,8 @@ def rolling(
         The image with the background subtracted.
     """
 
+    from skimage.restoration import rolling_ball
+
     bg: np.ndarray = rolling_ball(imarray, radius=Radius)
     if Return_Background:
         return bg
@@ -75,6 +72,8 @@ def inpaint(imarray: np.ndarray, Mask: np.ndarray) -> np.ndarray:
     inpaint_array: np.ndarray
         The inpainted image.
     """
+
+    from skimage.restoration import inpaint_biharmonic
 
     return inpaint_biharmonic(imarray, util.prep_mask(imarray, Mask)).astype(
         imarray.dtype
@@ -143,6 +142,11 @@ def ring_removal(
     if not util.is_square(imarray):
         print("Image(s) not square, ring removal not performed!")
         return imarray
+
+    from algotom.post.postprocessing import (
+        remove_ring_based_fft,
+        remove_ring_based_wavelet_fft,
+    )
 
     if util.is3d(imarray):
         rrarray: np.ndarray = np.empty(imarray.shape, imarray.dtype)

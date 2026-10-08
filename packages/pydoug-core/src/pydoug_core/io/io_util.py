@@ -2,10 +2,7 @@
 Utilitiy functions for PyDoug io package.
 """
 
-import os
-
 import numpy as np
-import psutil
 
 
 def _auto_worker_count(samplearray: np.ndarray, numfiles: int) -> int:
@@ -24,6 +21,10 @@ def _auto_worker_count(samplearray: np.ndarray, numfiles: int) -> int:
     numworkers: int
         The number of workers estimated.
     """
+
+    import os
+
+    import psutil
 
     cpu_count: int = os.cpu_count() or 1
     available_bytes: int = psutil.virtual_memory().available

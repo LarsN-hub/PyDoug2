@@ -5,7 +5,6 @@ Geometric transformations of images.
 from typing import Annotated, Literal, cast
 
 import numpy as np
-from skimage import transform
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -121,6 +120,8 @@ def rotate(
     if Angle == 0 or Angle == 360:
         return imarray
 
+    from skimage.transform import rotate as skirotate
+
     outdtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
 
     if Clockwise:
@@ -128,9 +129,7 @@ def rotate(
 
     def _3drot(imarray: np.ndarray, angle: float, resize: bool) -> np.ndarray:
         return np.moveaxis(
-            transform.rotate(
-                np.moveaxis(imarray, 0, 2), angle, resize, preserve_range=True
-            ),
+            skirotate(np.moveaxis(imarray, 0, 2), angle, resize, preserve_range=True),
             2,
             0,
         )
@@ -148,7 +147,7 @@ def rotate(
         else:
             return _3drot(imarray, Angle, Resize).astype(outdtype, copy=False)
     else:
-        return transform.rotate(imarray, Angle, Resize, preserve_range=True).astype(
+        return skirotate(imarray, Angle, Resize, preserve_range=True).astype(
             outdtype, copy=False
         )
 
@@ -192,6 +191,8 @@ def rescale(
     if Scale == 1:
         return imarray
 
+    from skimage.transform import rescale as skirescale
+
     outdtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
     if not Segmented_Data and imarray.dtype != np.dtype(np.bool):
         antialias: bool = True
@@ -199,7 +200,7 @@ def rescale(
         antialias = False
         Order = 0
 
-    return transform.rescale(
+    return skirescale(
         imarray,
         Scale,
         Order,
@@ -254,6 +255,8 @@ def resize(
         The resized image array.
     """
 
+    from skimage.transform import resize as skiresize
+
     axlengths: dict[str, int | None] = {"x": X_Length, "y": Y_Length, "z": Z_Length}
     for key in list(axlengths.keys()):
         if axlengths[key] == 0:
@@ -283,7 +286,7 @@ def resize(
         antialias = False
         Order = 0
 
-    resarray = transform.resize(
+    resarray = skiresize(
         imarray, outshape, Order, preserve_range=True, anti_aliasing=antialias
     )
     return cast(np.ndarray, resarray).astype(outdtype, copy=False)

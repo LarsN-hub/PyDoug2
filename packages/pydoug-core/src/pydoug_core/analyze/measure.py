@@ -5,7 +5,6 @@ Measured and calculated values of images.
 from typing import Annotated, Any, Literal
 
 import numpy as np
-from scipy.stats import mode
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -48,6 +47,8 @@ def stats(
         A dictionary containing the stats "Mean", "Median", "Mode", "Std Dev",
         "Variance", "Min", "Max", "Range", "Dtype Min", and "Dtype Max".
     """
+
+    from scipy.stats import mode
 
     if np.issubdtype(imarray.dtype, np.integer):
         imdmin = np.iinfo(imarray.dtype).min

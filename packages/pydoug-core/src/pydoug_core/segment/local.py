@@ -5,11 +5,6 @@ Local intensity-based thresholding operations to segment images.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.filters import threshold_local, threshold_niblack, threshold_sauvola
-from skimage.filters.rank import otsu as rank_otsu
-from skimage.filters.rank import threshold as rank_thresh
-from skimage.morphology import ball, disk
-from skimage.segmentation import chan_vese, morphological_chan_vese, random_walker
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -67,6 +62,11 @@ def local_threshold(
     thresh_array: np.ndarray
         The segmented image array.
     """
+
+    from skimage.filters import threshold_local, threshold_niblack, threshold_sauvola
+    from skimage.filters.rank import otsu as rank_otsu
+    from skimage.filters.rank import threshold as rank_thresh
+    from skimage.morphology import ball, disk
 
     if Method == "Adaptive":
         if Radius % 2 == 0:
@@ -152,6 +152,8 @@ def rand_walk(
         The segmented image.
     """
 
+    from skimage.segmentation import random_walker
+
     if Mode == "Brute Force":
         mode = "bf"
     elif Mode == "Conjugate Gradient":
@@ -225,6 +227,8 @@ def chan_vese_algs(
     """
 
     if Morphological_Snakes:
+        from skimage.segmentation import morphological_chan_vese
+
         if util.isrgb(imarray):
             seg_array: np.ndarray = np.empty(imarray.shape, np.int8)
             for cindex in range(0, imarray.shape[-1]):
@@ -247,6 +251,8 @@ def chan_vese_algs(
             Lambda_1,
             Lambda_2,
         )  # type: ignore
+
+    from skimage.segmentation import chan_vese
 
     if util.isrgb(imarray):
         seg_array: np.ndarray = np.empty(imarray.shape, np.bool)

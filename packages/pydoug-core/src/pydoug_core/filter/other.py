@@ -5,11 +5,8 @@ Other miscellaneous filters.
 from typing import Annotated
 
 import numpy as np
-from skimage.filters.rank import entropy as rank_entropy
-from skimage.morphology import ball, disk
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import is3d, isrgb
 
 __all__ = ["entropy"]
 
@@ -42,6 +39,11 @@ def entropy(
     entropy_array: np.ndarray
         The image after filtering.
     """
+
+    from skimage.filters.rank import entropy as rank_entropy
+    from skimage.morphology import ball, disk
+
+    from pydoug_core.util import is3d, isrgb
 
     if is3d(imarray) and not Perform_Slicewise:
         footprint = ball(Radius)

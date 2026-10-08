@@ -2,10 +2,6 @@
 Take a screenshot and record its parameters in the workflow.
 """
 
-import json
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +29,11 @@ def _render_screenshot_impl(
     screenshot_array: np.ndarray
         The screenshot as a 2D image.
     """
+
+    import json
+    import subprocess
+    import sys
+    import tempfile
 
     with tempfile.TemporaryDirectory() as tmp_str:
         tmp: Path = Path(tmp_str)
