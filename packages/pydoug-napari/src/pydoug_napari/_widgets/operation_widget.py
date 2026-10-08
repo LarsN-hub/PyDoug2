@@ -11,18 +11,17 @@ from magicclass.widgets import CollapsibleContainer
 from magicgui import magicgui
 from magicgui.widgets import FunctionGui
 from matplotlib.figure import Figure
-from napari.layers import Image, Labels, Layer
+from napari.layers import Labels, Layer
 from napari.qt.threading import thread_worker
 from napari.viewer import Viewer
 
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
+from pydoug_napari._widgets._layer_data import LAYER_TYPE_MAP, layer_payload
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
 from pydoug_napari._widgets._settings_capture import to_jsonable
 from pydoug_napari._widgets.plot_display_widget import default_display_plot
 from pydoug_napari._widgets.results_log_widget import ResultsLog
-
-_LAYER_TYPE_MAP: dict = {"image": Image, "labels": Labels}
 
 
 def make_operation_widget(
@@ -82,18 +81,26 @@ def make_operation_widget(
         recorded_params: dict = {}
         input_refs: dict[str, str] = {}
 
+        primary_payload: Any = (
+            layer_payload(layer) if operation_spec.requires_layer else None
+        )
+
         for name, value in params.items():
             if name in array_names:
                 flag_name: str | None = operation_spec.array_param_flags.get(name)
                 enabled: bool = params.get(flag_name, True) if flag_name else True
                 if enabled and value is not None:
-                    array_layer: Image = value
-                    call_params[name] = array_layer.data
-                    step_id: str | None = recorder.step_id_for_layer(array_layer)
-                    if step_id is not None:
-                        input_refs[name] = f"step:{step_id}"
-                    else:
-                        input_refs[name] = recorder.get_or_create_array_ref(array_layer)
+                    array_layer: Any = value
+                    payload: Any = layer_payload(array_layer)
+                    call_params[name] = payload
+                    if operation_spec.recordable:
+                        step_id: str | None = recorder.step_id_for_layer(array_layer)
+                        if step_id is not None:
+                            input_refs[name] = f"step:{step_id}"
+                        else:
+                            input_refs[name] = recorder.get_or_create_array_ref(
+                                array_layer
+                            )
                 else:
                     call_params[name] = None
             else:
@@ -104,14 +111,16 @@ def make_operation_widget(
             call_params["Settings"] = dict(captured_settings)
             recorded_params["Settings"] = dict(captured_settings)
 
-        if operation_spec.requires_layer:
+        if operation_spec.requires_layer and operation_spec.recordable:
             layer_step_id = recorder.step_id_for_layer(layer)
-            input_refs["layer"] = (
-                f"step:{layer_step_id}" if layer_step_id else "primary"
-            )
-
-        layer_step_id: str | None = recorder.step_id_for_layer(layer)
-        input_refs["layer"] = f"step:{layer_step_id}" if layer_step_id else "primary"
+            if layer_step_id is not None:
+                input_refs["layer"] = f"step:{layer_step_id}"
+            elif operation_spec.layer_type in ("image", "labels"):
+                input_refs["layer"] = "primary"
+            else:  # surface
+                input_refs["layer"] = recorder.get_or_create_array_ref(
+                    layer, primary_payload
+                )
 
         def _reset_button() -> None:
             """
@@ -154,7 +163,7 @@ def make_operation_widget(
                 preview_layer_ref["layer"] = None
                 widget.Preview.value = False
 
-            if operation_spec.output_kind in ("image", "labels"):
+            if operation_spec.output_kind in ("image", "labels", "surface"):
                 in_place: bool = (
                     operation_spec.requires_layer
                     and operation_spec.allow_in_place
@@ -164,12 +173,14 @@ def make_operation_widget(
                     layer.data = result  # type: ignore
                     result_layer = layer
                 else:
-                    add_fn = (
-                        viewer.add_labels  # type: ignore
-                        if operation_spec.output_kind == "labels"
-                        else viewer.add_image
+                    add_fn = {
+                        "image": viewer.add_image,
+                        "labels": viewer.add_labels,  # type: ignore
+                        "surface": viewer.add_surface,  # type: ignore
+                    }[operation_spec.output_kind]
+                    result_layer: Any = add_fn(
+                        result, name=f"{operation_spec.display_name}"
                     )
-                    result_layer = add_fn(result, name=f"{operation_spec.display_name}")
                 if should_record:
                     recorder.record(
                         operation_spec.name,
@@ -218,9 +229,15 @@ def make_operation_widget(
         def _run() -> Any:  # pragma: no cover
             """
             Run the operation widget's function and return its results.
+
+            Returns
+            -------
+            output: Any
+                The output of the operation's function.
             """
+
             if operation_spec.requires_layer:
-                return operation_spec.func(layer.data, **call_params)  # type: ignore
+                return operation_spec.func(primary_payload, **call_params)  # type: ignore
             return operation_spec.func(**call_params)
 
         worker = _run()  # type: ignore
@@ -234,7 +251,7 @@ def make_operation_widget(
         if operation_spec.captures_viewer_settings and p.name == "Settings":
             continue
         if p.name in array_names:
-            layer_type = _LAYER_TYPE_MAP[
+            layer_type = LAYER_TYPE_MAP[
                 operation_spec.array_param_types.get(p.name, "image")
             ]
             p = p.replace(kind=inspect.Parameter.KEYWORD_ONLY, annotation=layer_type)
@@ -264,14 +281,13 @@ def make_operation_widget(
 
     sig_params: list = []
     if operation_spec.requires_layer:
-        layer_type = _LAYER_TYPE_MAP[operation_spec.layer_type]
+        layer_type = LAYER_TYPE_MAP[operation_spec.layer_type]
         sig_params.append(
             inspect.Parameter(
                 "layer", inspect.Parameter.KEYWORD_ONLY, annotation=layer_type
             )
         )
     sig_params += params_only + extra_params
-    layer_type = _LAYER_TYPE_MAP[operation_spec.layer_type]
     _dispatch.__doc__ = operation_spec.func.__doc__
     _dispatch.__signature__ = inspect.Signature(sig_params)
 

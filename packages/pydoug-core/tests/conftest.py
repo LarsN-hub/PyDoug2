@@ -21,8 +21,8 @@ def registered_nothing():
     def _nothing(
         imarray: np.ndarray,
         extra_array: np.ndarray | None = None,
-    ) -> np.ndarray:
-        return np.copy(imarray)  # pragma: no cover
+    ) -> np.ndarray:  # pragma: no cover
+        return np.copy(imarray)
 
     yield "_nothing"
     unregister_operation("_nothing")
@@ -39,8 +39,8 @@ def registered_nothing_no_layer():
         display_name="Nothing No Layer",
         requires_layer=False,
     )
-    def _nothing_no_layer() -> np.ndarray:
-        return np.random.randint(0, 256, (10, 10), dtype=np.uint8)  # pragma: no cover
+    def _nothing_no_layer() -> np.ndarray:  # pragma: no cover
+        return np.random.randint(0, 256, (10, 10), dtype=np.uint8)
 
     yield "_nothing_no_layer"
     unregister_operation("_nothing_no_layer")
@@ -57,8 +57,8 @@ def registered_nothing_plot():
         display_name="Nothing Plot",
         output_kind="plot",
     )
-    def _nothing_plot(imarray: np.ndarray) -> Figure:
-        return Figure()  # pragma: no cover
+    def _nothing_plot(imarray: np.ndarray) -> Figure:  # pragma: no cover
+        return Figure()
 
     yield "_nothing_plot"
     unregister_operation("_nothing_plot")
@@ -73,11 +73,33 @@ def registered_nothing_calc():
     @register_operation(
         category="testing", display_name="Nothing Calc", output_kind="value"
     )
-    def _nothing_calc(imarray: np.ndarray) -> dict[str, int]:
-        return {"test": 2}  # pragma: no cover
+    def _nothing_calc(imarray: np.ndarray) -> dict[str, int]:  # pragma: no cover
+        return {"test": 2}
 
     yield "_nothing_calc"
     unregister_operation("_nothing_calc")
+
+
+@pytest.fixture
+def registered_nothing_surface():
+    """
+    Fixture to create a registered "nothing_surface" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Nothing Surface",
+        array_params=("dummy_surface",),
+        array_param_types={"dummy_surface": "surface"},
+        output_kind="surface",
+    )
+    def _nothing_surface(
+        imarray: np.ndarray, dummy_surface: tuple
+    ) -> tuple:  # pragma: no cover
+        return (np.array([[1, 2, 3]]), np.array([[4, 5, 6]]), np.array([7]))
+
+    yield "_nothing_surface"
+    unregister_operation("_nothing_surface")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)

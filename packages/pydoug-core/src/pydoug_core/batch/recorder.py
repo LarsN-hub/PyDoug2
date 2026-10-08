@@ -2,6 +2,7 @@
 Recorder for PyDoug operations used in napari widgets.
 """
 
+import copy
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -14,6 +15,89 @@ from psygnal import Signal
 
 from pydoug_core.io import imreader, imwriter
 from pydoug_core.registry import OperationSpec, get_operation
+
+
+def _write_payload(payload: Any, arrays_dir: Path, tag: str) -> str:
+    """
+    Write the payload from an operation to a file.
+
+    Parameters
+    ----------
+    payload: Any
+        The output from the function.
+    arrays_dir: Path
+        Path to the directories where array outputs are stored.
+    tag: str
+        The name of the file (without extension).
+
+    Returns
+    -------
+    name: str
+        The file name (with extension).
+    """
+
+    if isinstance(payload, np.ndarray):
+        name = f"{tag}.tiff"
+        imwriter.imwrite(payload, arrays_dir, tag, "tiff")
+    elif isinstance(payload, tuple):
+        name = f"{tag}.npz"
+        np.savez(arrays_dir / name, *payload)
+    else:  # pragma: no cover
+        raise TypeError(f"Cannot save stored data of type {type(payload).__name__}")
+    if not (arrays_dir / name).exists():  # pragma: no cover
+        raise RuntimeError(f"Failed to save '{tag}' to {arrays_dir / name}")
+    return name
+
+
+def _read_payload(path: Path) -> np.ndarray | tuple:
+    """
+    Read the payload from an operation into data.
+
+    Parameters
+    ----------
+    path: Path
+        The path to the payload.
+
+    Returns
+    -------
+    payload: np.ndarray | tuple
+        The data.
+    """
+
+    if path.suffix.lower() == ".npz":
+        with np.load(path) as stored:
+            return tuple(stored[key] for key in sorted(stored.files))
+    array = imreader.imread(path)
+    if array is None:
+        raise RuntimeError(f"Could not read referenced array file: {path}")
+    return array
+
+
+def _payloads_equal(a: np.ndarray | tuple, b: np.ndarray | tuple) -> bool:
+    """
+    Only use a reference when data is unchanged.
+
+    Parameters
+    ----------
+    a: np.ndarray | tuple
+        The payload.
+    b: np.ndarray | tuple
+        Another instance of the payload.
+
+    Returns
+    -------
+    payloads_equal: bool
+        Whether or not the payloads are equal.
+    """
+
+    if isinstance(a, tuple) and isinstance(b, tuple):  # pragma: no cover
+        return len(a) == len(b) and all(_payloads_equal(x, y) for x, y in zip(a, b))
+    return (
+        isinstance(a, np.ndarray)
+        and isinstance(b, np.ndarray)
+        and a.shape == b.shape
+        and np.array_equal(a, b)
+    )
 
 
 @dataclass
@@ -64,7 +148,7 @@ class Recorder:
         self.steps: list[RecordedStep] = []
         self._layer_to_step: WeakKeyDictionary = WeakKeyDictionary()
         self._external_layer_refs: WeakKeyDictionary = WeakKeyDictionary()
-        self._arrays: dict[str, np.ndarray] = {}
+        self._arrays: dict[str, np.ndarray | tuple] = {}
 
     def step_id_for_layer(self, layer) -> None | str:
         """
@@ -84,38 +168,15 @@ class Recorder:
 
         if layer is not None:
             return self._layer_to_step.get(layer)
-        return None
+        return None  # pragma: no cover
 
-    def get_or_create_array_ref(self, layer: Any) -> str:
-        """
-        Reuse an existing reference for this layer if one was already assigned.
-
-        Parameters
-        ----------
-        layer: the layer that needs to be referenced.
-
-        Returns
-        -------
-        ref: str
-            The reference to the layer.
-        """
-
-        existing: str | None = self._external_layer_refs.get(layer)
-        if existing is not None:
-            return existing
-        tag: str = uuid.uuid4().hex[:8]
-        ref: str = f"array:{tag}"
-        self._external_layer_refs[layer] = ref
-        self._arrays[tag] = np.copy(layer.data)
-        return ref
-
-    def register_array(self, array: np.ndarray) -> str:
+    def register_array(self, array: np.ndarray | tuple) -> str:
         """
         Store an array directly and return its reference.
 
         Parameters
         ----------
-        array: np.ndarray
+        array: np.ndarray | tuple
             The array to be stored.
 
         Returns
@@ -125,8 +186,35 @@ class Recorder:
         """
 
         tag: str = uuid.uuid4().hex[:8]
-        self._arrays[tag] = np.copy(array)
+        self._arrays[tag] = copy.deepcopy(array)
         return f"array:{tag}"
+
+    def get_or_create_array_ref(self, layer: Any, payload: Any = None) -> str:
+        """
+        Reuse an existing reference for this layer if one was already assigned.
+
+        Parameters
+        ----------
+        layer: Any
+            The layer that needs to be referenced.
+        payload: Any
+            The payload if the layer does not have data to write.
+
+        Returns
+        -------
+        ref: str
+            The reference to the layer.
+        """
+
+        data: Any = layer.data if payload is None else payload
+        existing: str | None = self._external_layer_refs.get(layer)
+        if existing is not None and _payloads_equal(
+            self._arrays[existing.split(":", 1)[1]], data
+        ):
+            return existing
+        ref: str = self.register_array(data)
+        self._external_layer_refs[layer] = ref
+        return ref
 
     def record(
         self,
@@ -274,11 +362,16 @@ class Recorder:
             if ref.startswith("array:")
         }
 
+        file_names: dict = {}
+        for tag in used_tags:
+            arrays_dir.mkdir(parents=True, exist_ok=True)
+            file_names[tag] = _write_payload(self._arrays[tag], arrays_dir, tag)
+
         data: list[dict] = []
         for s in self.steps:
             refs: dict[str, str] = {
                 name: (
-                    f"file:arrays/{ref.split(':', 1)[1]}.tiff"
+                    f"file:arrays/{file_names[ref.split(':', 1)[1]]}"
                     if ref.startswith("array:")
                     else ref
                 )
@@ -292,13 +385,6 @@ class Recorder:
                     "input_refs": refs,
                 }
             )
-
-        for tag in used_tags:
-            arrays_dir.mkdir(parents=True, exist_ok=True)
-            imwriter.imwrite(self._arrays[tag], arrays_dir, tag, "tiff")
-            written = arrays_dir / f"{tag}.tiff"
-            if not written.exists():
-                raise RuntimeError(f"Failed to save array for tag '{tag}' to {written}")
 
         (path / "workflow.json").write_text(json.dumps(data, indent=2))
 
@@ -324,12 +410,7 @@ class Recorder:
                 return ref
             rel: str = ref.split(":", 1)[1]
             if rel not in tag_by_file:
-                array: np.ndarray | None = imreader.imread(path / rel)
-                if array is None:
-                    raise RuntimeError(
-                        f"Could not read referenced array file: {path / rel}"
-                    )
-                tag_by_file[rel] = self.register_array(array)
+                tag_by_file[rel] = self.register_array(_read_payload(path / rel))
             return tag_by_file[rel]
 
         self.steps: list[RecordedStep] = [
@@ -352,7 +433,7 @@ class Recorder:
         ref: str,
         primary: np.ndarray,
         outputs: dict[str, np.ndarray],
-    ) -> np.ndarray | None:
+    ) -> np.ndarray | tuple | None:
         """
         Resolve input reference array.
 

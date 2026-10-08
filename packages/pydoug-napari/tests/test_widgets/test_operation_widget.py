@@ -13,6 +13,8 @@ from napari.layers import Image, Labels, Layer
 from napari.viewer import Viewer
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QMainWindow
+from skimage.measure import marching_cubes
+from skimage.morphology import ball
 
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec, get_operation
@@ -489,3 +491,41 @@ def test_no_layer_behavior(
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
     assert len(viewer.layers) == 2
+
+
+def test_surface_behavior(
+    make_napari_viewer, qtbot, registered_surface, registered_surface_calc
+) -> None:
+
+    viewer: Viewer = make_napari_viewer()
+    recorder: Recorder = Recorder()
+    results_log: ResultsLog = ResultsLog()
+    spec1: OperationSpec = get_operation(registered_surface)
+    spec2: OperationSpec = get_operation(registered_surface_calc)
+    widget1: CollapsibleContainer = make_operation_widget(
+        spec1, viewer, recorder, results_log
+    )
+    widget2: CollapsibleContainer = make_operation_widget(
+        spec2, viewer, recorder, results_log
+    )
+    qtbot.addWidget(widget1.native)
+    qtbot.addWidget(widget2.native)
+    subwidget1: FunctionGui | None = widget1.get_widget("_dispatch")
+    subwidget2: FunctionGui | None = widget2.get_widget("_dispatch")
+    assert subwidget1 is not None
+    assert subwidget2 is not None
+    assert len(viewer.layers) == 0
+    qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 1, timeout=5000)
+    assert len(viewer.layers) == 1
+    subwidget2.layer.value = viewer.layers[-1]
+    qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(recorder.steps) == 2, timeout=5000)
+    assert len(recorder.steps) == 2
+    array: np.ndarray = ball(25)  # type: ignore
+    verts, faces, _, values = marching_cubes(array)
+    viewer.add_surface((verts, faces, values))  # type: ignore
+    subwidget2.layer.value = viewer.layers[-1]
+    qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(recorder.steps) == 3, timeout=5000)
+    assert len(recorder.steps) == 3

@@ -19,6 +19,11 @@ class DummyLayer:
         self.data = data
 
 
+class DummySurfaceLayer:
+    def __init__(self, data: tuple | None) -> None:
+        self.data = data
+
+
 def test_RecordedStep() -> None:
 
     recorded_step: recorder.RecordedStep = recorder.RecordedStep(
@@ -52,11 +57,11 @@ def test_Recorder_record_and_step_id_for_layer() -> None:
     assert record.steps[1].step_id == record.step_id_for_layer(layer_ref)
 
 
-def test_Recorder_get_or_create_array_ref() -> None:
+def test_Recorder_get_or_create_array_ref(sample_2dgray_array) -> None:
 
     record: recorder.Recorder = recorder.Recorder()
-    layer1: DummyLayer = DummyLayer(None)
-    layer2: DummyLayer = DummyLayer(None)
+    layer1: DummyLayer = DummyLayer(sample_2dgray_array)
+    layer2: DummyLayer = DummyLayer(sample_2dgray_array)
     ref1: str = record.get_or_create_array_ref(layer1)
     ref2: str = record.get_or_create_array_ref(layer1)
     ref3: str = record.get_or_create_array_ref(layer2)
@@ -200,13 +205,13 @@ def test_resolve(sample_2dgray_array) -> None:
     outputs[record.step_id_for_layer(layer2)] = alt_array2
     array_ref: str = record.get_or_create_array_ref(layer3)
 
-    result1: np.ndarray | None = record._resolve(
+    result1: np.ndarray | tuple | None = record._resolve(
         "primary", sample_2dgray_array, outputs
     )
     assert result1 is not None
     assert np.all(result1 == sample_2dgray_array)
 
-    result2: np.ndarray | None = record._resolve(
+    result2: np.ndarray | tuple | None = record._resolve(
         f"step:{record.step_id_for_layer(layer1)}",
         sample_2dgray_array,
         outputs,
@@ -214,7 +219,7 @@ def test_resolve(sample_2dgray_array) -> None:
     assert result2 is not None
     assert np.all(result2 == alt_array1)
 
-    result3: np.ndarray | None = record._resolve(
+    result3: np.ndarray | tuple | None = record._resolve(
         f"step:{record.step_id_for_layer(layer2)}",
         sample_2dgray_array,
         outputs,
@@ -222,14 +227,16 @@ def test_resolve(sample_2dgray_array) -> None:
     assert result3 is not None
     assert np.all(result3 == alt_array2)
 
-    result4: np.ndarray | None = record._resolve(
+    result4: np.ndarray | tuple | None = record._resolve(
         array_ref, sample_2dgray_array, outputs
     )
     assert result4 is not None
     assert np.all(result4 == alt_array3)
 
     with pytest.raises(ValueError):
-        _: np.ndarray | None = record._resolve("fail", sample_2dgray_array, outputs)
+        _: np.ndarray | tuple | None = record._resolve(
+            "fail", sample_2dgray_array, outputs
+        )
 
 
 def test_Recorder_replay_and_iter_replay(
@@ -271,3 +278,24 @@ def test_Recorder_replay_and_iter_replay(
     assert result is not None
     assert isinstance(result, np.ndarray)
     assert not np.all(result == sample_2dgray_array)
+
+
+def test_surface_behavior(sample_masks, registered_nothing_surface, tmp_path) -> None:
+
+    record: recorder.Recorder = recorder.Recorder()
+    dummy_tuple: tuple = (np.array([[0, 0, 0]]), np.array([[1, 1, 1]]), np.array([5]))
+    dummy_tuple2: tuple = (np.array([[1, 2, 3]]), np.array([[4, 5, 6]]), np.array([7]))
+    layer1: DummySurfaceLayer = DummySurfaceLayer(dummy_tuple)
+    layer2: DummySurfaceLayer = DummySurfaceLayer(dummy_tuple2)
+    record.record(
+        "_nothing_surface",
+        {},
+        {"layer": "primary", "dummy_surface": record.get_or_create_array_ref(layer1)},
+        layer2,
+    )
+    record.save(Path(tmp_path / "test_surface_replay"))
+    record2: recorder.Recorder = recorder.Recorder()
+    record2.load(Path(tmp_path / "test_surface_replay"))
+    result: np.ndarray | dict | Any = record2.replay(sample_masks["3dgray"])
+    assert result is not None
+    assert isinstance(result, tuple)

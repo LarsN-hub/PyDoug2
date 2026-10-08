@@ -7,7 +7,6 @@ from typing import Annotated, Literal
 from numpy import ndarray
 from porespy.generators import (
     blobs,
-    cylinders,
     lattice_spheres,
     overlapping_spheres,
     polydisperse_spheres,
@@ -26,7 +25,6 @@ __all__ = ["gen_structures"]
 def gen_structures(
     Method: Literal[
         "Blobs",
-        "Cylinders",
         "Lattice Spheres",
         "Overlapping Spheres",
         "Polydisperse Spheres",
@@ -45,10 +43,9 @@ def gen_structures(
 ) -> ndarray:
     """
     Generate an image of specified dimensions with randomized structures. Convenience
-    wrapper around functions from porespy's generators package, namely blobs, cylinders,
+    wrapper around functions from porespy's generators package, namely blobs,
     lattice_spheres, overlapping_spheres, polydisperse_spheres, and random_spheres:
     https://porespy.org/autoapi/porespy/generators/blobs.html
-    https://porespy.org/autoapi/porespy/generators/cylinders.html
     https://porespy.org/autoapi/porespy/generators/lattice_spheres.html
     https://porespy.org/autoapi/porespy/generators/overlapping_spheres.html
     https://porespy.org/autoapi/porespy/generators/polydisperse_spheres.html
@@ -59,7 +56,6 @@ def gen_structures(
     Method: Literal
         The method for structure generation.
         - "Blobs": Generates blobs. 2D/3D.
-        - "Cylinders": Generates cylinders. Must be 3D.
         - "Lattice Spheres": Generates spheres in a lattice. 2D/3D depending on lattice.
         - "Overlapping Spheres" Generates overlapping monodisperse spheres. 2D/3D.
         - "Polydisperse Spheres": Generates overlapping polydisperse spheres. 2D/3D.
@@ -67,15 +63,15 @@ def gen_structures(
     Dimensions: tuple[int, int int]
         The dimensions of the output image in the format [X, Y, Z].
     Porosity: float
-        If "Method" is "Blobs", "Cylinders", "Overlapping Spheres", "Polydisperse
-        Spheres", or "Random Spheres", the porosity to use.
+        If "Method" is "Blobs", "Overlapping Spheres", "Polydisperse Spheres", or
+        "Random Spheres", the porosity to use.
     Blobiness: int
         If "Method" is "Blobs", an integer indicating the blob morphology. Higher =
         more, smaller blobs.
     Radius: int
-        If "Method" is "Cylinders", "Lattice Spheres", "Overlapping Spheres",
-        "Polydisperse Spheres", or "Random Spheres", the radius to use for shape
-        generation. This is the mean radius for "Polydisperse Spheres".
+        If "Method" is "Lattice Spheres", "Overlapping Spheres", "Polydisperse Spheres",
+        or "Random Spheres", the radius to use for shape generation. This is the mean
+        radius for "Polydisperse Spheres".
     Standard_Deviation: int
         If "Method" is "Polydisperse Spheres", the standard deviation of the radius.
     Lattice: Literal
@@ -98,11 +94,6 @@ def gen_structures(
 
     if Method == "Blobs":
         return blobs(dims, Porosity, Blobiness)
-
-    elif Method == "Cylinders":
-        if len(dims) == 2:
-            dims.append(min(dims))
-        return cylinders(dims, Radius, porosity=Porosity)
 
     elif Method == "Lattice Spheres":
         if Lattice == "BCC":

@@ -11,8 +11,6 @@ def test_gen_structres() -> None:
 
     result1: np.ndarray = gen.gen_structures(Dimensions=(25, 25, 0))
     result2: np.ndarray = gen.gen_structures(Dimensions=(25, 25, 25))
-    result3: np.ndarray = gen.gen_structures("Cylinders", (50, 50, 0))
-    result4: np.ndarray = gen.gen_structures("Cylinders", (50, 50, 50))
     result5: np.ndarray = gen.gen_structures("Lattice Spheres", (25, 25, 0))
     result6: np.ndarray = gen.gen_structures("Lattice Spheres", (25, 25, 25))
     result7: np.ndarray = gen.gen_structures(
@@ -42,8 +40,6 @@ def test_gen_structres() -> None:
 
     assert result1.dtype == np.bool
     assert result2.dtype == np.bool
-    assert result3.dtype == np.bool
-    assert result4.dtype == np.bool
     assert result5.dtype == np.bool
     assert result6.dtype == np.bool
     assert result7.dtype == np.bool
@@ -60,8 +56,6 @@ def test_gen_structres() -> None:
     assert result18.dtype == np.bool
     assert result1.shape == (25, 25)
     assert result2.shape == (25, 25, 25)
-    assert result3.shape == (50, 50, 50)
-    assert result4.shape == (50, 50, 50)
     assert result5.shape == (25, 25)
     assert result6.shape == (25, 25, 25)
     assert result7.shape == (25, 25, 25)

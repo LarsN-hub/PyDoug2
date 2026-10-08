@@ -187,9 +187,9 @@ class MainWidget(QTabWidget):
         if "morphology" in categories:
             sorted_categories.append("morphology")
             categories.remove("morphology")
-        if "measurements" in categories:
-            sorted_categories.append("measurements")
-            categories.remove("measurements")
+        if "measure" in categories:
+            sorted_categories.append("measure")
+            categories.remove("measure")
         # if "plots" in categories:
         #    sorted_categories.append("plots")
         #    categories.remove("plots")

@@ -11,11 +11,11 @@ from pydoug_core import util
 from pydoug_core.registry import register_operation
 from pydoug_core.segment.segment_util import calc_thresholds
 
-__all__ = ["stats", "percentiles", "thresholds"]
+__all__ = ["stats", "percentiles", "thresholds", "label_count", "mesh_surface_area"]
 
 
 @register_operation(
-    category="measurements",
+    category="measure",
     display_name="Stats",
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
@@ -109,7 +109,7 @@ def stats(
 
 
 @register_operation(
-    category="measurements",
+    category="measure",
     display_name="Percentiles",
     output_kind="value",
     recordable_toggle=True,
@@ -154,7 +154,7 @@ def percentiles(
 
 
 @register_operation(
-    category="measurements",
+    category="measure",
     display_name="Thresholds",
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
@@ -213,7 +213,7 @@ def thresholds(
 
 
 @register_operation(
-    category="measurements",
+    category="measure",
     display_name="Label Count",
     layer_type="labels",
     output_kind="value",
@@ -237,3 +237,36 @@ def label_count(imarray: np.ndarray) -> int:
     """
 
     return np.max(imarray)
+
+
+@register_operation(
+    category="measure",
+    display_name="Mesh Surface Area",
+    layer_type="surface",
+    output_kind="value",
+)
+def mesh_surface_area(
+    surface: tuple,
+    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
+) -> float:  # pragma: no cover
+    """
+    Compute the surface area of a mesh. Convenience wrapper around scikit-image's
+    measure.mesh_surface_area:
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.mesh_surface_area
+
+    Parameters
+    ----------
+    surface: tuple
+        The surface tuple.
+    Pixel_Size: float
+        The edge length of the pixels in real-world units.
+
+    Returns
+    -------
+    surf_area: float
+        The surface area.
+    """
+
+    from skimage.measure import mesh_surface_area
+
+    return mesh_surface_area(surface[0], surface[1]) * (Pixel_Size**2)

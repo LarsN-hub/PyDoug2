@@ -34,8 +34,8 @@ class OperationSpec:
         The layer type for each array input.
     array_param_flags: dict[str, str]
         Relevant flags for array inputs.
-    output_kind: Literal["image", "labels", "plot", "value"]
-        Whether the operation should output an image or a value.
+    output_kind: Literal["image", "labels", "surface", "plot", "value"]
+        What form of output the operation produces.
     display_result: Callable[[Any], None] | None
         How to interactively display the result.
     save_result: Callable[[Any, Path], None] | None
@@ -48,8 +48,8 @@ class OperationSpec:
         Whether or not the operation should be recorded on use.
     live_preview: bool
         Whether or not to allow a live preview of the operation.
-    layer_type: Literal["image", "labels"]
-        The layer type to be added if a numpy array is produced.
+    layer_type: Literal["image", "labels", "surface", "shapes"]
+        The layer type used.
     captures_viewer_settings: bool
         Whether or not the operation should capture viewer sttings (for screenshots).
     requires_layer: bool
@@ -67,14 +67,14 @@ class OperationSpec:
     array_params: tuple[str, ...] = ()
     array_param_types: dict[str, str] = field(default_factory=dict)
     array_param_flags: dict[str, str] = field(default_factory=dict)
-    output_kind: Literal["image", "labels", "plot", "value"] = "image"
+    output_kind: Literal["image", "labels", "surface", "plot", "value"] = "image"
     display_result: Callable[[Any], None] | None = None
     save_result: Callable[[Any, Path], None] | None = None
     recordable_toggle: bool = False
     allow_in_place: bool = False
     recordable: bool = True
     live_preview: bool = False
-    layer_type: Literal["image", "labels"] = "image"
+    layer_type: Literal["image", "labels", "surface", "shapes"] = "image"
     captures_viewer_settings: bool = False
     requires_layer: bool = True
     signature: inspect.Signature = field(init=False)
@@ -84,6 +84,7 @@ class OperationSpec:
 
 
 _REGISTRY: dict[str, OperationSpec] = {}
+_LAYER_TYPES: set[str] = {"image", "labels", "shapes", "surface"}
 
 
 def register_operation(
@@ -94,13 +95,13 @@ def register_operation(
     array_params: tuple[str, ...] = (),
     array_param_types: dict[str, str] = {},
     array_param_flags: dict[str, str] = {},
-    output_kind: Literal["image", "labels", "plot", "value"] = "image",
+    output_kind: Literal["image", "labels", "surface", "plot", "value"] = "image",
     display_result: Callable[[Any], None] | None = None,
     save_result: Callable[[Any, Path], None] | None = None,
     recordable_toggle: bool = False,
     recordable: bool = True,
     live_preview: bool = False,
-    layer_type: Literal["image", "labels"] = "image",
+    layer_type: Literal["image", "labels", "surface", "shapes"] = "image",
     captures_viewer_settings: bool = False,
     requires_layer: bool = True,
     allow_in_place: bool = False,
@@ -125,8 +126,8 @@ def register_operation(
         The napari layer type for each array input.
     array_param_flags: dict[str, str]
         Relevant flags for array inputs.
-    output_kind: Literal["image", "labels", "plot", "value"]
-        Whether the operation should output an image or a value.
+    output_kind: Literal["image", "labels", "surface", "plot", "value"]
+        What form of output the operation produces.
     display_result: Callable[[Any], None] | None
         How to interactively display the result.
     save_result: Callable[[Any, Path], None] | None
@@ -139,8 +140,8 @@ def register_operation(
         Whether or not to add a checkbox to the widget to toggle in-place operations.
     live_preview: bool
         Whether or not to allow a live preview of the operation.
-    layer_type: Literal["image", "labels"]
-        The layer type to be added if a numpy array is produced.
+    layer_type: Literal["image", "labels", "surface", "shapes"]
+        The layer type used.
     captures_viewer_settings: bool = False
         Whether or not the operation should capture viewer sttings (for screenshots).
     requires_layer: bool
@@ -188,6 +189,7 @@ def register_operation(
                 "output_kind='image'."
             )
 
+        """  # saving in case I encounter this issue later
         if not recordable and output_kind == "image":
             raise ValueError(  # pragma: no cover
                 f"{func.__name__}: recordable=False on an 'image' operation means its "
@@ -196,6 +198,7 @@ def register_operation(
                 "breaking batch replay. Only use recordable=False for output_kind that "
                 "isn't consumed downstream as an image/mask input."
             )
+        """
 
         if not requires_layer and allow_in_place:
             raise ValueError(  # pragma: no cover
@@ -209,17 +212,22 @@ def register_operation(
                 "from the selected layer, which requires_layer=False has none of."
             )
 
-        valid: set[str] = {"image", "labels"}
-        if layer_type not in valid:
+        if layer_type not in _LAYER_TYPES:
             raise ValueError(  # pragma: no cover
                 f"{func.__name__}: layer_type must be one of "
-                f"{valid}, got {layer_type!r}"
+                f"{_LAYER_TYPES}, got {layer_type!r}"
             )
-        bad: set[str] = set((array_param_types or {}).values()) - valid
+        bad: set[str] = set((array_param_types or {}).values()) - _LAYER_TYPES
         if bad:
             raise ValueError(  # pragma: no cover
                 f"{func.__name__}: array_param_types values must be one of "
-                f"{valid}, got {bad}"
+                f"{_LAYER_TYPES}, got {bad}"
+            )
+
+        if recordable and "shapes" in {layer_type, *array_param_types.values()}:
+            raise ValueError(  # pragma: no cover
+                f"{func.__name__}: shapes inputs can't be stored in a workflow, so "
+                "operations that take them must be registered with recordable=False."
             )
 
         _REGISTRY[func.__name__] = OperationSpec(

@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pytest
 from matplotlib.figure import Figure
+from skimage.measure import marching_cubes
+from skimage.morphology import ball
 
 from pydoug_core.registry import register_operation, unregister_operation
 
@@ -24,8 +26,10 @@ def registered_half():
         display_name="Half",
         native_options={"factor": {"setDecimals": 3}},
     )
-    def _half(imarray: np.ndarray, factor: float = 0.5) -> np.ndarray:
-        return np.round(imarray * factor).astype(imarray.dtype)  # pragma: no cover
+    def _half(
+        imarray: np.ndarray, factor: float = 0.5
+    ) -> np.ndarray:  # pragma: no cover
+        return np.round(imarray * factor).astype(imarray.dtype)
 
     yield "_half"
     unregister_operation("_half")
@@ -49,16 +53,16 @@ def registered_mask():
         maskarray: np.ndarray,
         Apply_Mask: bool = False,
         In_Place: bool = False,
-    ) -> np.ndarray:
-        if In_Place:  # pragma: no cover
-            if Apply_Mask:  # pragma: no cover
-                imarray[np.logical_not(maskarray)] = 0  # pragma: no cover
-            return imarray  # pragma: no cover
-        output: np.ndarray = np.copy(imarray)  # pragma: no cover
-        if Apply_Mask:  # pragma: no cover
-            output[np.logical_not(maskarray)] = 0  # pragma: no cover
-            return output  # pragma: no cover
-        return output  # pragma: no cover
+    ) -> np.ndarray:  # pragma: no cover
+        if In_Place:
+            if Apply_Mask:
+                imarray[np.logical_not(maskarray)] = 0
+            return imarray
+        output: np.ndarray = np.copy(imarray)
+        if Apply_Mask:
+            output[np.logical_not(maskarray)] = 0
+            return output
+        return output
 
     yield "_mask"
     unregister_operation("_mask")
@@ -76,11 +80,11 @@ def registered_bool():
         array_params=("maskarray",),
         array_param_flags={"Mask": "Apply_Mask"},
     )
-    def _bool(imarray: np.ndarray, thresh: int = 128) -> np.ndarray:
-        output: np.ndarray = np.copy(imarray)  # pragma: no cover
-        output[output > thresh] = 255  # pragma: no cover
-        output[output <= thresh] = 0  # pragma: no cover
-        return np.astype(output, np.bool)  # pragma: no cover
+    def _bool(imarray: np.ndarray, thresh: int = 128) -> np.ndarray:  # pragma: no cover
+        output: np.ndarray = np.copy(imarray)
+        output[output > thresh] = 255
+        output[output <= thresh] = 0
+        return np.astype(output, np.bool)
 
     yield "_mask"
     unregister_operation("_mask")
@@ -93,8 +97,8 @@ def registered_calc():
     """
 
     @register_operation(category="testing", display_name="Calc", output_kind="value")
-    def _calc(imarray: np.ndarray) -> np.float64:
-        return np.mean(imarray)  # pragma: no cover
+    def _calc(imarray: np.ndarray) -> np.float64:  # pragma: no cover
+        return np.mean(imarray)
 
     yield "_calc"
     unregister_operation("_calc")
@@ -107,8 +111,8 @@ def registered_plot():
     """
 
     @register_operation(category="testing", display_name="Plot", output_kind="plot")
-    def _plot(imarray: np.ndarray) -> Figure:
-        return Figure()  # pragma: no cover
+    def _plot(imarray: np.ndarray) -> Figure:  # pragma: no cover
+        return Figure()
 
     yield "_plot"
     unregister_operation("_plot")
@@ -121,10 +125,12 @@ def registered_threshold():
     """
 
     @register_operation(category="testing", display_name="Threshold", live_preview=True)
-    def _threshold(imarray: np.ndarray, threshold: int = 128) -> np.ndarray:
-        thresh_array: np.ndarray = np.zeros(imarray.shape, np.uint8)  # pragma: no cover
-        thresh_array[imarray > threshold] = 255  # pragma: no cover
-        return thresh_array  # pragma: no cover
+    def _threshold(
+        imarray: np.ndarray, threshold: int = 128
+    ) -> np.ndarray:  # pragma: no cover
+        thresh_array: np.ndarray = np.zeros(imarray.shape, np.uint8)
+        thresh_array[imarray > threshold] = 255
+        return thresh_array
 
     yield "_threshold"
     unregister_operation("_threshold")
@@ -142,8 +148,8 @@ def registered_label_count():
         layer_type="labels",
         output_kind="value",
     )
-    def _label_count(imarray: np.ndarray) -> int:
-        return np.max(imarray)  # pragma: no cover
+    def _label_count(imarray: np.ndarray) -> int:  # pragma: no cover
+        return np.max(imarray)
 
     yield "_label_count"
     unregister_operation("_label_count")
@@ -162,8 +168,8 @@ def registered_capture_screen_image():
     )
     def _capture_screen_image(
         imarray: np.ndarray, Settings: dict[str, Any]
-    ) -> np.ndarray:
-        return imarray  # pragma: no cover
+    ) -> np.ndarray:  # pragma: no cover
+        return imarray
 
     yield "_capture_screen_image"
     unregister_operation("_capture_screen_image")
@@ -183,8 +189,8 @@ def registered_capture_screen_labels():
     )
     def _capture_screen_labels(
         imarray: np.ndarray, Settings: dict[str, Any]
-    ) -> np.ndarray:
-        return imarray  # pragma: no cover
+    ) -> np.ndarray:  # pragma: no cover
+        return imarray
 
     yield "_capture_screen_labels"
     unregister_operation("_capture_screen_labels")
@@ -201,11 +207,51 @@ def registered_generator():
         display_name="Dummy Generator",
         requires_layer=False,
     )
-    def _dummy_generator() -> np.ndarray:
-        return np.random.randint(0, 256, (10, 10), dtype=np.uint8)  # pragma: no cover
+    def _dummy_generator() -> np.ndarray:  # pragma: no cover
+        return np.random.randint(0, 256, (10, 10), dtype=np.uint8)
 
     yield "_dummy_generator"
     unregister_operation("_dummy_generator")
+
+
+@pytest.fixture
+def registered_surface():
+    """
+    Fixture to create a registered "dummy surface" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Dummy Surface",
+        requires_layer=False,
+        output_kind="surface",
+    )
+    def _dummy_surface() -> tuple:  # pragma: no cover
+        array: np.ndarray = ball(25)  # type: ignore
+        verts, faces, _, values = marching_cubes(array)
+        return verts, faces, values
+
+    yield "_dummy_surface"
+    unregister_operation("_dummy_surface")
+
+
+@pytest.fixture
+def registered_surface_calc():
+    """
+    Fixture to create a registered "dummy surface calc" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Dummy Surface Calc",
+        layer_type="surface",
+        output_kind="value",
+    )
+    def _dummy_surface_calc(surface: tuple) -> int:  # pragma: no cover
+        return 2
+
+    yield "_dummy_surface_calc"
+    unregister_operation("_dummy_surface_calc")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
