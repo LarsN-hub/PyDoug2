@@ -8,9 +8,11 @@ from pathlib import Path
 from matplotlib.figure import Figure
 from numpy import generic, ndarray, savez
 
+from pydoug_core.results import PlotResult
+
 
 def default_save_result(
-    result: dict | Figure | float | int | str | tuple,
+    result: dict | Figure | float | int | str | tuple | PlotResult,
     path_without_ext: Path,
 ) -> None:
     """
@@ -24,6 +26,11 @@ def default_save_result(
     path_without_ext: Path
         The path (sans extension) where the results should be exported to.
     """
+
+    if isinstance(result, PlotResult):
+        result.figure.savefig(path_without_ext.with_suffix(".png"))
+        result.write_csv(path_without_ext.with_suffix(".csv"))
+        return
 
     if isinstance(result, Figure):
         result.savefig(path_without_ext.with_suffix(".png"))

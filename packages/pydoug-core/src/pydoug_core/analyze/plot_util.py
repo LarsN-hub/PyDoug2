@@ -2,8 +2,6 @@
 Utilities for generating plots.
 """
 
-from typing import Literal
-
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
@@ -15,11 +13,13 @@ plt.rcParams["font.sans-serif"] = "Arial"
 
 
 def hist_ax(
-    values: np.ndarray,
+    hist_vals: np.ndarray,
+    bin_centers: np.ndarray,
     hist_ax: Axes,
-    nbins: int = 256,
-    source_range: Literal["values", "dtype"] = "dtype",
-    normalize: bool = False,
+    x_label: str = "Gray Value",
+    y_label: str = "Counts",
+    y_max: float = 0,
+    x_lims: tuple[float, float] | None = None,
 ) -> Axes:
     """
     Generate an axis with a minimal histogram plot for the given values. Convenience
@@ -28,16 +28,16 @@ def hist_ax(
 
     Parameters
     ----------
-    values: np.ndarray
+    hist_vals: np.ndarray
         The values to generate a histogram for.
-    hist_ax: plt.Axes
-        The axis to plot the histogram on.
-    nbins: int
-        The number of bins to use. Default is 256.
-    source_range: Literal["values", "dtype"]
-        Whether to use the values or their dtype as the source for the x-axis range.
-    normalize: bool
-        Whether or not to normalize the histogram. Default is False.
+    bin_centers: np.ndarray
+        The bin centers for each value in "hist_vals".
+    hist_ax: Axes
+        The axis to add the histogram to.
+    y_max: float
+        The maximum y-axis value to plot. Ignored if 0.
+    x_lims: tuple[float, float] | None
+        The x-axis limits (optional).
 
     Returns
     -------
@@ -45,11 +45,12 @@ def hist_ax(
         The input axis with the histogram plot generated.
     """
 
-    from skimage.exposure import histogram
-
-    input_range: str = source_range
-    if source_range == "values":
-        input_range = "image"
-    hist, bin_centers = histogram(values, nbins, input_range, normalize)
-    hist_ax.hist(bin_centers, bin_centers, weights=hist, edgecolor="k")
+    hist_ax.hist(bin_centers, bin_centers, weights=hist_vals, edgecolor="k")  # type: ignore
+    x_lims = (min(x_lims), max(x_lims)) if x_lims else None
+    hist_ax.set_xlim(x_lims)
+    if y_max:
+        hist_ax.set_ylim(0, y_max)
+    hist_ax.set_xlabel(x_label, fontsize=15)
+    hist_ax.set_ylabel(y_label, fontsize=15)
+    hist_ax.tick_params("both", labelsize=13)
     return hist_ax

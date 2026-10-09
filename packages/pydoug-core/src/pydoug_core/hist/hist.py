@@ -5,11 +5,11 @@ Plot and modify an image array's histogram.
 from typing import Annotated, Literal
 
 import numpy as np
-from matplotlib.figure import Figure
 from skimage.morphology import ball, disk
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
+from pydoug_core.results import PlotResult
 
 __all__ = [
     "plot_histogram",
@@ -34,9 +34,19 @@ def plot_histogram(
     imarray: np.ndarray,
     Bin_Count: Annotated[int, {"min": 1}] = 256,
     Normalize: bool = False,
+    Y_Max: Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}] = 0,
+    Specify_X_Lims: bool = False,
+    X_Lims: tuple[
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+    ] = (0, 0),
     Apply_Mask: bool = False,
     Mask: np.ndarray | None = None,
-) -> Figure:
+) -> PlotResult:
     """
     Plot an image array's histogram. Convenience wrapper around scikit-image's
     exposure.histogram:
@@ -50,6 +60,14 @@ def plot_histogram(
         The number of bins to use in the histogram. Ignored for integer arrays.
     Normalize: bool
         Whether or not to normalize the counts by the total sum. Default is False.
+    Y_Max: float
+        The maximum y-axis value to plot. Automatically determined if 0.
+    Specify_X_Lims: bool
+        Whether to specify the limits of the X axis that are plotted (True) or to let
+        them be automatically decided (False). Default is False.
+    X_Lims: tuple[float, float]
+        If "Specify X Lims" is "True", the limits of the x-axis in the form [min, max].
+        Ignored if both are 0.
     Apply_Mask: bool
         Whether or not to apply a mask. Default is False.
     Mask: np.ndarray | None
@@ -58,13 +76,15 @@ def plot_histogram(
 
     Returns
     -------
-    hist_fig: plt.Figure
-        The figure containing the histogram plot.
+    plot_result: PlotResult
+        The PlotResult object containing the plot figure and the data.
     """
 
     from matplotlib import pyplot as plt
     from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
 
+    from pydoug_core.analyze.distrib import hist_distrib
     from pydoug_core.analyze.plot_util import hist_ax
 
     plt.rcParams["font.family"] = "sans-serif"
@@ -74,17 +94,31 @@ def plot_histogram(
         values: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         values = np.copy(imarray)
+    hist_vals, bin_centers = hist_distrib(values, Bin_Count, normalize=Normalize)
+
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
-    ax = hist_ax(values, ax, Bin_Count, normalize=Normalize)
-    ax.set_xlabel("Gray Value", fontsize=15)
-    if Normalize:
-        ax.set_ylabel("Probability", fontsize=15)
-    else:
-        ax.set_ylabel("Counts", fontsize=15)
-    ax.tick_params("both", labelsize=13)
+    x_lims: tuple[float, float] | None = (
+        None if (not Specify_X_Lims or (X_Lims[0] == X_Lims[1] == 0)) else X_Lims
+    )
+    ax = hist_ax(
+        hist_vals,
+        bin_centers,
+        ax,
+        "Gray Value",
+        "Density" if Normalize else "Counts",
+        Y_Max,
+        x_lims,
+    )
     fig.set_layout_engine("constrained")
-    return fig
+
+    return PlotResult(
+        figure=fig,
+        data={
+            "Bin Centers": bin_centers,
+            "Density" if Normalize else "Counts": hist_vals,
+        },  # type: ignore
+    )
 
 
 @register_operation(category="histogram", display_name="Invert")

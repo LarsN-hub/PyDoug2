@@ -17,6 +17,7 @@ from napari.viewer import Viewer
 
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
+from pydoug_core.results import PlotResult
 from pydoug_napari._widgets._layer_data import LAYER_TYPE_MAP, layer_payload
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
 from pydoug_napari._widgets._settings_capture import to_jsonable
@@ -138,7 +139,8 @@ def make_operation_widget(
             | float
             | int
             | np.ndarray
-            | str,
+            | str
+            | PlotResult,
         ) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
@@ -146,7 +148,7 @@ def make_operation_widget(
             Parameters
             ----------
             result: dict[str, float | int | str] | Figure | float | int | np.ndarray
-            | str
+            | str | PlotResult
                 The result layer of the operation.
             results_log: ResultsLog
                 The results log object.
@@ -190,7 +192,8 @@ def make_operation_widget(
                     )
 
             elif operation_spec.output_kind == "plot":
-                (operation_spec.display_result or default_display_plot)(result)  # type: ignore
+                figure = result.figure if isinstance(result, PlotResult) else result
+                (operation_spec.display_result or default_display_plot)(figure)  # type: ignore
                 results_log.add(
                     operation_spec.display_name, "Plot generated, see window"
                 )

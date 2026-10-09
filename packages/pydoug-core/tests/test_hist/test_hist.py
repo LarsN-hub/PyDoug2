@@ -3,19 +3,31 @@ Tests for PyDoug's hist.hist module.
 """
 
 import numpy as np
-from matplotlib.figure import Figure
 
 from pydoug_core.hist import hist
+from pydoug_core.results import PlotResult
 
 
 def test_plot_histogram(sample_3dgray_array, sample_masks) -> None:
 
-    fig1: Figure = hist.plot_histogram(sample_3dgray_array, Normalize=True)
-    fig2: Figure = hist.plot_histogram(
+    result1: PlotResult = hist.plot_histogram(
+        sample_3dgray_array,
+        Normalize=True,
+        Specify_X_Lims=True,
+        X_Lims=(0, 10),
+    )
+    result2: PlotResult = hist.plot_histogram(
         sample_3dgray_array, Apply_Mask=True, Mask=sample_masks["3dgray"]
     )
-    assert isinstance(fig1, Figure)
-    assert isinstance(fig2, Figure)
+    result3: PlotResult = hist.plot_histogram(
+        sample_3dgray_array,
+        Normalize=True,
+        Y_Max=10,
+        Specify_X_Lims=True,
+    )
+    assert isinstance(result1, PlotResult)
+    assert isinstance(result2, PlotResult)
+    assert isinstance(result3, PlotResult)
 
 
 def test_invert(sample_3dgray_array) -> None:
