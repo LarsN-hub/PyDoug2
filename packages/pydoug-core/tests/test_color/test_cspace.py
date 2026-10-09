@@ -10,7 +10,7 @@ from pydoug_core.color import cspace
 def test_convert_cspace(sample_2drgb_array) -> None:
 
     result0: np.ndarray = cspace.convert_cspace(sample_2drgb_array)
-    result1: np.ndarray = cspace.convert_cspace(sample_2drgb_array, "RGB", "HSV")
+    result1: np.ndarray = cspace.convert_cspace(sample_2drgb_array, "RGB", "HSV", False)
     result2: np.ndarray = cspace.convert_cspace(sample_2drgb_array, "RGB", "RGB CIE")
     result3: np.ndarray = cspace.convert_cspace(sample_2drgb_array, "RGB", "XYZ")
     result4: np.ndarray = cspace.convert_cspace(sample_2drgb_array, "RGB", "YUV")
@@ -29,10 +29,10 @@ def test_convert_cspace(sample_2drgb_array) -> None:
     assert result7.shape == sample_2drgb_array.shape
     assert result8.shape == sample_2drgb_array.shape
     assert result1.dtype == np.dtype(np.float64)
-    assert result2.dtype == np.dtype(np.float64)
-    assert result3.dtype == np.dtype(np.float64)
-    assert result4.dtype == np.dtype(np.float64)
-    assert result5.dtype == np.dtype(np.float64)
-    assert result6.dtype == np.dtype(np.float64)
-    assert result7.dtype == np.dtype(np.float64)
-    assert result8.dtype == np.dtype(np.float64)
+    assert result2.dtype == sample_2drgb_array.dtype
+    assert result3.dtype == sample_2drgb_array.dtype
+    assert result4.dtype == sample_2drgb_array.dtype
+    assert result5.dtype == sample_2drgb_array.dtype
+    assert result6.dtype == sample_2drgb_array.dtype
+    assert result7.dtype == sample_2drgb_array.dtype
+    assert result8.dtype == sample_2drgb_array.dtype

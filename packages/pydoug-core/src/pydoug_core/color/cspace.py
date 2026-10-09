@@ -4,21 +4,22 @@ Convert color space.
 
 from typing import Literal
 
-from numpy import ndarray
+import numpy as np
 
 from pydoug_core.registry import register_operation
 
 
 @register_operation(category="color", display_name="Convert Color Space")
 def convert_cspace(
-    imarray: ndarray,
+    imarray: np.ndarray,
     Input_Color_Space: Literal[
         "RGB", "HSV", "RGB CIE", "XYZ", "YUV", "YIQ", "YPbPr", "YCbCr", "YDbDr"
     ] = "RGB",
     Output_Color_Space: Literal[
         "RGB", "HSV", "RGB CIE", "XYZ", "YUV", "YIQ", "YPbPr", "YCbCr", "YDbDr"
     ] = "RGB",
-) -> ndarray:
+    Preserve_Dtype: bool = True,
+) -> np.ndarray:
     """
     Convert an image from one color space to another. Note, any PyDoug operations that
     work for color images are designed for RGB images. This functionality is solely for
@@ -43,6 +44,8 @@ def convert_cspace(
         - "YDbDr": luma - blue-difference - red-difference (SECAM)
     Output_Color_Space: Literal
         The output image's color space. Same options as "Input Color Space".
+    Preserve_Dtype: bool
+        Whether or not to return the same data type that was input. Default is True.
 
     Returns
     -------
@@ -51,10 +54,19 @@ def convert_cspace(
     """
 
     from skimage.color import convert_colorspace
+    from skimage.exposure import rescale_intensity
+
+    from pydoug_core.util import convert_dtype, dtype_2_str
 
     if Input_Color_Space == Output_Color_Space:
         return imarray
 
-    return convert_colorspace(
+    cspace_array: np.ndarray = convert_colorspace(
         imarray, Input_Color_Space.lower(), Output_Color_Space.lower()
     )
+
+    if Preserve_Dtype:
+        if np.max(cspace_array) > 1 or np.min(cspace_array) < -1:
+            cspace_array = rescale_intensity(cspace_array, out_range=(-1, 1))  # type: ignore
+        return convert_dtype(cspace_array, dtype_2_str(imarray.dtype))  # type: ignore
+    return cspace_array
