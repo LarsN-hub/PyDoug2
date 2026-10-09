@@ -248,7 +248,7 @@ def label_count(imarray: np.ndarray) -> int:
 )
 def mesh_surface_area(
     surface: tuple,
-    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
+    Pixel_Size: Annotated[float, {"min": 0, "max": 1000000, "step": 0.0001}] = 1,
 ) -> float:  # pragma: no cover
     """
     Compute the surface area of a mesh. Convenience wrapper around scikit-image's

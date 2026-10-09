@@ -120,6 +120,28 @@ def test_apply_mask(sample_arrays, sample_masks) -> None:
     assert np.all(result28 == rgb3dcopy)
 
 
+def test_projection(sample_masks) -> None:
+
+    result0: np.ndarray = logic.projection(sample_masks["2drgb"])
+    result0_2: np.ndarray = logic.projection(sample_masks["2dgray"])
+    result1: np.ndarray = logic.projection(sample_masks["3dgray"], Pixel_Size=1.5)
+    result2: np.ndarray = logic.projection(sample_masks["3dgray"], "First")
+    result3: np.ndarray = logic.projection(sample_masks["3dgray"], "Last")
+    result4: np.ndarray = logic.projection(sample_masks["3dgray"])
+
+    assert np.all(result0 == sample_masks["2drgb"])
+    assert np.all(result0_2 == sample_masks["2dgray"])
+    assert result1.shape == sample_masks["3dgray"].shape[1:]
+    assert result2.shape == sample_masks["3dgray"].shape[1:]
+    assert result3.shape == sample_masks["3dgray"].shape[1:]
+    assert result4.shape == sample_masks["3dgray"].shape[1:]
+    assert result1.dtype == np.dtype(np.float64)
+    assert result2.dtype == np.dtype(np.int64)
+    assert result3.dtype == np.dtype(np.int64)
+    assert result4.dtype == np.dtype(np.int64)
+    assert np.all(result1 == result4 * 1.5)
+
+
 def test_logic() -> None:
 
     first_array: np.ndarray = np.zeros((10, 10), np.bool)
