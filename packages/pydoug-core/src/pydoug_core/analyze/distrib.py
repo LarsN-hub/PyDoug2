@@ -41,7 +41,7 @@ def hist_distrib(
 
     from skimage.exposure import histogram
 
-    from pydoug_core.analyze.measure import stats
+    from pydoug_core.analyze.image_info import stats
 
     input_range: str = source_range
     if source_range == "values":
