@@ -5,6 +5,7 @@ Headless batch runner to apply a workflow to multiple image datasets.
 from collections.abc import Iterator
 from pathlib import Path
 
+from pydoug_core.batch._tables import BatchTables
 from pydoug_core.io.imwriter import imwrite
 
 
@@ -61,6 +62,8 @@ def run_batch(
         if needs_folder:
             (output_dir / step_folders[step.step_id]).mkdir(parents=True, exist_ok=True)
 
+    tables: BatchTables = BatchTables()
+
     for index, path in enumerate(image_paths, start=1):
         name: str = path.stem if path.is_file() else path.name
         yield index, total, f"Processing image {index} of {total}: {name}"
@@ -81,8 +84,12 @@ def run_batch(
                     if not out_path.exists():
                         text: str = f"WARNING: failed to write {folder.name} for {name}"
                         yield index, total, text
-            else:
+            elif spec.save_result is not None:  # pragma: no cover
                 (spec.save_result or default_save_result)(result, folder / name)
+            elif tables.handles(result):
+                tables.add(folder, name, result, spec.units)
+            else:
+                default_save_result(result, folder / name)
 
         if not save_every_step and save_images and last_image_result is not None:
             out_path: Path = output_dir / f"{name}.tiff"
@@ -93,5 +100,7 @@ def run_batch(
                     total,
                     f"WARNING: failed to write final image for {name}",
                 )
+
+        tables.write()
 
     yield total, total, "Finished processing all images!"

@@ -54,6 +54,8 @@ class OperationSpec:
         Whether or not the operation should capture viewer sttings (for screenshots).
     requires_layer: bool
         Whether or not the operation requires an input layer.
+    units: str | dict[str, str] | None
+        If returning plots/values, the units to include.
     signature: inspect.Signature
         The function's signature.
     """
@@ -77,6 +79,7 @@ class OperationSpec:
     layer_type: Literal["image", "labels", "surface", "shapes"] = "image"
     captures_viewer_settings: bool = False
     requires_layer: bool = True
+    units: str | dict[str, str] | None = None
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -104,6 +107,7 @@ def register_operation(
     layer_type: Literal["image", "labels", "surface", "shapes"] = "image",
     captures_viewer_settings: bool = False,
     requires_layer: bool = True,
+    units: str | dict[str, str] | None = None,
     allow_in_place: bool = False,
 ) -> Callable:
     """
@@ -146,6 +150,8 @@ def register_operation(
         Whether or not the operation should capture viewer sttings (for screenshots).
     requires_layer: bool
         Whether or not the operation requires an input layer.
+    units: str | dict[str, str] | None
+        If returning plots/values, the units to include.
 
     Returns
     -------
@@ -250,6 +256,7 @@ def register_operation(
             layer_type=layer_type,
             captures_viewer_settings=captures_viewer_settings,
             requires_layer=requires_layer,
+            units=units,
         )
         return func
 

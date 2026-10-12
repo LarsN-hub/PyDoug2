@@ -134,21 +134,14 @@ def make_operation_widget(
                 widget.call_button.text = f"Run {operation_spec.display_name}"
 
         def _on_done(
-            result: dict[str, float | int | str]
-            | Figure
-            | float
-            | int
-            | np.ndarray
-            | str
-            | PlotResult,
+            result: dict | Figure | float | int | np.ndarray | str | PlotResult,
         ) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
 
             Parameters
             ----------
-            result: dict[str, float | int | str] | Figure | float | int | np.ndarray
-            | str | PlotResult
+            result: dict | Figure | float | int | np.ndarray | str | PlotResult
                 The result layer of the operation.
             results_log: ResultsLog
                 The results log object.
@@ -197,6 +190,11 @@ def make_operation_widget(
                 results_log.add(
                     operation_spec.display_name, "Plot generated, see window"
                 )
+                if isinstance(result, PlotResult):
+                    for table_name, table in result.tables.items():
+                        results_log.add(
+                            f"{operation_spec.display_name} ({table_name})", table
+                        )
                 if record_in_workflow and should_record:
                     recorder.record(
                         operation_spec.name,

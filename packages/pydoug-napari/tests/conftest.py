@@ -12,6 +12,7 @@ from skimage.measure import marching_cubes
 from skimage.morphology import ball
 
 from pydoug_core.registry import register_operation, unregister_operation
+from pydoug_core.results import PlotResult
 
 pytest_plugins: list[str] = ["pydoug_core.testing"]
 
@@ -112,8 +113,13 @@ def registered_plot():
     """
 
     @register_operation(category="testing", display_name="Plot", output_kind="plot")
-    def _plot(imarray: np.ndarray) -> Figure:  # pragma: no cover
-        return Figure()
+    def _plot(imarray: np.ndarray) -> PlotResult:  # pragma: no cover
+        return PlotResult(
+            Figure(),
+            {"x": [1, 2, 3], "y": [2, 4, 6]},
+            ("x",),
+            {"stats": {"mean": 4}},
+        )
 
     yield "_plot"
     unregister_operation("_plot")

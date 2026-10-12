@@ -94,7 +94,9 @@ def plot_histogram(
         values: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         values = np.copy(imarray)
-    hist_vals, bin_centers = hist_distrib(values, Bin_Count, normalize=Normalize)
+    hist_vals, bin_centers, hist_stats = hist_distrib(
+        values, Bin_Count, normalize=Normalize
+    )
 
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
@@ -118,6 +120,8 @@ def plot_histogram(
             "Bin Centers": bin_centers,
             "Density" if Normalize else "Counts": hist_vals,
         },  # type: ignore
+        x_columns=("Bin Centers",),
+        tables={"statistics": hist_stats},
     )
 
 

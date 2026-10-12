@@ -14,7 +14,7 @@ def hist_distrib(
     nbins: int = 256,
     source_range: Literal["values", "dtype"] = "dtype",
     normalize: bool = False,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, dict[str, int | float]]:
     """
     Generate an histogram for the given values. Convenience wrapper around
     scikit-image's exposure.histogram:
@@ -41,7 +41,11 @@ def hist_distrib(
 
     from skimage.exposure import histogram
 
+    from pydoug_core.analyze.measure import stats
+
     input_range: str = source_range
     if source_range == "values":
         input_range = "image"
-    return histogram(values, nbins, input_range, normalize)
+    hist_vals, bin_centers = histogram(values, nbins, input_range, normalize)
+    stats_dict: dict[str, float | int] = stats(values)
+    return hist_vals, bin_centers, stats_dict
