@@ -35,7 +35,6 @@ def plot_histogram(
     Bin_Count: Annotated[int, {"min": 1}] = 256,
     Normalize: bool = False,
     Y_Max: Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}] = 0,
-    Specify_X_Lims: bool = False,
     X_Lims: tuple[
         Annotated[
             float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
@@ -62,12 +61,8 @@ def plot_histogram(
         Whether or not to normalize the counts by the total sum. Default is False.
     Y_Max: float
         The maximum y-axis value to plot. Automatically determined if 0.
-    Specify_X_Lims: bool
-        Whether to specify the limits of the x-axis that are plotted (True) or to let
-        them be automatically decided (False). Default is False.
     X_Lims: tuple[float, float]
-        If "Specify X Lims" is "True", the limits of the x-axis in the form [min, max].
-        Ignored if both are 0.
+        The limits of the x-axis in the form [min, max]. Ignored if both are 0.
     Apply_Mask: bool
         Whether or not to apply a mask. Default is False.
     Mask: np.ndarray | None
@@ -101,7 +96,7 @@ def plot_histogram(
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
     x_lims: tuple[float, float] | None = (
-        None if (not Specify_X_Lims or (X_Lims[0] == X_Lims[1] == 0)) else X_Lims
+        None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims
     )
     ax = hist_ax(
         hist_vals,

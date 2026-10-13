@@ -13,7 +13,6 @@ def test_plot_histogram(sample_3dgray_array, sample_masks) -> None:
     result1: PlotResult = hist.plot_histogram(
         sample_3dgray_array,
         Normalize=True,
-        Specify_X_Lims=True,
         X_Lims=(0, 10),
     )
     result2: PlotResult = hist.plot_histogram(
@@ -23,7 +22,6 @@ def test_plot_histogram(sample_3dgray_array, sample_masks) -> None:
         sample_3dgray_array,
         Normalize=True,
         Y_Max=10,
-        Specify_X_Lims=True,
     )
     assert isinstance(result1, PlotResult)
     assert isinstance(result2, PlotResult)

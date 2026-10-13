@@ -21,6 +21,16 @@ def test_hist_ax(sample_3dgray_array) -> None:
     assert isinstance(fig, Figure)
 
 
+def test_line_ax() -> None:
+
+    fig, ax = plt.subplots(layout="constrained")
+    ax = plot_util.line_ax(
+        np.array([1, 2, 3]), np.array([2, 4, 6]), ax, None, "Test X", "Test Y"
+    )
+    assert isinstance(ax, Axes)
+    assert isinstance(fig, Figure)
+
+
 def test_stats_ax() -> None:
 
     fig, ax = plt.subplots(layout="constrained")
@@ -31,6 +41,7 @@ def test_stats_ax() -> None:
         "Mode": np.array([7, 5]),
         "Std Dev": np.array([3, 2]),
         "Variance": np.array([9, 4]),
+        "Count": np.array([9, 7]),
         "Min": np.array([1, 2]),
         "Max": np.array([9, 8]),
         "Dtype Min": np.array([0, 0]),
@@ -40,6 +51,8 @@ def test_stats_ax() -> None:
         stats_dict,
         ax,
         None,
+        None,
+        True,
         True,
         True,
         True,

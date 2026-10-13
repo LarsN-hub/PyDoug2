@@ -40,6 +40,7 @@ def test_stats(sample_arrays, sample_masks) -> None:
     assert result0["Mode"] is np.nan
     assert result0["Std Dev"] is np.nan
     assert result0["Variance"] is np.nan
+    assert result0["Count"] == 0
     assert result0["Min"] is np.nan
     assert result0["Max"] is np.nan
     assert result0["Dtype Min"] == 0
@@ -53,6 +54,7 @@ def test_stats(sample_arrays, sample_masks) -> None:
     assert result1["Mode"].dtype == np.dtype(np.uint8)
     assert isinstance(result1["Std Dev"], float)
     assert isinstance(result1["Variance"], float)
+    assert isinstance(result1["Count"], int)
     assert not isinstance(result1["Min"], float) and not isinstance(result1["Min"], int)
     assert not isinstance(result1["Max"], float) and not isinstance(result1["Max"], int)
     assert not isinstance(result1["Range"], float) and not isinstance(
@@ -70,6 +72,7 @@ def test_stats(sample_arrays, sample_masks) -> None:
     assert result2["Mode"].dtype == np.dtype(np.uint8)
     assert isinstance(result2["Std Dev"], float)
     assert isinstance(result2["Variance"], float)
+    assert isinstance(result2["Count"], int)
     assert not isinstance(result2["Min"], float) and not isinstance(result2["Min"], int)
     assert not isinstance(result2["Max"], float) and not isinstance(result2["Max"], int)
     assert not isinstance(result2["Range"], float) and not isinstance(
@@ -83,6 +86,7 @@ def test_stats(sample_arrays, sample_masks) -> None:
     assert isinstance(result3["Mode"], float)
     assert isinstance(result3["Std Dev"], float)
     assert isinstance(result3["Variance"], float)
+    assert isinstance(result3["Count"], int)
     assert isinstance(result3["Min"], float)
     assert isinstance(result3["Max"], float)
     assert isinstance(result3["Range"], float)
@@ -94,6 +98,7 @@ def test_stats(sample_arrays, sample_masks) -> None:
     assert isinstance(result4["Mode"], int)
     assert isinstance(result4["Std Dev"], float)
     assert isinstance(result4["Variance"], float)
+    assert isinstance(result4["Count"], int)
     assert isinstance(result4["Min"], np.bool)
     assert isinstance(result4["Max"], np.bool)
     assert isinstance(result4["Range"], int)
@@ -105,11 +110,46 @@ def test_stats(sample_arrays, sample_masks) -> None:
     assert isinstance(result5["Mode"], int)
     assert isinstance(result5["Std Dev"], float)
     assert isinstance(result5["Variance"], float)
+    assert isinstance(result5["Count"], int)
     assert isinstance(result5["Min"], np.bool)
     assert isinstance(result5["Max"], np.bool)
     assert isinstance(result5["Range"], int)
     assert result5["Dtype Min"] == 0
     assert result5["Dtype Max"] == 1
+
+
+def test_linescan(sample_arrays) -> None:
+
+    class DummyShapes:
+        def __init__(self, data: list[np.ndarray], shape_type: list[str]):
+            self.data = data
+            self.shape_type = shape_type
+
+    shapes_layer0: DummyShapes = DummyShapes([np.array([[1, 2], [3, 4]])], ["ellipse"])
+    shapes_layer1: DummyShapes = DummyShapes([np.array([[1, 2], [3, 4]])], ["line"])
+    shapes_layer2: DummyShapes = DummyShapes(
+        [np.array([[3, 1, 2], [3, 3, 4]])], ["line"]
+    )
+    shapes_layer3: DummyShapes = DummyShapes(
+        [np.array([[1, 2], [3, 4]]), np.array([[1, 2], [3, 4]])], ["ellipse", "line"]
+    )
+
+    assert image_info.linescan(shapes_layer0, sample_arrays["2dgray"]) is None
+    assert isinstance(
+        image_info.linescan(shapes_layer1, sample_arrays["2dgray"]), PlotResult
+    )
+    assert isinstance(
+        image_info.linescan(shapes_layer2, sample_arrays["3dgray"]), PlotResult
+    )
+    assert isinstance(
+        image_info.linescan(shapes_layer3, sample_arrays["2dgray"]), PlotResult
+    )
+    assert isinstance(
+        image_info.linescan(shapes_layer2, sample_arrays["2dgray"]), PlotResult
+    )
+    assert isinstance(
+        image_info.linescan(shapes_layer1, sample_arrays["3dgray"]), PlotResult
+    )
 
 
 def test_percentile(sample_2dgray_array) -> None:
