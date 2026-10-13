@@ -184,27 +184,22 @@ def make_operation_widget(
                         layer_ref=result_layer,
                     )
 
-            elif operation_spec.output_kind == "plot":
-                figure = result.figure if isinstance(result, PlotResult) else result
-                (operation_spec.display_result or default_display_plot)(figure)  # type: ignore
-                results_log.add(
-                    operation_spec.display_name, "Plot generated, see window"
-                )
-                if isinstance(result, PlotResult):
-                    for table_name, table in result.tables.items():
-                        results_log.add(
-                            f"{operation_spec.display_name} ({table_name})", table
-                        )
-                if record_in_workflow and should_record:
-                    recorder.record(
-                        operation_spec.name,
-                        recorded_params,
-                        input_refs=input_refs,
-                        layer_ref=None,
+            else:
+                if isinstance(result, (PlotResult, Figure)):
+                    figure: Figure = (
+                        result.figure if isinstance(result, PlotResult) else result
                     )
-
-            else:  # "value"
-                results_log.add(operation_spec.display_name, result)  # type: ignore
+                    (operation_spec.display_result or default_display_plot)(figure)
+                    results_log.add(
+                        operation_spec.display_name, "Plot generated, see window"
+                    )
+                    if isinstance(result, PlotResult):
+                        for table_name, table in result.tables.items():
+                            results_log.add(
+                                f"{operation_spec.display_name} ({table_name})", table
+                            )
+                else:
+                    results_log.add(operation_spec.display_name, result)
                 if record_in_workflow and should_record:
                     recorder.record(
                         operation_spec.name,

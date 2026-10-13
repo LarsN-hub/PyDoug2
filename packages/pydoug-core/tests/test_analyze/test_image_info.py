@@ -7,21 +7,43 @@ from typing import Any
 import numpy as np
 
 from pydoug_core.analyze import image_info
+from pydoug_core.results import PlotResult
 
 
-def test_stats(sample_3dgray_array) -> None:
+def test_stats(sample_arrays, sample_masks) -> None:
 
-    result1: dict[str, float | int] = image_info.stats(sample_3dgray_array)
-    maskarray: np.ndarray = np.zeros(sample_3dgray_array.shape, np.bool)
-    maskarray[3] = 1
-    result2: dict[str, float | int] = image_info.stats(
-        sample_3dgray_array, True, maskarray
+    blank_mask: np.ndarray = np.zeros(sample_arrays["2dgray"].shape, np.bool)
+    result0 = image_info.stats(sample_arrays["2dgray"], True, blank_mask)
+    result1 = image_info.stats(sample_arrays["2dgray"])
+    result2 = image_info.stats(sample_arrays["2dgray"], True, sample_masks["2dgray"])
+    result3 = image_info.stats(np.astype(sample_arrays["2dgray"], np.float64))
+    result4 = image_info.stats(sample_masks["2dgray"])
+    result5 = image_info.stats(sample_masks["2dgray"], True, sample_masks["2dgray"])
+    result6 = image_info.stats(sample_arrays["2dgray"], Perform_Slicewise=True)
+    result7 = image_info.stats(sample_masks["3dgray"], Perform_Slicewise=True)
+    result8 = image_info.stats(
+        sample_masks["3dgray"], True, sample_masks["3dgray"], True
     )
-    result3: dict[str, float | int] = image_info.stats(
-        np.astype(sample_3dgray_array, np.float64)
-    )
-    result4: dict[str, float | int] = image_info.stats(maskarray)
-    result5: dict[str, float | int] = image_info.stats(maskarray, True, maskarray)
+
+    assert isinstance(result0, dict)
+    assert isinstance(result1, dict)
+    assert isinstance(result2, dict)
+    assert isinstance(result3, dict)
+    assert isinstance(result4, dict)
+    assert isinstance(result5, dict)
+    assert isinstance(result6, dict)
+    assert isinstance(result7, PlotResult)
+    assert isinstance(result8, PlotResult)
+
+    assert result0["Mean"] is np.nan
+    assert result0["Median"] is np.nan
+    assert result0["Mode"] is np.nan
+    assert result0["Std Dev"] is np.nan
+    assert result0["Variance"] is np.nan
+    assert result0["Min"] is np.nan
+    assert result0["Max"] is np.nan
+    assert result0["Dtype Min"] == 0
+    assert result0["Dtype Max"] == 255
 
     assert isinstance(result1["Mean"], float)
     assert isinstance(result1["Median"], float)
@@ -38,6 +60,7 @@ def test_stats(sample_3dgray_array) -> None:
     )
     assert result1["Dtype Min"] == 0
     assert result1["Dtype Max"] == 255
+    assert result1 == result6
 
     assert isinstance(result2["Mean"], float)
     assert isinstance(result2["Median"], float)

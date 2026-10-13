@@ -8,6 +8,7 @@ import numpy as np
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
+from pydoug_core.results import PlotResult
 
 __all__ = [
     "stats",
@@ -29,8 +30,30 @@ __all__ = [
     recordable_toggle=True,
 )
 def stats(
-    imarray: np.ndarray, Apply_Mask: bool = False, Mask: np.ndarray | None = None
-) -> dict[str, float | int]:
+    imarray: np.ndarray,
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+    Perform_Slicewise: bool = False,
+    Specify_Y_Lims: bool = False,
+    Y_Lims: tuple[
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+    ] = (0, 0),
+    Plot_Mean: bool = True,
+    Plot_Median: bool = False,
+    Plot_Mode: bool = False,
+    Plot_Std_Dev: bool = True,
+    Plot_Variance: bool = False,
+    Plot_Min: bool = True,
+    Plot_Max: bool = True,
+    Plot_Dtype_Min: bool = False,
+    Plot_Dtype_Max: bool = False,
+    Include_Legend: bool = True,
+) -> dict[str, float | int] | PlotResult:
     """
     Calculate the grayscale statistics of an image array. Convenience wrapper around
     functions in numpy's statistics section, except for mode which is calculated using
@@ -47,6 +70,45 @@ def stats(
     Mask: np.ndarray | None
         (Optional) the mask to be applied before statistics calculation if "Apply_Mask"
         is True.
+    Perform_Slicewise: bool
+        Whether to perform the operation slicewise and return a plot of the stats for
+        each slice (True) or not (False). Default is False (returns single values).
+    Specify_Y_Lims: bool
+        Whether to specify the limits of the y-axis that are plotted (True) or to let
+        them be automatically decided (False). Default is False.
+    Y_Lims: tuple[float, float]
+        If "Specify X Lims" is "True", the limits of the y-axis in the form [min, max].
+        Ignored if both are 0.
+    Plot_Mean: bool
+        If "Perform Slicewise" is "True", whether to plot the mean (True) or not
+        (False). Default is True.
+    Plot_Median: bool
+        If "Perform Slicewise" is "True", whether to plot the median (True) or not
+        (False). Default is False.
+    Plot_Mode: bool
+        If "Perform Slicewise" is "True", whether to plot the mode (True) or not
+        (False). Default is False.
+    Plot_Std_Dev: bool
+        If "Perform Slicewise" is "True", whether to plot the std dev (True) or not
+        (False). Default is True.
+    Plot_Variance: bool
+        If "Perform Slicewise" is "True", whether to plot the variance (True) or not
+        (False). Default is False.
+    Plot_Min: bool
+        If "Perform Slicewise" is "True", whether to plot the min (True) or not
+        (False). Default is True.
+    Plot_Max: bool
+        If "Perform Slicewise" is "True", whether to plot the max (True) or not
+        (False). Default is True.
+    Plot_Dtype_Min: bool
+        If "Perform Slicewise" is "True", whether to plot the dtype min (True) or not
+        (False). Default is False.
+    Plot_Dtype_Max: bool
+        If "Perform Slicewise" is "True", whether to plot the dtype max (True) or not
+        (False). Default is False.
+    Include_Legend: bool
+        If "Perform Slicewise" is "True", whether to include a legend (True) or not
+        (False). Default is True.
 
     Returns
     -------
@@ -57,63 +119,135 @@ def stats(
 
     from scipy.stats import mode
 
-    if np.issubdtype(imarray.dtype, np.integer):
-        imdmin = np.iinfo(imarray.dtype).min
-        imdmax = np.iinfo(imarray.dtype).max
-        boolarray: bool = False
-    elif np.issubdtype(imarray.dtype, np.floating):
-        imdmin = np.finfo(imarray.dtype).min
-        imdmax = np.finfo(imarray.dtype).max
-        boolarray: bool = False
-    else:
-        imdmin = 0
-        imdmax = 1
-        boolarray: bool = True
+    def _stats(values: np.ndarray) -> dict[str, float | int]:
 
-    if Mask is not None and Apply_Mask:
-        Mask = util.prep_mask(imarray, Mask)
-        immean: float = np.mean(imarray[Mask])
-        immedian: float | int = np.median(imarray[Mask])
-        imstd: float = np.std(imarray[Mask])
-        imvar: float = np.var(imarray[Mask])
-        immin: float | int = np.min(imarray[Mask])
-        immax: float | int = np.max(imarray[Mask])
+        if np.issubdtype(values.dtype, np.integer):
+            imdmin = np.iinfo(values.dtype).min
+            imdmax = np.iinfo(values.dtype).max
+            boolarray: bool = False
+        elif np.issubdtype(values.dtype, np.floating):
+            imdmin = np.finfo(values.dtype).min
+            imdmax = np.finfo(values.dtype).max
+            boolarray: bool = False
+        else:
+            imdmin = 0
+            imdmax = 1
+            boolarray: bool = True
+
+        if values.size == 0:
+            return {
+                "Mean": np.nan,
+                "Median": np.nan,
+                "Mode": np.nan,
+                "Std Dev": np.nan,
+                "Variance": np.nan,
+                "Min": np.nan,
+                "Max": np.nan,
+                "Range": np.nan,
+                "Dtype Min": imdmin,
+                "Dtype Max": imdmax,
+            }
+
+        immean: float = np.mean(values)
+        immedian: float | int = np.median(values)
+        imstd: float = np.std(values)
+        imvar: float = np.var(values)
+        immin: float | int = np.min(values)
+        immax: float | int = np.max(values)
         if not boolarray:
-            immode: float | int = mode(imarray[Mask], axis=None)[0]  # type: ignore
+            immode: float | int = mode(values, axis=None)[0]  # type: ignore
             imrange: float | int = immax - immin
         else:
-            onecount: np.int64 = np.count_nonzero(imarray[Mask])
-            zercount: np.int64 = len(imarray[Mask]) - onecount
-            immode: int = 1 if onecount >= zercount else 0
-            imrange = int(immax) - int(immin)
-    else:
-        immean: float = np.mean(imarray)
-        immedian: float | int = np.median(imarray)
-        imstd: float = np.std(imarray)
-        imvar: float = np.var(imarray)
-        immin: float | int = np.min(imarray)
-        immax: float | int = np.max(imarray)
-        if not boolarray:
-            immode: float | int = mode(imarray, axis=None)[0]  # type: ignore
-            imrange: float | int = immax - immin
-        else:
-            onecount: np.int64 = np.count_nonzero(imarray)
-            zercount: np.int64 = len(imarray) - onecount
+            onecount: np.int64 = np.count_nonzero(values)
+            zercount: np.int64 = values.size - onecount
             immode: int = 1 if onecount >= zercount else 0
             imrange = int(immax) - int(immin)
 
-    return {
-        "Mean": immean,
-        "Median": immedian,
-        "Mode": immode,
-        "Std Dev": imstd,
-        "Variance": imvar,
-        "Min": immin,
-        "Max": immax,
-        "Range": imrange,
-        "Dtype Min": imdmin,
-        "Dtype Max": imdmax,
-    }
+        return {
+            "Mean": immean,
+            "Median": immedian,
+            "Mode": immode,
+            "Std Dev": imstd,
+            "Variance": imvar,
+            "Min": immin,
+            "Max": immax,
+            "Range": imrange,
+            "Dtype Min": imdmin,
+            "Dtype Max": imdmax,
+        }
+
+    if Perform_Slicewise and util.is3d(imarray):
+        stats_dict: dict[str, np.ndarray] = {
+            "Slice": np.arange(0, imarray.shape[0]),
+            "Mean": np.empty(imarray.shape[0]),
+            "Median": np.empty(imarray.shape[0]),
+            "Mode": np.empty(imarray.shape[0]),
+            "Std Dev": np.empty(imarray.shape[0]),
+            "Variance": np.empty(imarray.shape[0]),
+            "Min": np.empty(imarray.shape[0]),
+            "Max": np.empty(imarray.shape[0]),
+            "Range": np.empty(imarray.shape[0]),
+            "Dtype Min": np.empty(imarray.shape[0]),
+            "Dtype Max": np.empty(imarray.shape[0]),
+        }
+
+        for index in range(0, imarray.shape[0]):
+            if Apply_Mask and Mask is not None:
+                cur_dict: dict[str, float | int] = _stats(
+                    imarray[index][util.prep_mask(imarray[index], Mask[index])]
+                )
+            else:
+                cur_dict = _stats(imarray[index])
+            stats_dict["Mean"][index] = cur_dict["Mean"]
+            stats_dict["Median"][index] = cur_dict["Median"]
+            stats_dict["Mode"][index] = cur_dict["Mode"]
+            stats_dict["Std Dev"][index] = cur_dict["Std Dev"]
+            stats_dict["Variance"][index] = cur_dict["Variance"]
+            stats_dict["Min"][index] = cur_dict["Min"]
+            stats_dict["Max"][index] = cur_dict["Max"]
+            stats_dict["Range"][index] = cur_dict["Range"]
+            stats_dict["Dtype Min"][index] = cur_dict["Dtype Min"]
+            stats_dict["Dtype Max"][index] = cur_dict["Dtype Max"]
+
+        from matplotlib import pyplot as plt
+        from matplotlib.axes import Axes
+        from matplotlib.figure import Figure
+
+        from pydoug_core.analyze.plot_util import stats_ax
+
+        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["font.sans-serif"] = "Arial"
+
+        y_lims: tuple[float, float] | None = (
+            None if (not Specify_Y_Lims or (Y_Lims[0] == Y_Lims[1] == 0)) else Y_Lims
+        )
+        fig: Figure = Figure()
+        ax: Axes = fig.add_subplot()
+        ax = stats_ax(
+            stats_dict,
+            ax,
+            y_lims,
+            Plot_Mean,
+            Plot_Median,
+            Plot_Mode,
+            Plot_Std_Dev,
+            Plot_Variance,
+            Plot_Min,
+            Plot_Max,
+            Plot_Dtype_Min,
+            Plot_Dtype_Max,
+            Include_Legend,
+        )
+        fig.set_layout_engine("constrained")
+
+        return PlotResult(figure=fig, data=stats_dict, x_columns=("Slice",))  # type: ignore
+
+    if Apply_Mask and Mask is not None:
+        values: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
+    else:
+        values = imarray
+
+    return _stats(values)
 
 
 @register_operation(

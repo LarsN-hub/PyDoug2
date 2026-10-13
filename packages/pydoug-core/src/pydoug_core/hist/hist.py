@@ -63,7 +63,7 @@ def plot_histogram(
     Y_Max: float
         The maximum y-axis value to plot. Automatically determined if 0.
     Specify_X_Lims: bool
-        Whether to specify the limits of the X axis that are plotted (True) or to let
+        Whether to specify the limits of the x-axis that are plotted (True) or to let
         them be automatically decided (False). Default is False.
     X_Lims: tuple[float, float]
         If "Specify X Lims" is "True", the limits of the x-axis in the form [min, max].

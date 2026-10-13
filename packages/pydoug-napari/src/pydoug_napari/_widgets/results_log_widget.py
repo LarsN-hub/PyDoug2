@@ -3,6 +3,7 @@ Widget for displaying results from operations that calculate/measure values for 
 napari plugin.
 """
 
+from numpy import ndarray
 from psygnal import Signal
 from qtpy.QtWidgets import QListWidget
 
@@ -22,9 +23,7 @@ class ResultsLog:
     def __init__(self):
         self.entries: list[tuple[str, object]] = []
 
-    def add(
-        self, label: str, result: dict[str, float | int | str] | float | int | str
-    ) -> None:
+    def add(self, label: str, result: dict | float | int | str | ndarray) -> None:
         """
         Add an item to the results log.
 
@@ -54,9 +53,7 @@ class ResultsLogWidget(QListWidget):
         super().__init__()
         results_log.entry_added.connect(self._on_entry)
 
-    def _on_entry(
-        self, label: str, result: dict[str, float | int | str] | float | int | str
-    ) -> None:
+    def _on_entry(self, label: str, result: dict | float | int | str | ndarray) -> None:
         """
         How to add the result to the results log.
 

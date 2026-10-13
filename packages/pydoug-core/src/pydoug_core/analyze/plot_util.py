@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
-__all__ = ["hist_ax"]
+__all__ = ["hist_ax", "stats_ax"]
 
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = "Arial"
@@ -23,8 +23,8 @@ def hist_ax(
 ) -> Axes:
     """
     Generate an axis with a minimal histogram plot for the given values. Convenience
-    wrapper around scikit-image's exposure.histogram function:
-    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.histogram
+    wrapper around matplotlib's hist:
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 
     Parameters
     ----------
@@ -41,7 +41,7 @@ def hist_ax(
 
     Returns
     -------
-    hist_ax: plt.Axes
+    hist_ax: Axes
         The input axis with the histogram plot generated.
     """
 
@@ -54,3 +54,119 @@ def hist_ax(
     hist_ax.set_ylabel(y_label, fontsize=15)
     hist_ax.tick_params("both", labelsize=13)
     return hist_ax
+
+
+def stats_ax(
+    stats_dict: dict[str, np.ndarray],
+    stats_ax: Axes,
+    y_lims: tuple | None = None,
+    plot_mean: bool = True,
+    plot_median: bool = False,
+    plot_mode: bool = False,
+    plot_stdv: bool = True,
+    plot_var: bool = False,
+    plot_min: bool = True,
+    plot_max: bool = True,
+    plot_dtype_min: bool = False,
+    plot_dtype_max: bool = False,
+    include_legend: bool = True,
+) -> Axes:
+    """
+    Generate an axis with a minimal line plot for the given statistics. Convenience
+    wrapper around matplotlib's plot and fill_between:
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.fill_between.html
+
+    Parameters
+    ----------
+    stats_dict: dict[str, np.ndarray]
+        A dictionary containing the slicewise statistics.
+    stats_ax: Axes
+        The axis to plot on.
+    plot_mean, plot_median, plot_mode, plot_stdv, plot_var, plot_min, plot_max,
+    plot_dtype_min, plot_dtype_max: bool
+        Whether or not to plot each element of the stats dictionary. Defaults plot mean,
+        stdv, min, and max.
+
+    Returns
+    -------
+    stats_ax: Axes
+        The input axis with the stats plot generated.
+    """
+
+    if plot_mean:
+        stats_ax.plot(
+            stats_dict["Slice"],
+            stats_dict["Mean"],
+            "black",
+            linewidth=2,
+            label="Mean",
+        )
+    if plot_median:
+        stats_ax.plot(
+            stats_dict["Slice"],
+            stats_dict["Median"],
+            "green",
+            linewidth=2,
+            label="Median",
+        )
+    if plot_mode:
+        stats_ax.plot(
+            stats_dict["Slice"],
+            stats_dict["Mode"],
+            "magenta",
+            linewidth=2,
+            label="Mode",
+        )
+    if plot_stdv:
+        stats_ax.fill_between(
+            stats_dict["Slice"],
+            y1=stats_dict["Mean"] + stats_dict["Std Dev"],
+            y2=stats_dict["Mean"] - stats_dict["Std Dev"],
+            color="gray",
+            alpha=0.5,
+            label="Std Dev",
+        )
+    if plot_var:
+        stats_ax.fill_between(
+            stats_dict["Slice"],
+            y1=stats_dict["Mean"] + stats_dict["Variance"],
+            y2=stats_dict["Mean"] - stats_dict["Variance"],
+            color="gray",
+            alpha=0.25,
+            label="Variance",
+        )
+    if plot_min:
+        stats_ax.plot(
+            stats_dict["Slice"], stats_dict["Min"], "blue", linewidth=2, label="Min"
+        )
+    if plot_max:
+        stats_ax.plot(
+            stats_dict["Slice"], stats_dict["Max"], "red", linewidth=2, label="Max"
+        )
+    if plot_dtype_min:
+        stats_ax.plot(
+            stats_dict["Slice"],
+            stats_dict["Dtype Min"],
+            "cyan",
+            linewidth=2,
+            label="Dtype Min",
+        )
+    if plot_dtype_max:
+        stats_ax.plot(
+            stats_dict["Slice"],
+            stats_dict["Dtype Max"],
+            "yellow",
+            linewidth=2,
+            label="Dtype Max",
+        )
+    y_lims = (min(y_lims), max(y_lims)) if y_lims else None
+    stats_ax.set_ylim(y_lims)
+    stats_ax.set_xlim(0, stats_dict["Slice"][-1])
+    stats_ax.set_xlabel("Slice", fontsize=15)
+    stats_ax.set_ylabel("Gray Value", fontsize=15)
+    stats_ax.tick_params("both", labelsize=13)
+    if include_legend:
+        stats_ax.legend(fontsize=12)
+
+    return stats_ax
