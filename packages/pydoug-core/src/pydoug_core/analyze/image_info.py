@@ -9,7 +9,15 @@ import numpy as np
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["stats", "percentiles", "thresholds"]
+__all__ = [
+    "stats",
+    "percentiles",
+    "thresholds",
+    "euler_num",
+    "blur_effect",
+    "shannon_entropy",
+    "inertia_tensor_eigs",
+]
 
 
 @register_operation(
@@ -212,3 +220,172 @@ def thresholds(
     return calc_thresholds(
         eval_array, Method, Otsu_Classes, Bin_Count, Max_Iteration_Count
     )
+
+
+@register_operation(
+    category="info",
+    display_name="Euler Number",
+    output_kind="value",
+    recordable_toggle=True,
+)
+def euler_num(
+    imarray: np.ndarray,
+    Connectivity: Literal[1, 2, 3] = 2,
+) -> int:
+    """
+    Calculate the Euler number of a binary image (the number of objects minus the number
+    of holes). Connectivity is for the objects (note that the connectivity of holes is
+    dependent on the object connectivity, e.g., object connectivity of 2 forces a holes
+    connectivity of 1 in 2D). Image can be 2D/3D grayscale/RGB but non-binary images are
+    binarized before labeling and RGB images are converted to grayscale. Convenience
+    wrapper around scikit-image's measure.euler_number:
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.euler_number
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The binary image.
+    Connectivity: Literal
+        The method to use for determing label connectivity for objects. Default is 2.
+        - 1: Only pixels with faces in contact are considered connected.
+            - In 2D, this means only four most adjacent pixels.
+            - In 3D, this means only the 6 most adjacent voxels.
+        - 2: Includes 1, and adds pixels with edges in contact.
+            - In 2D, this means the surrounding 8 pixels.
+            - Not supported for 3D in this operation (defaults to 3).
+        - 3: (3D only) Includes 1-2, and adds pixels with corners in contact.
+            - In 3D, this means the surrounding 26 voxels.
+
+    Returns
+    -------
+    euler_num: int
+        The Euler number of the image.
+    """
+
+    from skimage.measure import euler_number
+
+    from pydoug_core.util import is3d, rgb2gray
+
+    if Connectivity == 2 and is3d(imarray):
+        Connectivity = 3
+
+    return int(euler_number(np.round(rgb2gray(imarray)).astype(np.bool), Connectivity))  # type: ignore
+
+
+@register_operation(
+    category="info",
+    display_name="Blur Effect",
+    output_kind="value",
+    recordable_toggle=True,
+)
+def blur_effect(
+    imarray: np.ndarray,
+    H_Size: Annotated[int, {"min": 1}] = 11,
+) -> float:
+    """
+    Estimate the blur effect applied to an image. Returns a value between 0 (no blur)
+    and 1 (max blur). Image can be 2D/3D grayscale/RGB. Convenience wrapper around
+    scikit-image's measure.blur_effect:
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.blur_effect
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to test the blur effect for.
+    H_Size: int
+        The size of the re-blurring filter (higher detects larger blur).
+
+    Returns
+    -------
+    blur_val: float
+        The blur effect.
+    """
+
+    from skimage.measure import blur_effect as skiblur_effect
+
+    from pydoug_core.util import chan_axis
+
+    return skiblur_effect(imarray, H_Size, channel_axis=chan_axis(imarray))  # type: ignore
+
+
+@register_operation(
+    category="info",
+    display_name="Shannon Entropy",
+    output_kind="value",
+    recordable_toggle=True,
+)
+def shannon_entropy(
+    imarray: np.ndarray,
+    Base: Annotated[int, {"min": 2}] = 2,
+) -> float:
+    """
+    Calculate the Shannon entropy for the image. Higher entropy = less order. Image must
+    be 2D grayscale (RGB image will be converted). Convenience wrapper around
+    scikit-image's measure.shannon_entropy:
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.shannon_entropy
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The 2D iamge to.
+    Base: int
+        The logarithmic base to use for the calculation.
+
+    Returns
+    -------
+    entropy_val: float
+        The Shannon entropy.
+    """
+
+    from skimage.measure import shannon_entropy as ski_entropy
+
+    from pydoug_core.util import is3d, rgb2gray
+
+    if is3d(imarray):
+        print("Image is 3D, entropy not calculated!")
+        return 0
+
+    return ski_entropy(rgb2gray(imarray), Base)  # type: ignore
+
+
+@register_operation(
+    category="info",
+    display_name="Inertia Tensor Eigenvalues",
+    output_kind="value",
+    recordable_toggle=True,
+)
+def inertia_tensor_eigs(
+    imarray: np.ndarray,
+    Maximum_Moments_Order: Annotated[int, {"min": 1}] = 3,
+) -> dict[str, float]:
+    """
+    Calculate the inertia tensor eigenvalues of the image. Iimage can be 2D/3D grayscale
+    or RGB, but RGB images are converted first. Convenience wrapper around
+    scikit-image's measure.inertia_tensor_eigvals and measure.moments:
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.inertia_tensor_eigvals
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.moments
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to calculate the inertia tensor eigenvalues for.
+    Maximum_Moments_Order: int
+        The maximum order of moments to calculate the inertia tensor. Default is 3.
+
+    Returns
+    -------
+    inertia_eigs: dict[str, float]
+        Dictionary containing the inertia tensor eigenvalues for each axis.
+    """
+
+    from skimage.measure import inertia_tensor_eigvals, moments
+
+    from pydoug_core.util import is3d, rgb2gray
+
+    results: list = inertia_tensor_eigvals(
+        rgb2gray(imarray), moments(rgb2gray(imarray), Maximum_Moments_Order)
+    )
+    if is3d(imarray):
+        return {"X": results[2], "Y": results[1], "Z": results[0]}
+
+    return {"X": results[1], "Y": results[0]}

@@ -16,6 +16,7 @@ __all__ = ["mesh_surface_area", "label_count"]
     display_name="Mesh Surface Area",
     layer_type="surface",
     output_kind="value",
+    recordable_toggle=True,
 )
 def mesh_surface_area(
     surface: tuple,
@@ -49,6 +50,7 @@ def mesh_surface_area(
     display_name="Label Count",
     layer_type="labels",
     output_kind="value",
+    recordable_toggle=True,
 )
 def label_count(imarray: np.ndarray) -> int:
     """

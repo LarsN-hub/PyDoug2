@@ -125,3 +125,47 @@ def test_thresholds(sample_3dgray_array, sample_masks) -> None:
     assert not isinstance(result7, np.ndarray)
     assert isinstance(result8, np.ndarray)
     assert not isinstance(result9, np.ndarray)
+
+
+def test_euler_num(sample_masks, sample_arrays) -> None:
+
+    test_array: np.ndarray = np.zeros((10, 10), np.bool)
+    test_array[2:8, 2:8] = 1
+    test_array[4:6, 4:6] = 0
+    assert isinstance(image_info.euler_num(sample_masks["2dgray"]), int)
+    assert isinstance(image_info.euler_num(sample_masks["3dgray"]), int)
+    assert isinstance(image_info.euler_num(sample_masks["2drgb"]), int)
+    assert isinstance(image_info.euler_num(sample_masks["3drgb"]), int)
+    assert isinstance(image_info.euler_num(sample_arrays["2dgray"]), int)
+    assert isinstance(image_info.euler_num(sample_arrays["3dgray"]), int)
+    assert isinstance(image_info.euler_num(sample_arrays["2drgb"]), int)
+    assert isinstance(image_info.euler_num(sample_arrays["3drgb"]), int)
+    assert image_info.euler_num(test_array) == 0
+
+
+def test_blur_effect(sample_arrays) -> None:
+
+    assert isinstance(image_info.blur_effect(sample_arrays["2dgray"], 3), float)
+    assert isinstance(image_info.blur_effect(sample_arrays["3dgray"], 3), float)
+    assert isinstance(image_info.blur_effect(sample_arrays["2drgb"], 3), float)
+    assert isinstance(image_info.blur_effect(sample_arrays["3drgb"], 3), float)
+
+
+def test_entropy(sample_arrays) -> None:
+
+    assert isinstance(image_info.shannon_entropy(sample_arrays["2dgray"]), float)
+    assert isinstance(image_info.shannon_entropy(sample_arrays["2drgb"]), float)
+    assert image_info.shannon_entropy(sample_arrays["3dgray"]) == 0
+    assert image_info.shannon_entropy(sample_arrays["3drgb"]) == 0
+
+
+def test_inertia_tensor_eigs(sample_arrays) -> None:
+
+    assert isinstance(image_info.inertia_tensor_eigs(sample_arrays["2dgray"]), dict)
+    assert isinstance(image_info.inertia_tensor_eigs(sample_arrays["3dgray"]), dict)
+    assert isinstance(image_info.inertia_tensor_eigs(sample_arrays["2drgb"]), dict)
+    assert isinstance(image_info.inertia_tensor_eigs(sample_arrays["3drgb"]), dict)
+    assert len(image_info.inertia_tensor_eigs(sample_arrays["2dgray"])) == 2
+    assert len(image_info.inertia_tensor_eigs(sample_arrays["3dgray"])) == 3
+    assert len(image_info.inertia_tensor_eigs(sample_arrays["2drgb"])) == 2
+    assert len(image_info.inertia_tensor_eigs(sample_arrays["3drgb"])) == 3

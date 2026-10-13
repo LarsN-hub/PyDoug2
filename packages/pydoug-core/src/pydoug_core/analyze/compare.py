@@ -16,6 +16,7 @@ __all__ = ["mse", "ssi", "psnr", "are", "voi", "nmi", "intersection", "hausdorff
     display_name="Mean Squared Error",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def mse(
     imarray: np.ndarray,
@@ -71,6 +72,7 @@ def mse(
     display_name="Structural Similarity",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def ssi(
     imarray: np.ndarray,
@@ -119,6 +121,7 @@ def ssi(
     display_name="Peak Signal to Noise Ratio",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def psnr(
     imarray: np.ndarray,
@@ -160,6 +163,7 @@ def psnr(
     display_name="Adapted Rand Error",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def are(
     imarray: np.ndarray,
@@ -206,6 +210,7 @@ def are(
     display_name="Variation of Information",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def voi(
     imarray: np.ndarray,
@@ -256,6 +261,7 @@ def voi(
     display_name="Normalized Mutual Information",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def nmi(
     imarray: np.ndarray,
@@ -302,6 +308,7 @@ def nmi(
     display_name="Intersection Coefficient",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def intersection(
     imarray: np.ndarray,
@@ -346,6 +353,7 @@ def intersection(
     display_name="Hausdorff Distance",
     array_params=("Layer2",),
     output_kind="value",
+    recordable_toggle=True,
 )
 def hausdorff_dist(
     imarray: np.ndarray,
