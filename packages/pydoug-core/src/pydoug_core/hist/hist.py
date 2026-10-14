@@ -89,6 +89,8 @@ def plot_histogram(
         values: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         values = np.copy(imarray)
+    if values.size == 0:
+        values = np.array([0], imarray.dtype)
     hist_vals, bin_centers, hist_stats = hist_distrib(
         values, Bin_Count, normalize=Normalize
     )
@@ -314,6 +316,8 @@ def equalize(
 
         if Method == "Global":
             if Apply_Mask and Mask is not None:
+                if not np.any(Mask):
+                    return imarray
                 return util.convert_dtype(
                     equalize_hist(imarray, mask=Mask),
                     input_dtype,  # type: ignore

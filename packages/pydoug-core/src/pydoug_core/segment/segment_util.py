@@ -54,6 +54,9 @@ def calc_thresholds(
         threshold_yen,
     )
 
+    if imarray.size == 0:
+        return 0
+
     thresh_vals: Any = None
     if Method == "Isodata":
         thresh_vals = threshold_isodata(imarray, Bin_Count)
@@ -65,7 +68,10 @@ def calc_thresholds(
         thresh_vals = threshold_minimum(imarray, Bin_Count, Max_Iteration_Count)
     if Method == "Otsu":
         if Otsu_Classes > 2:
-            thresh_vals = threshold_multiotsu(imarray, Otsu_Classes, Bin_Count)
+            if np.unique(imarray).size < Otsu_Classes:
+                thresh_vals = threshold_otsu(imarray, Bin_Count)
+            else:
+                thresh_vals = threshold_multiotsu(imarray, Otsu_Classes, Bin_Count)
         else:
             thresh_vals = threshold_otsu(imarray, Bin_Count)
     if Method == "Triangle":

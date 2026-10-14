@@ -46,6 +46,9 @@ def hist_distrib(
     input_range: str = source_range
     if source_range == "values":
         input_range = "image"
+    if values.size == 0:
+        values = np.array([0], values.dtype)
     hist_vals, bin_centers = histogram(values, nbins, input_range, normalize)
-    stats_dict: dict[str, float | int] = stats(values)
+    stats_dict: dict[str, float | int] = stats(values)  # type: ignore
+
     return hist_vals, bin_centers, stats_dict

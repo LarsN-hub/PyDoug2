@@ -76,6 +76,20 @@ def test_hist_threshold(sample_3dgray_array, sample_masks) -> None:
     assert len(np.unique(result8)) == 3
     assert len(np.unique(result9)) == 2
 
+    result10: np.ndarray = intensity.hist_threshold(
+        min_array, Apply_Mask=True, Mask=np.zeros(min_array.shape, np.bool)
+    )
+    assert result10.dtype == np.uint8
+    for method in ("Isodata", "Li", "Mean", "Otsu", "Triangle", "Yen"):
+        result10 = intensity.hist_threshold(
+            min_array,
+            method,
+            Otsu_Classes=3,
+            Apply_Mask=True,
+            Mask=np.zeros(min_array.shape, np.bool),
+        )
+        assert result10.dtype == min_array.dtype
+
 
 def test_hysteresis(sample_2dgray_array) -> None:
 

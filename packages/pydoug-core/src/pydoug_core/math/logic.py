@@ -1,5 +1,5 @@
 """
-Masking and logic operations.
+Logic operations.
 """
 
 from typing import Annotated, Literal

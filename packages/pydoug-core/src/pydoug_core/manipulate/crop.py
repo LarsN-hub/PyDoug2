@@ -58,7 +58,7 @@ def crop(
 
     from pydoug_core.util import is3d, prep_mask
 
-    if np.all(Mask):
+    if np.all(Mask) or not np.any(Mask):
         return imarray
 
     if is3d(Mask):

@@ -203,6 +203,8 @@ def hist_threshold(
         eval_array: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         eval_array = imarray
+    if eval_array.size == 0:
+        eval_array = np.array([0], imarray.dtype)
 
     thresh_vals: Any = calc_thresholds(
         eval_array, Method, Otsu_Classes, Bin_Count, Max_Iteration_Count

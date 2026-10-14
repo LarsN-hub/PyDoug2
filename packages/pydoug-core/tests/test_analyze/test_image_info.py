@@ -179,6 +179,11 @@ def test_thresholds(sample_3dgray_array, sample_masks) -> None:
     result9: Any = image_info.thresholds(
         sample_3dgray_array, Apply_Mask=True, Mask=sample_masks["3dgray"]
     )
+    result10: Any = image_info.thresholds(
+        sample_3dgray_array,
+        Apply_Mask=True,
+        Mask=np.zeros(sample_3dgray_array.shape, np.bool),
+    )
     assert not isinstance(result1, np.ndarray)
     assert not isinstance(result2, np.ndarray)
     assert not isinstance(result3, np.ndarray)
@@ -188,6 +193,7 @@ def test_thresholds(sample_3dgray_array, sample_masks) -> None:
     assert not isinstance(result7, np.ndarray)
     assert isinstance(result8, np.ndarray)
     assert not isinstance(result9, np.ndarray)
+    assert result10 == 0
 
 
 def test_euler_num(sample_masks, sample_arrays) -> None:
