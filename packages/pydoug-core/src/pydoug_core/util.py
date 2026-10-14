@@ -347,7 +347,7 @@ def axint2str(imarray: np.ndarray, axis: int = 0) -> Literal["X", "Y", "Z", "C"]
     return "C"
 
 
-def axlengths(imarray: np.ndarray) -> dict[str, int | None]:
+def axlengths(imarray: np.ndarray) -> dict[str, int]:
     """
     Return the axial lengths of an image array in a dictionary.
 
@@ -359,14 +359,13 @@ def axlengths(imarray: np.ndarray) -> dict[str, int | None]:
     Returns
     -------
     axlengths: dict[str, int | None]
-        A dictionary containing the axial lengths in the format "x": 50. Always returns
-        inegers for "x" and "y" but will return "None" for "z" in case of a 2D array.
+        A dictionary containing the axial lengths in the format "x": "axis length".
     """
 
     if is3d(imarray):
         return {"x": imarray.shape[2], "y": imarray.shape[1], "z": imarray.shape[0]}
     else:
-        return {"x": imarray.shape[1], "y": imarray.shape[0], "z": None}
+        return {"x": imarray.shape[1], "y": imarray.shape[0], "z": 0}
 
 
 def tidypath(filepath: Path, ext: str = "json") -> Path:

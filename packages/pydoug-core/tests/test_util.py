@@ -163,14 +163,14 @@ def test_axlengths_returns(sample_arrays) -> None:
     assert (
         util.axlengths(sample_arrays["2dgray"])["y"] == sample_arrays["2dgray"].shape[0]
     )
-    assert util.axlengths(sample_arrays["2dgray"])["z"] is None
+    assert util.axlengths(sample_arrays["2dgray"])["z"] == 0
     assert (
         util.axlengths(sample_arrays["2drgb"])["x"] == sample_arrays["2drgb"].shape[1]
     )
     assert (
         util.axlengths(sample_arrays["2drgb"])["y"] == sample_arrays["2drgb"].shape[0]
     )
-    assert util.axlengths(sample_arrays["2drgb"])["z"] is None
+    assert util.axlengths(sample_arrays["2drgb"])["z"] == 0
     assert (
         util.axlengths(sample_arrays["3dgray"])["x"] == sample_arrays["3dgray"].shape[2]
     )
