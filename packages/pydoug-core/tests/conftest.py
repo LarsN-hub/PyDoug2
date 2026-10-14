@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from matplotlib.figure import Figure
 
+from pydoug_core.payloads import ShapesData
 from pydoug_core.registry import register_operation, unregister_operation
 
 pytest_plugins: list[str] = ["pydoug_core.testing"]
@@ -100,6 +101,29 @@ def registered_nothing_surface():
 
     yield "_nothing_surface"
     unregister_operation("_nothing_surface")
+
+
+@pytest.fixture
+def registered_nothing_shapes():
+    """
+    Fixture to create a registered "nothing_shapes" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Nothing Shapes",
+        array_params=("imarray",),
+        primary_params=("imarray",),
+        output_kind="value",
+        layer_type="shapes",
+    )
+    def _nothing_shapes(
+        dummy_shapes: ShapesData, imarray: np.ndarray
+    ) -> int:  # pragma: no cover
+        return 2
+
+    yield "_nothing_shapes"
+    unregister_operation("_nothing_shapes")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)

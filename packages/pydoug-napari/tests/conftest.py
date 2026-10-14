@@ -280,6 +280,29 @@ def registered_shapes():
     unregister_operation("_dummy_shapes")
 
 
+@pytest.fixture
+def registered_shapes_primary():
+    """
+    Fixture to create a registered "dummy shapes primary" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Dummy Shapes Primary",
+        layer_type="shapes",
+        array_params=("imarray",),
+        primary_params=("imarray",),
+        output_kind="value",
+    )
+    def _dummy_shapes_primary(
+        shapes: Shapes, imarray: np.ndarray
+    ) -> int:  # pragma: no cover
+        return 2
+
+    yield "_dummy_shapes_primary"
+    unregister_operation("_dummy_shapes_primary")
+
+
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield

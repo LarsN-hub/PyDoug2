@@ -2,7 +2,10 @@
 Convert napari layers into plain data for non-napari operations.
 """
 
+import numpy as np
 from napari.layers import Image, Labels, Shapes, Surface
+
+from pydoug_core.payloads import ShapesData
 
 LAYER_TYPE_MAP: dict = {
     "image": Image,
@@ -12,7 +15,7 @@ LAYER_TYPE_MAP: dict = {
 }
 
 
-def layer_payload(layer):
+def layer_payload(layer, live_shapes: bool = False):
     """
     Convert a napari layer into the plain data its operation receives.
 
@@ -20,6 +23,8 @@ def layer_payload(layer):
     ----------
     layer: Any
         The napari layer to extract plain data from.
+    live_shapes: bool
+        Whether or not a shapes layer is live.
 
     Returns
     -------
@@ -27,10 +32,13 @@ def layer_payload(layer):
         The layer data.
     """
 
-    import numpy as np
-
     if isinstance(layer, Shapes):
-        return layer
+        if live_shapes:
+            return layer  # unrecorded operation may call layer methods like "to_labels"
+        return ShapesData(
+            data=[np.array(v, dtype=float) for v in layer.data],
+            shape_type=list(layer.shape_type),
+        )
 
     if isinstance(layer, Surface):
         return tuple(np.asarray(a) for a in layer.data if a is not None)

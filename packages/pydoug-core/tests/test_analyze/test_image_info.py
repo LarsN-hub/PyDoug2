@@ -5,8 +5,10 @@ Tests for PyDoug's analyze.image_info module.
 from typing import Any
 
 import numpy as np
+import pytest
 
 from pydoug_core.analyze import image_info
+from pydoug_core.payloads import ShapesData
 from pydoug_core.results import PlotResult
 
 
@@ -120,21 +122,15 @@ def test_stats(sample_arrays, sample_masks) -> None:
 
 def test_linescan(sample_arrays) -> None:
 
-    class DummyShapes:
-        def __init__(self, data: list[np.ndarray], shape_type: list[str]):
-            self.data = data
-            self.shape_type = shape_type
-
-    shapes_layer0: DummyShapes = DummyShapes([np.array([[1, 2], [3, 4]])], ["ellipse"])
-    shapes_layer1: DummyShapes = DummyShapes([np.array([[1, 2], [3, 4]])], ["line"])
-    shapes_layer2: DummyShapes = DummyShapes(
-        [np.array([[3, 1, 2], [3, 3, 4]])], ["line"]
-    )
-    shapes_layer3: DummyShapes = DummyShapes(
+    shapes_layer0: ShapesData = ShapesData([np.array([[1, 2], [3, 4]])], ["ellipse"])
+    shapes_layer1: ShapesData = ShapesData([np.array([[1, 2], [3, 4]])], ["line"])
+    shapes_layer2: ShapesData = ShapesData([np.array([[3, 1, 2], [3, 3, 4]])], ["line"])
+    shapes_layer3: ShapesData = ShapesData(
         [np.array([[1, 2], [3, 4]]), np.array([[1, 2], [3, 4]])], ["ellipse", "line"]
     )
 
-    assert image_info.linescan(shapes_layer0, sample_arrays["2dgray"]) is None
+    with pytest.raises(ValueError):
+        _ = image_info.linescan(shapes_layer0, sample_arrays["2dgray"])
     assert isinstance(
         image_info.linescan(shapes_layer1, sample_arrays["2dgray"]), PlotResult
     )

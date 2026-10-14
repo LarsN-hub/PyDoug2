@@ -56,6 +56,8 @@ class OperationSpec:
         Whether or not the operation requires an input layer.
     units: str | dict[str, str] | None
         If returning plots/values, the units to include.
+    primary_params: tuple[str, ...]
+        Array parameters that mean "the dataset being processed".
     signature: inspect.Signature
         The function's signature.
     """
@@ -80,6 +82,7 @@ class OperationSpec:
     captures_viewer_settings: bool = False
     requires_layer: bool = True
     units: str | dict[str, str] | None = None
+    primary_params: tuple[str, ...] = ()
     signature: inspect.Signature = field(init=False)
 
     def __post_init__(self):
@@ -108,6 +111,7 @@ def register_operation(
     captures_viewer_settings: bool = False,
     requires_layer: bool = True,
     units: str | dict[str, str] | None = None,
+    primary_params: tuple[str, ...] = (),
     allow_in_place: bool = False,
 ) -> Callable:
     """
@@ -152,6 +156,8 @@ def register_operation(
         Whether or not the operation requires an input layer.
     units: str | dict[str, str] | None
         If returning plots/values, the units to include.
+    primary_params: tuple[str, ...]
+        Array parameters that mean "the dataset being processed".
 
     Returns
     -------
@@ -230,10 +236,9 @@ def register_operation(
                 f"{_LAYER_TYPES}, got {bad}"
             )
 
-        if recordable and "shapes" in {layer_type, *array_param_types.values()}:
+        if not set(primary_params) <= set(array_params):
             raise ValueError(  # pragma: no cover
-                f"{func.__name__}: shapes inputs can't be stored in a workflow, so "
-                "operations that take them must be registered with recordable=False."
+                f"{func.__name__}: primary_params must also be listed in array_params"
             )
 
         _REGISTRY[func.__name__] = OperationSpec(
@@ -257,6 +262,7 @@ def register_operation(
             captures_viewer_settings=captures_viewer_settings,
             requires_layer=requires_layer,
             units=units,
+            primary_params=primary_params,
         )
         return func
 

@@ -12,6 +12,7 @@ import pytest
 import pydoug_core  # noqa: F401 — imported for its registration side effect
 from pydoug_core.batch import recorder
 from pydoug_core.io import imreader, imwriter
+from pydoug_core.payloads import ShapesData
 
 
 class DummyLayer:
@@ -21,6 +22,11 @@ class DummyLayer:
 
 class DummySurfaceLayer:
     def __init__(self, data: tuple | None) -> None:
+        self.data = data
+
+
+class DummyShapesLayer:
+    def __init__(self, data: ShapesData | None) -> None:
         self.data = data
 
 
@@ -205,13 +211,13 @@ def test_resolve(sample_2dgray_array) -> None:
     outputs[record.step_id_for_layer(layer2)] = alt_array2
     array_ref: str = record.get_or_create_array_ref(layer3)
 
-    result1: np.ndarray | tuple | None = record._resolve(
+    result1: np.ndarray | tuple | ShapesData | None = record._resolve(
         "primary", sample_2dgray_array, outputs
     )
     assert result1 is not None
     assert np.all(result1 == sample_2dgray_array)
 
-    result2: np.ndarray | tuple | None = record._resolve(
+    result2: np.ndarray | tuple | ShapesData | None = record._resolve(
         f"step:{record.step_id_for_layer(layer1)}",
         sample_2dgray_array,
         outputs,
@@ -219,7 +225,7 @@ def test_resolve(sample_2dgray_array) -> None:
     assert result2 is not None
     assert np.all(result2 == alt_array1)
 
-    result3: np.ndarray | tuple | None = record._resolve(
+    result3: np.ndarray | tuple | ShapesData | None = record._resolve(
         f"step:{record.step_id_for_layer(layer2)}",
         sample_2dgray_array,
         outputs,
@@ -227,14 +233,14 @@ def test_resolve(sample_2dgray_array) -> None:
     assert result3 is not None
     assert np.all(result3 == alt_array2)
 
-    result4: np.ndarray | tuple | None = record._resolve(
+    result4: np.ndarray | tuple | ShapesData | None = record._resolve(
         array_ref, sample_2dgray_array, outputs
     )
     assert result4 is not None
     assert np.all(result4 == alt_array3)
 
     with pytest.raises(ValueError):
-        _: np.ndarray | tuple | None = record._resolve(
+        _: np.ndarray | tuple | ShapesData | None = record._resolve(
             "fail", sample_2dgray_array, outputs
         )
 
@@ -296,6 +302,31 @@ def test_surface_behavior(sample_masks, registered_nothing_surface, tmp_path) ->
     record.save(Path(tmp_path / "test_surface_replay"))
     record2: recorder.Recorder = recorder.Recorder()
     record2.load(Path(tmp_path / "test_surface_replay"))
-    result: np.ndarray | dict | Any = record2.replay(sample_masks["3dgray"])
+    result: Any = record2.replay(sample_masks["3dgray"])
     assert result is not None
     assert isinstance(result, tuple)
+
+
+def test_shapes_behavior(
+    sample_2dgray_array, registered_nothing_shapes, tmp_path
+) -> None:
+
+    record: recorder.Recorder = recorder.Recorder()
+    shapes: ShapesData = ShapesData([np.array([[1, 2], [3, 4]])], ["line"])
+    layer1: DummyShapesLayer = DummyShapesLayer(shapes)
+    layer2: DummyLayer = DummyLayer(sample_2dgray_array)
+    record.record(
+        "_nothing_shapes",
+        {},
+        {
+            "dummy_shapes": record.get_or_create_array_ref(layer1, shapes),
+            "imarray": record.get_or_create_array_ref(layer2),
+        },
+        None,
+    )
+    record.save(Path(tmp_path / "test_shapes_replay"))
+    record2: recorder.Recorder = recorder.Recorder()
+    record2.load(Path(tmp_path / "test_shapes_replay"))
+    result: Any = record2.replay(sample_2dgray_array)
+    assert result is not None
+    assert isinstance(result, int)

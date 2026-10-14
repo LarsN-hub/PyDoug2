@@ -83,7 +83,9 @@ def make_operation_widget(
         input_refs: dict[str, str] = {}
 
         primary_payload: Any = (
-            layer_payload(layer) if operation_spec.requires_layer else None
+            layer_payload(layer, live_shapes=not operation_spec.recordable)
+            if operation_spec.requires_layer
+            else None
         )
 
         for name, value in params.items():
@@ -92,15 +94,19 @@ def make_operation_widget(
                 enabled: bool = params.get(flag_name, True) if flag_name else True
                 if enabled and value is not None:
                     array_layer: Any = value
-                    payload: Any = layer_payload(array_layer)
+                    payload: Any = layer_payload(
+                        array_layer, live_shapes=not operation_spec.recordable
+                    )
                     call_params[name] = payload
                     if operation_spec.recordable:
                         step_id: str | None = recorder.step_id_for_layer(array_layer)
                         if step_id is not None:
                             input_refs[name] = f"step:{step_id}"
+                        elif name in operation_spec.primary_params:
+                            input_refs[name] = "primary"
                         else:
                             input_refs[name] = recorder.get_or_create_array_ref(
-                                array_layer
+                                array_layer, payload
                             )
                 else:
                     call_params[name] = None
@@ -118,7 +124,7 @@ def make_operation_widget(
                 input_refs["layer"] = f"step:{layer_step_id}"
             elif operation_spec.layer_type in ("image", "labels"):
                 input_refs["layer"] = "primary"
-            else:  # surface
+            else:  # surface or shapes
                 input_refs["layer"] = recorder.get_or_create_array_ref(
                     layer, primary_payload
                 )

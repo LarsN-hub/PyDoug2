@@ -531,23 +531,41 @@ def test_surface_behavior(
     assert len(recorder.steps) == 3
 
 
-def test_shapes_behavior(make_napari_viewer, qtbot, registered_shapes) -> None:
+def test_shapes_behavior(
+    make_napari_viewer,
+    qtbot,
+    registered_shapes,
+    registered_shapes_primary,
+) -> None:
 
     viewer: Viewer = make_napari_viewer()
     recorder: Recorder = Recorder()
     results_log: ResultsLog = ResultsLog()
-    spec: OperationSpec = get_operation(registered_shapes)
-    widget: CollapsibleContainer = make_operation_widget(
-        spec, viewer, recorder, results_log
+    spec1: OperationSpec = get_operation(registered_shapes)
+    spec2: OperationSpec = get_operation(registered_shapes_primary)
+    widget1: CollapsibleContainer = make_operation_widget(
+        spec1, viewer, recorder, results_log
     )
-    qtbot.addWidget(widget.native)
-    subwidget: FunctionGui | None = widget.get_widget("_dispatch")
-    assert subwidget is not None
+    widget2: CollapsibleContainer = make_operation_widget(
+        spec2, viewer, recorder, results_log
+    )
+    qtbot.addWidget(widget1.native)
+    qtbot.addWidget(widget2.native)
+    subwidget1: FunctionGui | None = widget1.get_widget("_dispatch")
+    subwidget2: FunctionGui | None = widget2.get_widget("_dispatch")
+    assert subwidget1 is not None
+    assert subwidget2 is not None
     viewer.add_shapes(  # type: ignore
         np.array([[3, 3], [7, 3], [7, 7], [7, 3]]), shape_type="rectangle"
     )
     assert len(viewer.layers) == 1
-    subwidget.layer.value = viewer.layers[-1]
-    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    subwidget1.layer.value = viewer.layers[-1]
+    qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
     assert len(viewer.layers) == 2
+    subwidget2.layer.value = viewer.layers[0]
+    subwidget2.imarray.value = viewer.layers[-1]
+    assert len(recorder.steps) == 0
+    qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(recorder.steps) == 1, timeout=5000)
+    assert len(recorder.steps) == 1

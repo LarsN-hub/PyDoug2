@@ -13,6 +13,7 @@ from weakref import WeakKeyDictionary
 import numpy as np
 from psygnal import Signal
 
+from pydoug_core.payloads import ShapesData
 from pydoug_core.registry import OperationSpec, get_operation
 
 
@@ -38,8 +39,18 @@ def _write_payload(payload: Any, arrays_dir: Path, tag: str) -> str:
     from pydoug_core.io import imwriter
 
     if isinstance(payload, np.ndarray):
-        name = f"{tag}.tiff"
+        name: str = f"{tag}.tiff"
         imwriter.imwrite(payload, arrays_dir, tag, "tiff")
+    elif isinstance(payload, ShapesData):
+        name = f"{tag}.json"
+        (arrays_dir / name).write_text(
+            json.dumps(
+                {
+                    "data": [v.tolist() for v in payload.data],
+                    "shape_type": list(payload.shape_type),
+                }
+            )
+        )
     elif isinstance(payload, tuple):
         name = f"{tag}.npz"
         np.savez(arrays_dir / name, *payload)
@@ -50,7 +61,7 @@ def _write_payload(payload: Any, arrays_dir: Path, tag: str) -> str:
     return name
 
 
-def _read_payload(path: Path) -> np.ndarray | tuple:
+def _read_payload(path: Path) -> np.ndarray | tuple | ShapesData:
     """
     Read the payload from an operation into data.
 
@@ -67,6 +78,12 @@ def _read_payload(path: Path) -> np.ndarray | tuple:
 
     from pydoug_core.io import imreader
 
+    if path.suffix == ".json":
+        stored = json.loads(path.read_text())
+        return ShapesData(
+            data=[np.array(v, dtype=float) for v in stored["data"]],
+            shape_type=stored["shape_type"],
+        )
     if path.suffix.lower() == ".npz":
         with np.load(path) as stored:
             return tuple(stored[key] for key in sorted(stored.files))
@@ -76,7 +93,10 @@ def _read_payload(path: Path) -> np.ndarray | tuple:
     return array
 
 
-def _payloads_equal(a: np.ndarray | tuple, b: np.ndarray | tuple) -> bool:
+def _payloads_equal(
+    a: np.ndarray | tuple | ShapesData,
+    b: np.ndarray | tuple | ShapesData,
+) -> bool:
     """
     Only use a reference when data is unchanged.
 
@@ -93,6 +113,15 @@ def _payloads_equal(a: np.ndarray | tuple, b: np.ndarray | tuple) -> bool:
         Whether or not the payloads are equal.
     """
 
+    if isinstance(a, ShapesData) and isinstance(b, ShapesData):  #  pragma: no cover
+        return (
+            a.shape_type == b.shape_type
+            and len(a.data) == len(b.data)
+            and all(
+                x.shape == y.shape and np.array_equal(x, y)
+                for x, y in zip(a.data, b.data)
+            )
+        )
     if isinstance(a, tuple) and isinstance(b, tuple):  # pragma: no cover
         return len(a) == len(b) and all(_payloads_equal(x, y) for x, y in zip(a, b))
     return (
@@ -140,7 +169,7 @@ class Recorder:
     _layer_to_step: WeakKeyDictionary
         Weak key dictionary mapping layers to steps.
     _external_layer_refs: WeakKeyDictionary
-        Weak key dictionary mapping imported masks to layers.
+        Weak key dictionary mapping imported arrays to layers.
     _arrays: dict[str, np.ndarray]
         Arrays that need be saved.
     """
@@ -151,7 +180,7 @@ class Recorder:
         self.steps: list[RecordedStep] = []
         self._layer_to_step: WeakKeyDictionary = WeakKeyDictionary()
         self._external_layer_refs: WeakKeyDictionary = WeakKeyDictionary()
-        self._arrays: dict[str, np.ndarray | tuple] = {}
+        self._arrays: dict[str, np.ndarray | tuple | ShapesData] = {}
 
     def step_id_for_layer(self, layer) -> None | str:
         """
@@ -173,7 +202,7 @@ class Recorder:
             return self._layer_to_step.get(layer)
         return None  # pragma: no cover
 
-    def register_array(self, array: np.ndarray | tuple) -> str:
+    def register_array(self, array: np.ndarray | tuple | ShapesData) -> str:
         """
         Store an array directly and return its reference.
 
@@ -436,7 +465,7 @@ class Recorder:
         ref: str,
         primary: np.ndarray,
         outputs: dict[str, np.ndarray],
-    ) -> np.ndarray | tuple | None:
+    ) -> np.ndarray | tuple | ShapesData | None:
         """
         Resolve input reference array.
 

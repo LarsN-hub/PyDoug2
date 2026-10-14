@@ -275,9 +275,9 @@ def stats(
     category="info",
     display_name="Line Scan",
     layer_type="shapes",
-    recordable=False,
     output_kind="value",
     array_params=("Image_Layer",),
+    primary_params=("Image_Layer",),
 )
 def linescan(
     shapes_layer,
@@ -290,7 +290,7 @@ def linescan(
             float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
         ],
     ] = (0, 0),
-) -> PlotResult | None:
+) -> PlotResult:
     """
     Plot a line scan from a line drawn in a shapes layer. If multiple shapes are drawn
     in the shapes layer, the first line encountered will be used. Fails if no line is
@@ -320,8 +320,7 @@ def linescan(
             break
 
     if not found_coords:
-        print("No line found in shapes layer, line scan not performed!")
-        return
+        raise ValueError("No line found in the shapes layer, line scan not performed.")
 
     if coords.shape[1] == 3:
         if util.is3d(Image_Layer):
