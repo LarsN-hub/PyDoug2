@@ -31,6 +31,7 @@ def test_multi_line() -> None:
     _, ax7 = plt.subplots(layout="constrained")
     _, ax8 = plt.subplots(layout="constrained")
     _, ax9 = plt.subplots(layout="constrained")
+    _, ax10 = plt.subplots(layout="constrained")
     ax1 = plot_util.multi_line(x_vals, y_vals, ax1, "X", "Y", colors="blue")
     ax2 = plot_util.multi_line(
         x_vals, y_vals, ax2, "X", "Y", (0, 1), ["1", "2"], "magma", True
@@ -50,6 +51,7 @@ def test_multi_line() -> None:
     ax9 = plot_util.multi_line(
         x_vals, y_vals, ax9, "X", "Y", colors=np.array([[0, 0, 1]])
     )
+    ax10 = plot_util.multi_line(x_vals, y_vals, ax10, "X", "Y")
     assert isinstance(ax1, Axes)
     assert isinstance(ax2, Axes)
     assert isinstance(ax3, Axes)
@@ -59,6 +61,7 @@ def test_multi_line() -> None:
     assert isinstance(ax7, Axes)
     assert isinstance(ax8, Axes)
     assert isinstance(ax9, Axes)
+    assert isinstance(ax10, Axes)
 
 
 def test_hist_ax(sample_3dgray_array) -> None:

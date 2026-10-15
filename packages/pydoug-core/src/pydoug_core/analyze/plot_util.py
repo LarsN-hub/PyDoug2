@@ -67,7 +67,7 @@ def multi_line(
     y_label: str,
     y_lims: tuple | None = None,
     data_labels: list[str] | list[None] | None = None,
-    colors: np.ndarray | str | list[str] | list[np.ndarray] = ["blue"],
+    colors: np.ndarray | str | list[str] | list[np.ndarray] | None | list[None] = None,
     add_legend: bool = False,
 ) -> Axes:
     """
@@ -125,6 +125,9 @@ def multi_line(
         if len(colors) < len(y_vals):
             colors += [colors[-1]] * (len(y_vals) - len(colors))  # type: ignore
 
+    if colors is None:
+        colors = [None] * len(y_vals)
+
     if not data_labels:
         data_labels = [None] * len(y_vals)
 
@@ -132,20 +135,14 @@ def multi_line(
         ax.plot(
             x_vals, y_val, linewidth=2, color=colors[index], label=data_labels[index]
         )
-        if index == 0:
-            lines, labels = ax.get_legend_handles_labels()
-        else:
-            lines1, labels1 = ax.get_legend_handles_labels()
-            lines += lines1  # type: ignore
-            labels += labels1  # type: ignore
 
     ax.set_xlim(min(x_vals), max(x_vals))
     ax.set_ylim((min(y_lims), max(y_lims)) if y_lims else None)
     ax.set_xlabel(x_label, fontsize=15)
     ax.set_ylabel(y_label, fontsize=15)
     ax.tick_params("both", labelsize=13)
-    if add_legend:
-        ax.legend(lines, labels, fontsize=12, frameon=False)  # type: ignore
+    if add_legend and len(y_vals) > 1:
+        ax.legend(fontsize=12, frameon=False)  # type: ignore
     return ax
 
 
