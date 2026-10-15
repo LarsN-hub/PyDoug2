@@ -42,25 +42,6 @@ def stats(
             float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
         ],
     ] = (0, 0),
-    Y2_Lims: tuple[
-        Annotated[
-            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
-        ],
-        Annotated[
-            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
-        ],
-    ] = (0, 0),
-    Plot_Mean: bool = True,
-    Plot_Median: bool = False,
-    Plot_Mode: bool = False,
-    Plot_Std_Dev: bool = True,
-    Plot_Variance: bool = False,
-    Plot_Count: bool = False,
-    Plot_Min: bool = True,
-    Plot_Max: bool = True,
-    Plot_Dtype_Min: bool = False,
-    Plot_Dtype_Max: bool = False,
-    Include_Legend: bool = True,
 ) -> dict[str, float | int] | PlotResult:
     """
     Calculate the grayscale statistics of an image array. Convenience wrapper around
@@ -81,43 +62,11 @@ def stats(
     Perform_Slicewise: bool
         Whether to perform the operation slicewise and return a plot of the stats for
         each slice (True) or not (False). Default is False (returns single values).
+        Note that only the mean, min, max, and stdv are plotted but all values are still
+        output upon batch running.
     Y_Lims: tuple[float, float]
-        The limits of the y-axis in the form [min, max]. Ignored if both are 0.
-    Y2_Lims: tuple[float, float]
-        The limits of the second y-axis in the form [min, max]. Ignored if both are 0.
-    Plot_Mean: bool
-        If "Perform Slicewise" is "True", whether to plot the mean (True) or not
-        (False). Default is True.
-    Plot_Median: bool
-        If "Perform Slicewise" is "True", whether to plot the median (True) or not
-        (False). Default is False.
-    Plot_Mode: bool
-        If "Perform Slicewise" is "True", whether to plot the mode (True) or not
-        (False). Default is False.
-    Plot_Std_Dev: bool
-        If "Perform Slicewise" is "True", whether to plot the std dev (True) or not
-        (False). Default is True.
-    Plot_Variance: bool
-        If "Perform Slicewise" is "True", whether to plot the variance (True) or not
-        (False). Default is False.
-    Plot_Count: bool
-        If "Perform Slicewise" is "True", whether to plot the number of unique gray
-        values (True) or not (False). Default is False.
-    Plot_Min: bool
-        If "Perform Slicewise" is "True", whether to plot the min (True) or not
-        (False). Default is True.
-    Plot_Max: bool
-        If "Perform Slicewise" is "True", whether to plot the max (True) or not
-        (False). Default is True.
-    Plot_Dtype_Min: bool
-        If "Perform Slicewise" is "True", whether to plot the dtype min (True) or not
-        (False). Default is False.
-    Plot_Dtype_Max: bool
-        If "Perform Slicewise" is "True", whether to plot the dtype max (True) or not
-        (False). Default is False.
-    Include_Legend: bool
-        If "Perform Slicewise" is "True", whether to include a legend (True) or not
-        (False). Default is True.
+        If "Perform Slicewise" is "True", the limits of the plot's y-axis in the form
+        [min, max]. Ignored if both are 0.
 
     Returns
     -------
@@ -225,40 +174,17 @@ def stats(
             stats_dict["Dtype Min"][index] = cur_dict["Dtype Min"]
             stats_dict["Dtype Max"][index] = cur_dict["Dtype Max"]
 
-        from matplotlib import pyplot as plt
         from matplotlib.axes import Axes
         from matplotlib.figure import Figure
 
         from pydoug_core.analyze.plot_util import stats_ax
 
-        plt.rcParams["font.family"] = "sans-serif"
-        plt.rcParams["font.sans-serif"] = "Arial"
-
         y_lims: tuple[float, float] | None = (
             None if (Y_Lims[0] == Y_Lims[1] == 0) else Y_Lims
         )
-        y2_lims: tuple[float, float] | None = (
-            None if (Y2_Lims[0] == Y2_Lims[1] == 0) else Y2_Lims
-        )
         fig: Figure = Figure()
         ax: Axes = fig.add_subplot()
-        ax = stats_ax(
-            stats_dict,
-            ax,
-            y_lims,
-            y2_lims,
-            Plot_Mean,
-            Plot_Median,
-            Plot_Mode,
-            Plot_Std_Dev,
-            Plot_Variance,
-            Plot_Count,
-            Plot_Min,
-            Plot_Max,
-            Plot_Dtype_Min,
-            Plot_Dtype_Max,
-            Include_Legend,
-        )
+        ax = stats_ax(stats_dict, ax, y_lims)
         fig.set_layout_engine("constrained")
 
         return PlotResult(figure=fig, data=stats_dict, x_columns=("Slice",))  # type: ignore
@@ -278,6 +204,7 @@ def stats(
     output_kind="value",
     array_params=("Image_Layer",),
     primary_params=("Image_Layer",),
+    recordable_toggle=True,
 )
 def linescan(
     shapes_layer,
@@ -338,15 +265,11 @@ def linescan(
         None if (Y_Lims[0] == Y_Lims[1] == 0) else Y_Lims
     )
 
-    from matplotlib import pyplot as plt
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
     from skimage.measure import profile_line
 
     from pydoug_core.analyze.plot_util import line_ax
-
-    plt.rcParams["font.family"] = "sans-serif"
-    plt.rcParams["font.sans-serif"] = "Arial"
 
     line_vals: np.ndarray = profile_line(
         eval_array, coords[0, :], coords[1, :], order=0, mode="constant", cval=0
@@ -354,13 +277,13 @@ def linescan(
     pos_vals: np.ndarray = np.linspace(0, len(line_vals), num=len(line_vals))
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
-    ax = line_ax(pos_vals, line_vals, ax, y_lims, "Pixel", "Gray Value")
+    ax = line_ax(pos_vals, line_vals, ax, y_lims, "Distance (pixels)", "Gray Value")
     fig.set_layout_engine("constrained")
 
     return PlotResult(
         figure=fig,
-        data={"Pixel": pos_vals, "Gray Value": line_vals},  # type: ignore
-        x_columns=("Pixel",),
+        data={"Distance (pixels)": pos_vals, "Gray Value": line_vals},  # type: ignore
+        x_columns=("Distance (pixels)",),
     )
 
 
@@ -369,14 +292,19 @@ def linescan(
     display_name="Percentiles",
     output_kind="value",
     recordable_toggle=True,
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
 )
 def percentiles(
     imarray: np.ndarray,
-    percentiles: tuple[
+    Percentiles: tuple[
         Annotated[float, {"step": 0.0001, "max": 100, "min": 0}],
         Annotated[float, {"step": 0.0001, "max": 100, "min": 0}],
     ] = (1, 99),
-) -> dict[float, float]:
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+    Perform_Slicewise: bool = False,
+) -> dict[float, float] | PlotResult:
     """
     Calculate the lower and upper intensity values for the given percentiles.
     Convenience wrapper around numpy's percentile:
@@ -386,27 +314,96 @@ def percentiles(
     ----------
     imarray: np.ndarray
         The image array to calculate percentile intensities for.
-    percentiles: tuple[float, float]
+    Percentiles: tuple[float, float]
         A tuple containing the lower and upper percentiles in the range [0, 100]. Values
         outside [0, 100] will be clipped to 0 (first value) or 100 (second value).
+    Apply_Mask: bool = False
+        Whether or not to apply a mask to the operation. Default is False.
+    Mask: np.ndarray | None
+        (Optional) the mask to be applied before statistics calculation if "Apply_Mask"
+        is True.
+    Perform_Slicewise: bool
+        Whether to perform the operation slicewise and return a plot of the percentiles
+        for each slice (True) or not (False). Default is False (returns single values).
 
     Returns
     -------
     intensities: dict[float, float]
         The percentile values in a dictionary containing keys for each given percentile.
+    intensities_plot: PlotResult
+        A PlotResult object containing the plot and data for the percentile intensities
+        for each slice.
     """
 
-    if percentiles[0] > 100 or percentiles[0] < 0:
-        percentiles = (0, percentiles[1])
-    if percentiles[1] > 100 or percentiles[1] < 0:
-        percentiles = (percentiles[0], 100)
+    def _percentiles(
+        values: np.ndarray,
+        Percentiles: tuple[float, float],
+    ) -> dict[float, float]:
 
-    if percentiles == (0, 100):
-        return {0: np.min(imarray), 100: np.max(imarray)}
-    return {
-        min(percentiles): np.percentile(imarray, min(percentiles)),
-        max(percentiles): np.percentile(imarray, max(percentiles)),
-    }
+        if values.size == 0:
+            return {min(Percentiles): np.nan, max(Percentiles): np.nan}
+
+        if Percentiles == (0, 100):
+            return {0: np.min(values), 100: np.max(values)}
+
+        return {
+            min(Percentiles): np.percentile(values, min(Percentiles)),
+            max(Percentiles): np.percentile(values, max(Percentiles)),
+        }
+
+    if Percentiles[0] > 100 or Percentiles[0] < 0:
+        Percentiles = (0, Percentiles[1])
+    if Percentiles[1] > 100 or Percentiles[1] < 0:
+        Percentiles = (Percentiles[0], 100)
+
+    if Perform_Slicewise and util.is3d(imarray):
+        min_array: np.ndarray = np.empty(imarray.shape[0])
+        max_array: np.ndarray = np.copy(min_array)
+        slice_array: np.ndarray = np.arange(0, imarray.shape[0])
+        if Apply_Mask and Mask is not None:
+            Mask = util.prep_mask(imarray, Mask)
+        for index in range(0, imarray.shape[0]):
+            if Apply_Mask and Mask is not None:
+                cur_percentiles: dict = _percentiles(
+                    imarray[index][Mask[index]], Percentiles
+                )
+            else:
+                cur_percentiles: dict = _percentiles(imarray[index], Percentiles)
+            min_array[index] = cur_percentiles[min(Percentiles)]
+            max_array[index] = cur_percentiles[max(Percentiles)]
+
+        from matplotlib.axes import Axes
+        from matplotlib.figure import Figure
+
+        from pydoug_core.analyze.plot_util import multi_line
+
+        fig: Figure = Figure()
+        ax: Axes = fig.add_subplot()
+        ax = multi_line(
+            slice_array,
+            [min_array, max_array],
+            ax,
+            "Slice",
+            "Gray Value",
+            data_labels=[f"{min(Percentiles)}", f"{max(Percentiles)}"],
+            colors=["blue", "red"],
+        )
+        fig.set_layout_engine("constrained")
+
+        return PlotResult(
+            figure=fig,
+            data={
+                "Slice": slice_array,
+                f"{min(Percentiles)}": min_array,
+                f"{max(Percentiles)}": max_array,
+            },  # type: ignore
+            x_columns=("Slice",),
+        )
+
+    if Apply_Mask and Mask is not None:
+        return _percentiles(imarray[util.prep_mask(imarray, Mask)], Percentiles)
+
+    return _percentiles(imarray, Percentiles)
 
 
 @register_operation(

@@ -2,57 +2,14 @@
 Utilities for generating plots.
 """
 
+import matplotlib
 import numpy as np
-from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
-__all__ = ["hist_ax", "line_ax", "stats_ax"]
+__all__ = ["line_ax", "multi_line", "hist_ax", "stats_ax"]
 
-plt.rcParams["font.family"] = "sans-serif"
-plt.rcParams["font.sans-serif"] = "Arial"
-
-
-def hist_ax(
-    hist_vals: np.ndarray,
-    bin_centers: np.ndarray,
-    hist_ax: Axes,
-    x_label: str = "Gray Value",
-    y_label: str = "Counts",
-    y_max: float = 0,
-    x_lims: tuple[float, float] | None = None,
-) -> Axes:
-    """
-    Generate an axis with a minimal histogram plot for the given values. Convenience
-    wrapper around matplotlib's hist:
-    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
-
-    Parameters
-    ----------
-    hist_vals: np.ndarray
-        The values to generate a histogram for.
-    bin_centers: np.ndarray
-        The bin centers for each value in "hist_vals".
-    hist_ax: Axes
-        The axis to add the histogram to.
-    y_max: float
-        The maximum y-axis value to plot. Ignored if 0.
-    x_lims: tuple[float, float] | None
-        The x-axis limits (optional).
-
-    Returns
-    -------
-    hist_ax: Axes
-        The input axis with the histogram plot generated.
-    """
-
-    hist_ax.hist(bin_centers, bin_centers, weights=hist_vals, edgecolor="k")  # type: ignore
-    hist_ax.set_xlim((min(x_lims), max(x_lims)) if x_lims else None)
-    if y_max:
-        hist_ax.set_ylim(0, y_max)
-    hist_ax.set_xlabel(x_label, fontsize=15)
-    hist_ax.set_ylabel(y_label, fontsize=15)
-    hist_ax.tick_params("both", labelsize=13)
-    return hist_ax
+matplotlib.rcParams["font.family"] = "sans-serif"
+matplotlib.rcParams["font.sans-serif"] = ["Arial", "Liberation Sans", "DejaVu Sans"]
 
 
 def line_ax(
@@ -76,7 +33,7 @@ def line_ax(
     y_vals
         Any iterable format of values for the y-axis.
     ax: Axes
-        The input axis.
+        The input axes.
     y_lims: tuple | None
         (Optional) The limits for the y-axis.
     x_label: str
@@ -89,7 +46,7 @@ def line_ax(
     Returns
     -------
     ax: Axes
-        The input axis with the line plot added.
+        The input axes with the line plot added.
     """
 
     ax.plot(x_vals, y_vals, color=color, linewidth=2)
@@ -100,6 +57,139 @@ def line_ax(
     ax.tick_params("both", labelsize=13)
 
     return ax
+
+
+def multi_line(
+    x_vals: np.ndarray,
+    y_vals: list[np.ndarray],
+    ax: Axes,
+    x_label: str,
+    y_label: str,
+    y_lims: tuple | None = None,
+    data_labels: list[str] | list[None] | None = None,
+    colors: np.ndarray | str | list[str] | list[np.ndarray] = ["blue"],
+    add_legend: bool = False,
+) -> Axes:
+    """
+    Generate an axis with as many line plots as required. Convenience wrapper around
+    matplotlib's plot:
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
+
+    Parameters
+    ----------
+    x_vals: np.ndarray
+        The x-axis values.
+    y_vals: list[np.ndarray]
+        List of same-shape arrays as the x-axis array to plot.
+    ax: Axes
+        The input axes.
+    x_label: str
+        The x-axis label.
+    y_label: str
+        The y-axis label.
+    y_lims: tuple | None
+        (Optional) The y-axis limits. Calculated automatically if not provided.
+    data_labels: list[str]
+        The labels for the data to use if "add_legend" is "True".
+    colors: str | list[str]
+        A list of colors to use for each plot or a single name denoting a colormap to
+        gradiate each line with.
+    add_legend: bool
+        Whether or not to add a legend. Default is False.
+
+    Returns
+    -------
+    ml_ax: Axes
+        The axes with the multi line plot.
+    """
+
+    if isinstance(colors, str):
+        import cmasher  # noqa: F401 — imported for its colormaps addition effect
+
+        if colors in list(matplotlib.colormaps):
+            cmap = matplotlib.colormaps[colors]
+            colors = cmap(np.linspace(0, 1, len(y_vals)))
+        else:
+            colors = [colors] * len(y_vals)
+
+    if isinstance(colors, np.ndarray):
+        if colors.ndim == 1:
+            colors = [colors] * len(y_vals)
+        else:
+            if colors.shape[0] < len(y_vals):
+                colors = np.vstack(
+                    (colors, [colors[-1]] * (len(y_vals) - colors.shape[0]))
+                )
+
+    if isinstance(colors, list):
+        if len(colors) < len(y_vals):
+            colors += [colors[-1]] * (len(y_vals) - len(colors))  # type: ignore
+
+    if not data_labels:
+        data_labels = [None] * len(y_vals)
+
+    for index, y_val in enumerate(y_vals):
+        ax.plot(
+            x_vals, y_val, linewidth=2, color=colors[index], label=data_labels[index]
+        )
+        if index == 0:
+            lines, labels = ax.get_legend_handles_labels()
+        else:
+            lines1, labels1 = ax.get_legend_handles_labels()
+            lines += lines1  # type: ignore
+            labels += labels1  # type: ignore
+
+    ax.set_xlim(min(x_vals), max(x_vals))
+    ax.set_ylim((min(y_lims), max(y_lims)) if y_lims else None)
+    ax.set_xlabel(x_label, fontsize=15)
+    ax.set_ylabel(y_label, fontsize=15)
+    ax.tick_params("both", labelsize=13)
+    if add_legend:
+        ax.legend(lines, labels, fontsize=12, frameon=False)  # type: ignore
+    return ax
+
+
+def hist_ax(
+    hist_vals: np.ndarray,
+    bin_centers: np.ndarray,
+    hist_ax: Axes,
+    x_label: str = "Gray Value",
+    y_label: str = "Counts",
+    y_max: float = 0,
+    x_lims: tuple[float, float] | None = None,
+) -> Axes:
+    """
+    Generate an axis with a minimal histogram plot for the given values. Convenience
+    wrapper around matplotlib's hist:
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
+
+    Parameters
+    ----------
+    hist_vals: np.ndarray
+        The values to generate a histogram for.
+    bin_centers: np.ndarray
+        The bin centers for each value in "hist_vals".
+    hist_ax: Axes
+        The axes to add the histogram to.
+    y_max: float
+        The maximum y-axis value to plot. Ignored if 0.
+    x_lims: tuple[float, float] | None
+        The x-axis limits (optional).
+
+    Returns
+    -------
+    hist_ax: Axes
+        The input axes with the histogram plot generated.
+    """
+
+    hist_ax.hist(bin_centers, bin_centers, weights=hist_vals, edgecolor="k")  # type: ignore
+    hist_ax.set_xlim((min(x_lims), max(x_lims)) if x_lims else None)
+    if y_max:
+        hist_ax.set_ylim(0, y_max)
+    hist_ax.set_xlabel(x_label, fontsize=15)
+    hist_ax.set_ylabel(y_label, fontsize=15)
+    hist_ax.tick_params("both", labelsize=13)
+    return hist_ax
 
 
 def stats_ax(
@@ -238,6 +328,6 @@ def stats_ax(
         lines1 += lines2
         labels1 += labels2
     if include_legend:
-        stats_ax.legend(lines1, labels1, fontsize=12)
+        stats_ax.legend(lines1, labels1, fontsize=12, frameon=False)
 
     return stats_ax

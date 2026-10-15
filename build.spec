@@ -21,6 +21,7 @@ for pkg in (
     "imageio",
     "magicgui",
     "magicclass",
+    "matplotlib",
     "napari",
     "napari_builtins",
     "napari_console",

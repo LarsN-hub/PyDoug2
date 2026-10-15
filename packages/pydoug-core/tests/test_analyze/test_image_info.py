@@ -148,12 +148,44 @@ def test_linescan(sample_arrays) -> None:
     )
 
 
-def test_percentile(sample_2dgray_array) -> None:
+def test_percentile(sample_arrays, sample_masks) -> None:
 
-    result1: dict = image_info.percentiles(sample_2dgray_array)
-    result2: dict = image_info.percentiles(sample_2dgray_array, (30, 70))
-    result3: dict = image_info.percentiles(sample_2dgray_array, (-5, 105))
-    result4: dict = image_info.percentiles(sample_2dgray_array, (0, 100))
+    empty_mask_2d: np.ndarray = np.zeros(sample_arrays["2dgray"].shape, np.bool)
+    empty_mask_3d: np.ndarray = np.zeros(sample_arrays["3dgray"].shape, np.bool)
+    result1: dict | PlotResult = image_info.percentiles(sample_arrays["2dgray"])
+    result2: dict | PlotResult = image_info.percentiles(
+        sample_arrays["2dgray"], (30, 70)
+    )
+    result3: dict | PlotResult = image_info.percentiles(
+        sample_arrays["2dgray"], (-5, 105)
+    )
+    result4: dict | PlotResult = image_info.percentiles(
+        sample_arrays["2dgray"], (0, 100)
+    )
+    result5: dict | PlotResult = image_info.percentiles(
+        sample_arrays["2dgray"], (1, 99), True, sample_masks["2dgray"]
+    )
+    result6: dict | PlotResult = image_info.percentiles(
+        sample_arrays["2dgray"], (1, 99), True, empty_mask_2d
+    )
+    result7: dict | PlotResult = image_info.percentiles(
+        sample_arrays["3dgray"], (1, 99), True, sample_masks["3dgray"], True
+    )
+    result8: dict | PlotResult = image_info.percentiles(
+        sample_arrays["3dgray"], (1, 99), True, empty_mask_3d, True
+    )
+    result9: dict | PlotResult = image_info.percentiles(
+        sample_arrays["3dgray"], (1, 99), Perform_Slicewise=True
+    )
+    assert isinstance(result1, dict)
+    assert isinstance(result2, dict)
+    assert isinstance(result3, dict)
+    assert isinstance(result4, dict)
+    assert isinstance(result5, dict)
+    assert isinstance(result6, dict)
+    assert isinstance(result7, PlotResult)
+    assert isinstance(result8, PlotResult)
+    assert isinstance(result9, PlotResult)
     assert list(result1.values())[0] < list(result2.values())[0]
     assert list(result1.values())[1] > list(result2.values())[1]
     assert result4 == result3
