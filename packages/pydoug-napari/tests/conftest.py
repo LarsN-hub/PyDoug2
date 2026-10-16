@@ -12,7 +12,7 @@ from skimage.measure import marching_cubes
 from skimage.morphology import ball
 
 from pydoug_core.registry import register_operation, unregister_operation
-from pydoug_core.results import PlotResult
+from pydoug_core.results import PlotResult, ValueResult
 
 pytest_plugins: list[str] = ["pydoug_core.testing"]
 
@@ -104,6 +104,20 @@ def registered_calc():
 
     yield "_calc"
     unregister_operation("_calc")
+
+
+@pytest.fixture
+def registered_calc_vr():
+    """
+    Fixture to create a registered "calc vr" operation (vr = ValueResult).
+    """
+
+    @register_operation(category="testing", display_name="Calc VR", output_kind="value")
+    def _calc_vr(imarray: np.ndarray) -> ValueResult:  # pragma: no cover
+        return ValueResult(np.mean(imarray))
+
+    yield "_calc_vr"
+    unregister_operation("_calc_vr")
 
 
 @pytest.fixture

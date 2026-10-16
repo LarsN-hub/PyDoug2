@@ -1,6 +1,5 @@
 """
-Widget for displaying results from operations that calculate/measure values for PyDoug's
-napari plugin.
+Widget for displaying values from operations for PyDoug's napari plugin.
 """
 
 from numpy import ndarray
@@ -65,9 +64,8 @@ class ResultsLogWidget(QListWidget):
             The operation's result.
         """
 
-        text: str = (
-            "\n".join(f"  {k}: {v}" for k, v in result.items())
-            if isinstance(result, dict)
-            else str(result)
-        )
+        if isinstance(result, dict):
+            text: str = "\n".join(f"  {k}: {v}" for k, v in result.items())
+        else:
+            text = str(result)
         self.addItem(f"{label}\n{text}")

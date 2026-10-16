@@ -17,7 +17,7 @@ from napari.viewer import Viewer
 
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
-from pydoug_core.results import PlotResult
+from pydoug_core.results import PlotResult, ValueResult
 from pydoug_napari._widgets._layer_data import LAYER_TYPE_MAP, layer_payload
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
 from pydoug_napari._widgets._settings_capture import to_jsonable
@@ -202,8 +202,11 @@ def make_operation_widget(
                     if isinstance(result, PlotResult):
                         for table_name, table in result.tables.items():
                             results_log.add(
-                                f"{operation_spec.display_name} ({table_name})", table
+                                f"{operation_spec.display_name} ({table_name})",
+                                ValueResult(table, result.units).display(),
                             )
+                elif isinstance(result, ValueResult):
+                    results_log.add(operation_spec.display_name, result.display())
                 else:
                     results_log.add(operation_spec.display_name, result)
                 if record_in_workflow and should_record:

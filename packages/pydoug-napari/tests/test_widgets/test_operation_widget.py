@@ -294,6 +294,7 @@ def test_non_image_output(
     qtbot,
     sample_3dgray_array,
     registered_calc,
+    registered_calc_vr,
     registered_plot,
     monkeypatch,
 ) -> None:
@@ -315,18 +316,33 @@ def test_non_image_output(
         spec2, viewer, record, results_log
     )
     qtbot.addWidget(container2.native)
+    spec3: OperationSpec = get_operation(registered_calc_vr)
+    container3: CollapsibleContainer = make_operation_widget(
+        spec3, viewer, record, results_log
+    )
+    qtbot.addWidget(container3.native)
+    subwidget1: FunctionGui | None = container1.get_widget("_dispatch")
     subwidget2: FunctionGui | None = container2.get_widget("_dispatch")
+    subwidget3: FunctionGui | None = container3.get_widget("_dispatch")
     assert subwidget1 is not None
     assert subwidget1.layer.value == imlayer
     assert subwidget1.call_button is not None
     assert subwidget2 is not None
     assert subwidget2.layer.value == imlayer
     assert subwidget2.call_button is not None
+    assert subwidget3 is not None
+    assert subwidget3.layer.value == imlayer
+    assert subwidget3.call_button is not None
     qtbot.mouseClick(subwidget1.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(record.steps) == 1, timeout=5000)
+    assert len(record.steps) == 1
+    qtbot.mouseClick(subwidget3.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(record.steps) == 2, timeout=5000)
+    assert len(record.steps) == 2
     monkeypatch.setattr(QMainWindow, "show", lambda *a, **k: None)
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: len(record.steps) == 2, timeout=5000)
+    qtbot.waitUntil(lambda: len(record.steps) == 3, timeout=5000)
+    assert len(record.steps) == 3
 
 
 def test_live_preview(

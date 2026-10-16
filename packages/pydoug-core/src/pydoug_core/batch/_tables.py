@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from pydoug_core.results import SCALAR_TYPES, PlotResult
+from pydoug_core.results import SCALAR_TYPES, PlotResult, ValueResult
 
 
 def _plain(value: Any) -> Any:
@@ -58,11 +58,14 @@ class _ValueTable:
 
     Attributes
     ----------
-    units: str | dict[str, str] | None
+    units: str | dict[int | float | str, str | None] | None
         The units for the data.
     """
 
-    def __init__(self, units: str | dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        units: str | dict[int | float | str, str | None] | None = None,
+    ) -> None:
 
         self.units = units
         self.rows: list[tuple[str, dict]] = []
@@ -161,9 +164,11 @@ class BatchTables:
         Returns
         -------
         bool_res: bool
-            True if the result is a PlotResult or in SCALAR_TYPES, else False.
+            True if result is a PlotResult, ValueResult, or in SCALAR_TYPES, else False.
         """
 
+        if isinstance(result, ValueResult):
+            return _is_value_result(result.values)
         return isinstance(result, PlotResult) or _is_value_result(result)
 
     def _add_table(
@@ -172,7 +177,7 @@ class BatchTables:
         name: str,
         dataset: str,
         table: dict[str, dict],
-        units: str | dict[str, str] | None,
+        units: str | dict[int | float | str, str | None] | None,
     ) -> None:
         """
         Add data to the rows of a _ValueTable object.
@@ -191,6 +196,14 @@ class BatchTables:
             The units for the data.
         """
 
+        value_table: _ValueTable = self._values.setdefault(
+            (folder, name), _ValueTable(units)
+        )
+        if value_table.units != units:  # pragma: no cover
+            raise ValueError(
+                f"Units changed between datasets in '{name}' ({folder.name}): "
+                f"{value_table.units!r} vs {units!r}"
+            )
         self._values.setdefault((folder, name), _ValueTable(units)).add(dataset, table)
 
     def _add_plot(
@@ -198,7 +211,7 @@ class BatchTables:
         folder: Path,
         dataset: str,
         result: PlotResult,
-        units: str | dict[str, str] | None = None,
+        units: str | dict[int | float | str, str | None] | None = None,
     ) -> None:
         """
         Save a plot from a PlotResult and add its data tables to the _ValueTable object.
@@ -244,7 +257,7 @@ class BatchTables:
         folder: Path,
         dataset: str,
         result: Any,
-        units: str | dict[str, str] | None = None,
+        units: str | dict[int | float | str, str | None] | None = None,
     ) -> None:
         """
         Add plot and tabular data to the BatchTables to save.
@@ -261,8 +274,13 @@ class BatchTables:
             The units for the data.
         """
 
+        if isinstance(result, ValueResult):
+            units = result.units if result.units is not None else units
+            result = result.values
         if isinstance(result, PlotResult):
-            self._add_plot(folder, dataset, result, units)
+            plot_units = result.units if result.units is not None else units
+            print(plot_units)
+            self._add_plot(folder, dataset, result, plot_units)
         else:
             self._add_table(folder, "values", dataset, result, units)
 
@@ -277,11 +295,11 @@ class BatchTables:
         for folder, groups in self._plots.items():
             folder.mkdir(parents=True, exist_ok=True)
             for number, group in enumerate(groups, start=1):
-                path = folder / (
+                path: Path = folder / (
                     "plot_data.csv" if number == 1 else f"plot_data_{number}.csv"
                 )
-                headers = list(group["x"])
-                columns = [group["x"][c].tolist() for c in group["x"]]
+                headers: list[str] = list(group["x"])
+                columns: list[str] = [group["x"][c].tolist() for c in group["x"]]
                 for dataset, y in group["y"].items():
                     for column, values in y.items():
                         headers.append(

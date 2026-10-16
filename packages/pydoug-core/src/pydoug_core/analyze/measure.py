@@ -8,7 +8,7 @@ import numpy as np
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
-from pydoug_core.results import PlotResult
+from pydoug_core.results import PlotResult, ValueResult
 
 __all__ = ["bulk", "mesh_surface_area", "label_count"]
 
@@ -19,12 +19,13 @@ __all__ = ["bulk", "mesh_surface_area", "label_count"]
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
     output_kind="value",
+    recordable_toggle=True,
 )
 def bulk(
     imarray: np.ndarray,
     Measurement: Literal["Area", "Length", "Volume"] = "Volume",
     Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
-    Units: str = "pix",
+    Units: str = "pixels",
     Normalize: bool = False,
     Normalization_Method: Literal["Dataset", "Segmented", "Phase"] = "Dataset",
     Apply_Mask: bool = False,
@@ -40,7 +41,7 @@ def bulk(
     ] = (0, 0),
     Plot_Background: bool = False,
     Normalize_by_Slice: bool = False,
-) -> dict | PlotResult:
+) -> PlotResult | ValueResult:
     """
     Measure bulk values (area, length, volume) of segmented data. If there are multiple
     segmented phases, the measurement for each unique intensity is returned.
@@ -60,7 +61,7 @@ def bulk(
         The edge-length of pixels in real-world units.
     Units: str
         The real-world units for "Pixel Size". If "um" is provided, the u will be
-        converted to a micro symbol automatically.
+        converted to a micro symbol (Greek lowercase mu) automatically.
     Normalize: bool
         Whether to normalize the output by dividing it by a normalization factor
         specified in "Normalization Method" (True) or to leave the value absolute
@@ -95,9 +96,9 @@ def bulk(
 
     Returns
     -------
-    bulk_dict: dict
-        A dictionary containing the bulk measurement for each unique intensity in the
-        dataset.
+    bulk_dict: ValueResult
+        A ValueResult containing the bulk measurement for each unique intensity in the
+        dataset and units.
     bulk_plot: PlotResult
         The PlotResult object if "Perform Slicewise" is "True".
     """
@@ -167,8 +168,11 @@ def bulk(
                 bulk_dict[val][index] = (
                     cur_bulk_dict[val] if val in cur_bulk_dict.keys() else 0
                 )
+        units: dict[str | int | float, str | None] = {slice_key: Units}
         if Normalize:
             bulk_dict = _norm(bulk_dict)
+            for key in list(bulk_dict.keys()):
+                units[key] = None
             if Normalization_Method == "Dataset":
                 y_label: str = (
                     f"Fraction of Total {Measurement}"
@@ -193,16 +197,19 @@ def bulk(
                 for key in list(bulk_dict.keys()):
                     if key != slice_key:
                         bulk_dict[key] *= Pixel_Size**2
+                        units[key] = f"{Units}\u00b2"
             elif Measurement == "Volume":
                 y_label = f"Volume ({Units}\u00b3)"
                 for key in list(bulk_dict.keys()):
                     if key != slice_key:
                         bulk_dict[key] *= Pixel_Size**3
+                        units[key] = f"{Units}\u00b3"
             else:
                 y_label = f"Length ({Units})"
                 for key in list(bulk_dict.keys()):
                     if key != slice_key:
                         bulk_dict[key] *= Pixel_Size
+                        units[key] = f"{Units}"
 
         from matplotlib.axes import Axes
         from matplotlib.figure import Figure
@@ -235,24 +242,30 @@ def bulk(
         )
         fig.set_layout_engine("constrained")
 
-        return PlotResult(fig, bulk_dict, (slice_key,))
+        return PlotResult(fig, bulk_dict, (slice_key,), units=units)
 
     if Apply_Mask and Mask is not None:
         bulk_dict: dict = _bulk(imarray[util.prep_mask(imarray, Mask)])
     else:
         bulk_dict = _bulk(imarray)
+    units: dict[str | int | float, str | None] = {slice_key: Units}
     if Normalize:
         bulk_dict = _norm(bulk_dict)
+        for key in list(bulk_dict.keys()):
+            units[key] = None
     else:
         for key in list(bulk_dict.keys()):
             if Measurement == "Area":
                 bulk_dict[key] *= Pixel_Size**2
+                units[key] = f"{Units}\u00b2"
             elif Measurement == "Volume":
                 bulk_dict[key] *= Pixel_Size**3
+                units[key] = f"{Units}\u00b3"
             else:
                 bulk_dict[key] *= Pixel_Size
+                units[key] = f"{Units}"
 
-    return bulk_dict
+    return ValueResult(bulk_dict, units)
 
 
 @register_operation(

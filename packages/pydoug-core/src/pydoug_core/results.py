@@ -1,16 +1,68 @@
 """
-Class for obtaining plot and value results from operations.
+Classes for obtaining plot and value results from operations.
 """
 
 import csv
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from matplotlib.figure import Figure
 
 SCALAR_TYPES: tuple = (int, float, str, bool, np.generic)
+
+
+@dataclass
+class ValueResult:
+    """
+    A value or dict of values with the units the function determined.
+
+    Attributes
+    ----------
+    values: dict | int | float | str
+        The value(s).
+    units: str | dict[int | float | str, str | None] | None
+        One unit for everything or one per key.
+    """
+
+    values: dict | int | float | str
+    units: str | dict[int | float | str, str | None] | None = None
+
+    def display(self) -> dict | int | float | str:
+        """
+        Display the result value(s).
+
+        Returns
+        -------
+        output: dict | int | float | str
+            The output to display.
+        """
+
+        def with_unit(key: Any, value: int | float | str) -> int | float | str:
+            """
+            Add units as available to the value to display.
+
+            Parameters
+            ----------
+            key: Any
+                The key for the value if units is a dictionary.
+            value: int | float | str
+                The value to assign a unit to.
+
+            Returns
+            -------
+            """
+
+            unit: str | None = (
+                self.units.get(key) if isinstance(self.units, dict) else self.units
+            )
+            return f"{value} {unit}" if unit else value
+
+        if isinstance(self.values, dict):
+            return {key: with_unit(key, value) for key, value in self.values.items()}
+        return with_unit("value", self.values)
 
 
 @dataclass
@@ -30,12 +82,15 @@ class PlotResult:
         each dataset.
     tables: dict[str, dict]
         Extra scalar value tables of data accompanying the plot data as desired.
+    units: str | dict[int | float | str, str | None] | None
+        One unit for everything or one per key.
     """
 
     figure: Figure
     data: dict[str, Sequence]
     x_columns: tuple[str, ...] = ()
     tables: dict[str, dict] = field(default_factory=dict)
+    units: str | dict[int | float | str, str | None] | None = None
 
     def __post_init__(self) -> None:
 

@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib.figure import Figure
 
 from pydoug_core.batch import _tables
-from pydoug_core.results import PlotResult
+from pydoug_core.results import PlotResult, ValueResult
 
 
 def test_plain() -> None:
@@ -130,7 +130,7 @@ def test_ValueTable_dict_multi_units(tmp_path) -> None:
 def test_BatchTables_handles() -> None:
 
     table: _tables.BatchTables = _tables.BatchTables()
-    assert table.handles(
+    table.handles(
         PlotResult(
             Figure(),
             {
@@ -142,6 +142,7 @@ def test_BatchTables_handles() -> None:
             {"test": {"test_val1": 1}},
         )
     )
+    assert table.handles(ValueResult(2))
     assert table.handles(1)
     assert not table.handles([1, 2])
 
@@ -195,6 +196,116 @@ def test_BatchTables_values(tmp_path) -> None:
         assert rows[0] == ["dataset", "value", "units"]
         assert rows[1] == ["test1", "1", "a.u."]
         assert rows[2] == ["test2", "2", "a.u."]
+
+
+def test_BatchTables_ValueResult_no_units(tmp_path) -> None:
+
+    table: _tables.BatchTables = _tables.BatchTables()
+    table.add(tmp_path, "test1", ValueResult(1))
+    table.add(tmp_path, "test2", ValueResult(2))
+    assert len(table._values) == 1
+
+    table.write()
+    assert Path(tmp_path / "values.csv").exists()
+
+    with open(Path(tmp_path / "values.csv")) as file:
+        reader = csv.reader(file)
+        rows: list = []
+        for row in reader:
+            rows.append(row)
+        assert len(rows) == 3
+        assert len(rows[0]) == len(rows[1]) == len(rows[2]) == 2
+        assert rows[0] == ["dataset", "value"]
+        assert rows[1] == ["test1", "1"]
+        assert rows[2] == ["test2", "2"]
+
+
+def test_BatchTables_ValueResult_units(tmp_path) -> None:
+
+    table: _tables.BatchTables = _tables.BatchTables()
+    table.add(tmp_path, "test1", ValueResult(1, "a.u."))
+    table.add(tmp_path, "test2", ValueResult(2, "a.u."))
+    assert len(table._values) == 1
+
+    table.write()
+    assert Path(tmp_path / "values.csv").exists()
+
+    with open(Path(tmp_path / "values.csv")) as file:
+        reader = csv.reader(file)
+        rows: list = []
+        for row in reader:
+            rows.append(row)
+        assert len(rows) == 3
+        assert len(rows[0]) == len(rows[1]) == len(rows[2]) == 3
+        assert rows[0] == ["dataset", "value", "units"]
+        assert rows[1] == ["test1", "1", "a.u."]
+        assert rows[2] == ["test2", "2", "a.u."]
+
+
+def test_BatchTables_ValueResult_dict_no_units(tmp_path) -> None:
+
+    table: _tables.BatchTables = _tables.BatchTables()
+    table.add(tmp_path, "test1", ValueResult({1: 1, 2: 2}))
+    table.add(tmp_path, "test2", ValueResult({1: 3, 2: 4}))
+    assert len(table._values) == 1
+
+    table.write()
+    assert Path(tmp_path / "values.csv").exists()
+
+    with open(Path(tmp_path / "values.csv")) as file:
+        reader = csv.reader(file)
+        rows: list = []
+        for row in reader:
+            rows.append(row)
+        assert len(rows) == 3
+        assert len(rows[0]) == len(rows[1]) == len(rows[2]) == 3
+        assert rows[0] == ["dataset", "1", "2"]
+        assert rows[1] == ["test1", "1", "2"]
+        assert rows[2] == ["test2", "3", "4"]
+
+
+def test_BatchTables_ValueResult_dict_one_unit(tmp_path) -> None:
+
+    table: _tables.BatchTables = _tables.BatchTables()
+    table.add(tmp_path, "test1", ValueResult({1: 1, 2: 2}, "a.u."))
+    table.add(tmp_path, "test2", ValueResult({1: 3, 2: 4}, "a.u."))
+    assert len(table._values) == 1
+
+    table.write()
+    assert Path(tmp_path / "values.csv").exists()
+
+    with open(Path(tmp_path / "values.csv")) as file:
+        reader = csv.reader(file)
+        rows: list = []
+        for row in reader:
+            rows.append(row)
+        assert len(rows) == 3
+        assert len(rows[0]) == len(rows[1]) == len(rows[2]) == 3
+        assert rows[0] == ["dataset", "1 (a.u.)", "2 (a.u.)"]
+        assert rows[1] == ["test1", "1", "2"]
+        assert rows[2] == ["test2", "3", "4"]
+
+
+def test_BatchTables_ValueResult_dict_units(tmp_path) -> None:
+
+    table: _tables.BatchTables = _tables.BatchTables()
+    table.add(tmp_path, "test1", ValueResult({1: 1, 2: 2}, {1: "a.u.1", 2: "a.u.2"}))
+    table.add(tmp_path, "test2", ValueResult({1: 3, 2: 4}, {1: "a.u.1", 2: "a.u.2"}))
+    assert len(table._values) == 1
+
+    table.write()
+    assert Path(tmp_path / "values.csv").exists()
+
+    with open(Path(tmp_path / "values.csv")) as file:
+        reader = csv.reader(file)
+        rows: list = []
+        for row in reader:
+            rows.append(row)
+        assert len(rows) == 3
+        assert len(rows[0]) == len(rows[1]) == len(rows[2]) == 3
+        assert rows[0] == ["dataset", "1 (a.u.1)", "2 (a.u.2)"]
+        assert rows[1] == ["test1", "1", "2"]
+        assert rows[2] == ["test2", "3", "4"]
 
 
 def test_BatchTables_plots_x_cols(tmp_path) -> None:
@@ -317,6 +428,7 @@ def test_BatchTables_plots_no_x_cols(tmp_path) -> None:
             rows.append(row)
         assert len(rows) == 11
         assert len(rows[0]) == len(rows[1]) == 2
+        print(rows)
         assert rows[0] == ["1", "2"]
         assert rows[1] == ["1", "2"]
         assert rows[2] == ["2", "4"]
