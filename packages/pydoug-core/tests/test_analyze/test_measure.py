@@ -6,19 +6,33 @@ import numpy as np
 from skimage.measure import label
 
 from pydoug_core.analyze import measure
-from pydoug_core.results import PlotResult
+from pydoug_core.results import PlotResult, ValueResult
 
 
 def test_bulk_scalar(sample_masks) -> None:
 
-    result00: dict | PlotResult = measure.bulk(sample_masks["2dgray"], Units="um")
-    result01: dict | PlotResult = measure.bulk(sample_masks["2dgray"], Pixel_Size=2)
-    result02: dict | PlotResult = measure.bulk(sample_masks["2dgray"], "Area", 2)
-    result03: dict | PlotResult = measure.bulk(sample_masks["2dgray"], "Length", 2)
-    result04: dict | PlotResult = measure.bulk(sample_masks["3dgray"], Pixel_Size=2)
-    result05: dict | PlotResult = measure.bulk(sample_masks["3dgray"], "Area", 2)
-    result06: dict | PlotResult = measure.bulk(sample_masks["3dgray"], "Length", 2)
+    result00 = measure.bulk(sample_masks["2dgray"], Units="um")
+    result01 = measure.bulk(sample_masks["2dgray"], Pixel_Size=2)
+    result02 = measure.bulk(sample_masks["2dgray"], "Area", 2)
+    result03 = measure.bulk(sample_masks["2dgray"], "Length", 2)
+    result04 = measure.bulk(sample_masks["3dgray"], Pixel_Size=2)
+    result05 = measure.bulk(sample_masks["3dgray"], "Area", 2)
+    result06 = measure.bulk(sample_masks["3dgray"], "Length", 2)
 
+    assert isinstance(result00, ValueResult)
+    assert isinstance(result01, ValueResult)
+    assert isinstance(result02, ValueResult)
+    assert isinstance(result03, ValueResult)
+    assert isinstance(result04, ValueResult)
+    assert isinstance(result05, ValueResult)
+    assert isinstance(result06, ValueResult)
+    result00 = result00.values
+    result01 = result01.values
+    result02 = result02.values
+    result03 = result03.values
+    result04 = result04.values
+    result05 = result05.values
+    result06 = result06.values
     assert isinstance(result00, dict)
     assert isinstance(result01, dict)
     assert isinstance(result02, dict)
@@ -41,25 +55,25 @@ def test_bulk_scalar(sample_masks) -> None:
         assert result04[key] == result05[key] * 2
         assert result04[key] == result06[key] * 4
 
-    result07: dict | PlotResult = measure.bulk(
-        sample_masks["2dgray"], Pixel_Size=2, Normalize=True
-    )
-    result08: dict | PlotResult = measure.bulk(
-        sample_masks["2dgray"], "Area", 2, Normalize=True
-    )
-    result09: dict | PlotResult = measure.bulk(
-        sample_masks["2dgray"], "Length", 2, Normalize=True
-    )
-    result10: dict | PlotResult = measure.bulk(
-        sample_masks["3dgray"], Pixel_Size=2, Normalize=True
-    )
-    result11: dict | PlotResult = measure.bulk(
-        sample_masks["3dgray"], "Area", 2, Normalize=True
-    )
-    result12: dict | PlotResult = measure.bulk(
-        sample_masks["3dgray"], "Length", 2, Normalize=True
-    )
+    result07 = measure.bulk(sample_masks["2dgray"], Pixel_Size=2, Normalize=True)
+    result08 = measure.bulk(sample_masks["2dgray"], "Area", 2, Normalize=True)
+    result09 = measure.bulk(sample_masks["2dgray"], "Length", 2, Normalize=True)
+    result10 = measure.bulk(sample_masks["3dgray"], Pixel_Size=2, Normalize=True)
+    result11 = measure.bulk(sample_masks["3dgray"], "Area", 2, Normalize=True)
+    result12 = measure.bulk(sample_masks["3dgray"], "Length", 2, Normalize=True)
 
+    assert isinstance(result07, ValueResult)
+    assert isinstance(result08, ValueResult)
+    assert isinstance(result09, ValueResult)
+    assert isinstance(result10, ValueResult)
+    assert isinstance(result11, ValueResult)
+    assert isinstance(result12, ValueResult)
+    result07 = result07.values
+    result08 = result08.values
+    result09 = result09.values
+    result10 = result10.values
+    result11 = result11.values
+    result12 = result12.values
     assert isinstance(result07, dict)
     assert isinstance(result08, dict)
     assert isinstance(result09, dict)
@@ -85,40 +99,40 @@ def test_bulk_scalar(sample_masks) -> None:
         assert result11[key] <= 1
         assert result10[key] == result11[key] == result12[key]
 
-    result13: dict | PlotResult = measure.bulk(
+    result13 = measure.bulk(
         sample_masks["2dgray"],
         Pixel_Size=2,
         Normalize=True,
         Normalization_Method="Segmented",
     )
-    result14: dict | PlotResult = measure.bulk(
+    result14 = measure.bulk(
         sample_masks["2dgray"],
         "Area",
         2,
         Normalize=True,
         Normalization_Method="Segmented",
     )
-    result15: dict | PlotResult = measure.bulk(
+    result15 = measure.bulk(
         sample_masks["2dgray"],
         "Length",
         2,
         Normalize=True,
         Normalization_Method="Segmented",
     )
-    result16: dict | PlotResult = measure.bulk(
+    result16 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
         Normalization_Method="Segmented",
     )
-    result17: dict | PlotResult = measure.bulk(
+    result17 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
         Normalize=True,
         Normalization_Method="Segmented",
     )
-    result18: dict | PlotResult = measure.bulk(
+    result18 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -126,6 +140,18 @@ def test_bulk_scalar(sample_masks) -> None:
         Normalization_Method="Segmented",
     )
 
+    assert isinstance(result13, ValueResult)
+    assert isinstance(result14, ValueResult)
+    assert isinstance(result15, ValueResult)
+    assert isinstance(result16, ValueResult)
+    assert isinstance(result17, ValueResult)
+    assert isinstance(result18, ValueResult)
+    result13 = result13.values
+    result14 = result14.values
+    result15 = result15.values
+    result16 = result16.values
+    result17 = result17.values
+    result18 = result18.values
     assert isinstance(result13, dict)
     assert isinstance(result14, dict)
     assert isinstance(result15, dict)
@@ -153,40 +179,40 @@ def test_bulk_scalar(sample_masks) -> None:
         assert result18[key] >= 0
         assert result16[key] == result17[key] == result18[key]
 
-    result19: dict | PlotResult = measure.bulk(
+    result19 = measure.bulk(
         sample_masks["2dgray"],
         Pixel_Size=2,
         Normalize=True,
         Normalization_Method="Phase",
     )
-    result20: dict | PlotResult = measure.bulk(
+    result20 = measure.bulk(
         sample_masks["2dgray"],
         "Area",
         2,
         Normalize=True,
         Normalization_Method="Phase",
     )
-    result21: dict | PlotResult = measure.bulk(
+    result21 = measure.bulk(
         sample_masks["2dgray"],
         "Length",
         2,
         Normalize=True,
         Normalization_Method="Phase",
     )
-    result22: dict | PlotResult = measure.bulk(
+    result22 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
         Normalization_Method="Phase",
     )
-    result23: dict | PlotResult = measure.bulk(
+    result23 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
         Normalize=True,
         Normalization_Method="Phase",
     )
-    result24: dict | PlotResult = measure.bulk(
+    result24 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -194,6 +220,18 @@ def test_bulk_scalar(sample_masks) -> None:
         Normalization_Method="Phase",
     )
 
+    assert isinstance(result19, ValueResult)
+    assert isinstance(result20, ValueResult)
+    assert isinstance(result21, ValueResult)
+    assert isinstance(result22, ValueResult)
+    assert isinstance(result23, ValueResult)
+    assert isinstance(result24, ValueResult)
+    result19 = result19.values
+    result20 = result20.values
+    result21 = result21.values
+    result22 = result22.values
+    result23 = result23.values
+    result24 = result24.values
     assert isinstance(result19, dict)
     assert isinstance(result20, dict)
     assert isinstance(result21, dict)
@@ -211,40 +249,40 @@ def test_bulk_scalar(sample_masks) -> None:
     mask_3d: np.ndarray = np.zeros(sample_masks["3dgray"].shape, np.bool)
     mask_2d[3:7, 3:7] = 1
     mask_3d[:, 3:7, 3:7] = 1
-    result25: dict | PlotResult = measure.bulk(
+    result25 = measure.bulk(
         sample_masks["2dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
         Mask=mask_2d,
     )
-    result26: dict | PlotResult = measure.bulk(
+    result26 = measure.bulk(
         sample_masks["2dgray"],
         "Area",
         2,
         Apply_Mask=True,
         Mask=mask_2d,
     )
-    result27: dict | PlotResult = measure.bulk(
+    result27 = measure.bulk(
         sample_masks["2dgray"],
         "Length",
         2,
         Apply_Mask=True,
         Mask=mask_2d,
     )
-    result28: dict | PlotResult = measure.bulk(
+    result28 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
         Mask=mask_3d,
     )
-    result29: dict | PlotResult = measure.bulk(
+    result29 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
         Apply_Mask=True,
         Mask=mask_3d,
     )
-    result30: dict | PlotResult = measure.bulk(
+    result30 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -252,6 +290,18 @@ def test_bulk_scalar(sample_masks) -> None:
         Mask=mask_3d,
     )
 
+    assert isinstance(result25, ValueResult)
+    assert isinstance(result26, ValueResult)
+    assert isinstance(result27, ValueResult)
+    assert isinstance(result28, ValueResult)
+    assert isinstance(result29, ValueResult)
+    assert isinstance(result30, ValueResult)
+    result25 = result25.values
+    result26 = result26.values
+    result27 = result27.values
+    result28 = result28.values
+    result29 = result29.values
+    result30 = result30.values
     assert isinstance(result25, dict)
     assert isinstance(result26, dict)
     assert isinstance(result27, dict)
@@ -277,25 +327,37 @@ def test_bulk_scalar(sample_masks) -> None:
 def test_bulk_scalar_empty_masks(sample_masks) -> None:
 
     empty_mask: np.ndarray = np.zeros(sample_masks["2dgray"].shape)
-    result01: dict | PlotResult = measure.bulk(
+    result01 = measure.bulk(
         sample_masks["2dgray"], Pixel_Size=2, Apply_Mask=True, Mask=empty_mask
     )
-    result02: dict | PlotResult = measure.bulk(
+    result02 = measure.bulk(
         sample_masks["2dgray"], "Area", 2, Apply_Mask=True, Mask=empty_mask
     )
-    result03: dict | PlotResult = measure.bulk(
+    result03 = measure.bulk(
         sample_masks["2dgray"], "Length", 2, Apply_Mask=True, Mask=empty_mask
     )
-    result04: dict | PlotResult = measure.bulk(
+    result04 = measure.bulk(
         sample_masks["3dgray"], Pixel_Size=2, Apply_Mask=True, Mask=empty_mask
     )
-    result05: dict | PlotResult = measure.bulk(
+    result05 = measure.bulk(
         sample_masks["3dgray"], "Area", 2, Apply_Mask=True, Mask=empty_mask
     )
-    result06: dict | PlotResult = measure.bulk(
+    result06 = measure.bulk(
         sample_masks["3dgray"], "Length", 2, Apply_Mask=True, Mask=empty_mask
     )
 
+    assert isinstance(result01, ValueResult)
+    assert isinstance(result02, ValueResult)
+    assert isinstance(result03, ValueResult)
+    assert isinstance(result04, ValueResult)
+    assert isinstance(result05, ValueResult)
+    assert isinstance(result06, ValueResult)
+    result01 = result01.values
+    result02 = result02.values
+    result03 = result03.values
+    result04 = result04.values
+    result05 = result05.values
+    result06 = result06.values
     assert isinstance(result01, dict)
     assert isinstance(result02, dict)
     assert isinstance(result03, dict)
@@ -305,14 +367,14 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
     assert len(result01) == len(result02) == len(result03) == 0
     assert len(result04) == len(result05) == len(result06) == 0
 
-    result07: dict | PlotResult = measure.bulk(
+    result07 = measure.bulk(
         sample_masks["2dgray"],
         Pixel_Size=2,
         Normalize=True,
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result08: dict | PlotResult = measure.bulk(
+    result08 = measure.bulk(
         sample_masks["2dgray"],
         "Area",
         2,
@@ -320,7 +382,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result09: dict | PlotResult = measure.bulk(
+    result09 = measure.bulk(
         sample_masks["2dgray"],
         "Length",
         2,
@@ -328,14 +390,14 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result10: dict | PlotResult = measure.bulk(
+    result10 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result11: dict | PlotResult = measure.bulk(
+    result11 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -343,7 +405,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result12: dict | PlotResult = measure.bulk(
+    result12 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -352,6 +414,18 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Mask=empty_mask,
     )
 
+    assert isinstance(result07, ValueResult)
+    assert isinstance(result08, ValueResult)
+    assert isinstance(result09, ValueResult)
+    assert isinstance(result10, ValueResult)
+    assert isinstance(result11, ValueResult)
+    assert isinstance(result12, ValueResult)
+    result07 = result07.values
+    result08 = result08.values
+    result09 = result09.values
+    result10 = result10.values
+    result11 = result11.values
+    result12 = result12.values
     assert isinstance(result07, dict)
     assert isinstance(result08, dict)
     assert isinstance(result09, dict)
@@ -361,7 +435,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
     assert len(result07) == len(result08) == len(result09) == 0
     assert len(result10) == len(result11) == len(result12) == 0
 
-    result13: dict | PlotResult = measure.bulk(
+    result13 = measure.bulk(
         sample_masks["2dgray"],
         Pixel_Size=2,
         Normalize=True,
@@ -369,7 +443,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result14: dict | PlotResult = measure.bulk(
+    result14 = measure.bulk(
         sample_masks["2dgray"],
         "Area",
         2,
@@ -378,7 +452,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result15: dict | PlotResult = measure.bulk(
+    result15 = measure.bulk(
         sample_masks["2dgray"],
         "Length",
         2,
@@ -387,7 +461,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result16: dict | PlotResult = measure.bulk(
+    result16 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
@@ -395,7 +469,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result17: dict | PlotResult = measure.bulk(
+    result17 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -404,7 +478,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result18: dict | PlotResult = measure.bulk(
+    result18 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -414,6 +488,18 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Mask=empty_mask,
     )
 
+    assert isinstance(result13, ValueResult)
+    assert isinstance(result14, ValueResult)
+    assert isinstance(result15, ValueResult)
+    assert isinstance(result16, ValueResult)
+    assert isinstance(result17, ValueResult)
+    assert isinstance(result18, ValueResult)
+    result13 = result13.values
+    result14 = result14.values
+    result15 = result15.values
+    result16 = result16.values
+    result17 = result17.values
+    result18 = result18.values
     assert isinstance(result13, dict)
     assert isinstance(result14, dict)
     assert isinstance(result15, dict)
@@ -423,7 +509,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
     assert len(result13) == len(result14) == len(result15) == 0
     assert len(result16) == len(result17) == len(result18) == 0
 
-    result19: dict | PlotResult = measure.bulk(
+    result19 = measure.bulk(
         sample_masks["2dgray"],
         Pixel_Size=2,
         Normalize=True,
@@ -431,7 +517,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result20: dict | PlotResult = measure.bulk(
+    result20 = measure.bulk(
         sample_masks["2dgray"],
         "Area",
         2,
@@ -440,7 +526,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result21: dict | PlotResult = measure.bulk(
+    result21 = measure.bulk(
         sample_masks["2dgray"],
         "Length",
         2,
@@ -449,7 +535,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result22: dict | PlotResult = measure.bulk(
+    result22 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
@@ -457,7 +543,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result23: dict | PlotResult = measure.bulk(
+    result23 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -466,7 +552,7 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Apply_Mask=True,
         Mask=empty_mask,
     )
-    result24: dict | PlotResult = measure.bulk(
+    result24 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -476,6 +562,18 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
         Mask=empty_mask,
     )
 
+    assert isinstance(result19, ValueResult)
+    assert isinstance(result20, ValueResult)
+    assert isinstance(result21, ValueResult)
+    assert isinstance(result22, ValueResult)
+    assert isinstance(result23, ValueResult)
+    assert isinstance(result24, ValueResult)
+    result19 = result19.values
+    result20 = result20.values
+    result21 = result21.values
+    result22 = result22.values
+    result23 = result23.values
+    result24 = result24.values
     assert isinstance(result19, dict)
     assert isinstance(result20, dict)
     assert isinstance(result21, dict)
@@ -488,20 +586,14 @@ def test_bulk_scalar_empty_masks(sample_masks) -> None:
 
 def test_bulk_plot(sample_masks) -> None:
 
-    result00: dict | PlotResult = measure.bulk(
-        sample_masks["2dgray"], Perform_Slicewise=True
-    )
-    result01: dict | PlotResult = measure.bulk(
+    result00 = measure.bulk(sample_masks["2dgray"], Perform_Slicewise=True)
+    result01 = measure.bulk(
         sample_masks["3dgray"], Pixel_Size=2, Perform_Slicewise=True
     )
-    result02: dict | PlotResult = measure.bulk(
-        sample_masks["3dgray"], "Area", 2, Perform_Slicewise=True
-    )
-    result03: dict | PlotResult = measure.bulk(
-        sample_masks["3dgray"], "Length", 2, Perform_Slicewise=True
-    )
+    result02 = measure.bulk(sample_masks["3dgray"], "Area", 2, Perform_Slicewise=True)
+    result03 = measure.bulk(sample_masks["3dgray"], "Length", 2, Perform_Slicewise=True)
 
-    assert isinstance(result00, dict)
+    assert isinstance(result00, ValueResult)
     assert isinstance(result01, PlotResult)
     assert isinstance(result02, PlotResult)
     assert isinstance(result03, PlotResult)
@@ -531,13 +623,13 @@ def test_bulk_plot(sample_masks) -> None:
                 result03.data[key] == np.arange(0, sample_masks["3dgray"].shape[0])
             )  # type: ignore
 
-    result04: dict | PlotResult = measure.bulk(
+    result04 = measure.bulk(
         sample_masks["3dgray"], Pixel_Size=2, Normalize=True, Perform_Slicewise=True
     )
-    result05: dict | PlotResult = measure.bulk(
+    result05 = measure.bulk(
         sample_masks["3dgray"], "Area", 2, Normalize=True, Perform_Slicewise=True
     )
-    result06: dict | PlotResult = measure.bulk(
+    result06 = measure.bulk(
         sample_masks["3dgray"], "Length", 2, Normalize=True, Perform_Slicewise=True
     )
 
@@ -573,14 +665,14 @@ def test_bulk_plot(sample_masks) -> None:
                 result06.data[key] == np.arange(0, sample_masks["3dgray"].shape[0])
             )  # type: ignore
 
-    result07: dict | PlotResult = measure.bulk(
+    result07 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result08: dict | PlotResult = measure.bulk(
+    result08 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -588,7 +680,7 @@ def test_bulk_plot(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result09: dict | PlotResult = measure.bulk(
+    result09 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -632,14 +724,14 @@ def test_bulk_plot(sample_masks) -> None:
                 result09.data[key] == np.arange(0, sample_masks["3dgray"].shape[0])
             )  # type: ignore
 
-    result10: dict | PlotResult = measure.bulk(
+    result10 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
         Normalization_Method="Segmented",
         Perform_Slicewise=True,
     )
-    result11: dict | PlotResult = measure.bulk(
+    result11 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -647,7 +739,7 @@ def test_bulk_plot(sample_masks) -> None:
         Normalization_Method="Segmented",
         Perform_Slicewise=True,
     )
-    result12: dict | PlotResult = measure.bulk(
+    result12 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -689,7 +781,7 @@ def test_bulk_plot(sample_masks) -> None:
                 result12.data[key] == np.arange(0, sample_masks["3dgray"].shape[0])
             )  # type: ignore
 
-    result13: dict | PlotResult = measure.bulk(
+    result13 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
@@ -697,7 +789,7 @@ def test_bulk_plot(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result14: dict | PlotResult = measure.bulk(
+    result14 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -706,7 +798,7 @@ def test_bulk_plot(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result15: dict | PlotResult = measure.bulk(
+    result15 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -750,14 +842,14 @@ def test_bulk_plot(sample_masks) -> None:
                 result15.data[key] == np.arange(0, sample_masks["3dgray"].shape[0])
             )  # type: ignore
 
-    result16: dict | PlotResult = measure.bulk(
+    result16 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
         Normalization_Method="Phase",
         Perform_Slicewise=True,
     )
-    result17: dict | PlotResult = measure.bulk(
+    result17 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -765,7 +857,7 @@ def test_bulk_plot(sample_masks) -> None:
         Normalization_Method="Phase",
         Perform_Slicewise=True,
     )
-    result18: dict | PlotResult = measure.bulk(
+    result18 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -806,7 +898,7 @@ def test_bulk_plot(sample_masks) -> None:
                 result18.data[key] == np.arange(0, sample_masks["3dgray"].shape[0])
             )  # type: ignore
 
-    result19: dict | PlotResult = measure.bulk(
+    result19 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
@@ -814,7 +906,7 @@ def test_bulk_plot(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result20: dict | PlotResult = measure.bulk(
+    result20 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -823,7 +915,7 @@ def test_bulk_plot(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result21: dict | PlotResult = measure.bulk(
+    result21 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -862,14 +954,14 @@ def test_bulk_plot(sample_masks) -> None:
 
     test_mask: np.ndarray = np.zeros(sample_masks["3dgray"].shape, np.bool)
     test_mask[:, 3:7, 3:7] = 1
-    result22: dict | PlotResult = measure.bulk(
+    result22 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
         Mask=test_mask,
         Perform_Slicewise=True,
     )
-    result23: dict | PlotResult = measure.bulk(
+    result23 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -877,7 +969,7 @@ def test_bulk_plot(sample_masks) -> None:
         Mask=test_mask,
         Perform_Slicewise=True,
     )
-    result24: dict | PlotResult = measure.bulk(
+    result24 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -922,14 +1014,14 @@ def test_bulk_plot(sample_masks) -> None:
 def test_bulk_plot_empty_masks(sample_masks) -> None:
 
     empty_mask: np.ndarray = np.zeros(sample_masks["3dgray"].shape, np.bool)
-    result01: dict | PlotResult = measure.bulk(
+    result01 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
         Mask=empty_mask,
         Perform_Slicewise=True,
     )
-    result02: dict | PlotResult = measure.bulk(
+    result02 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -937,7 +1029,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Mask=empty_mask,
         Perform_Slicewise=True,
     )
-    result03: dict | PlotResult = measure.bulk(
+    result03 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -953,7 +1045,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
     assert len(list(result02.data.keys())) == 1
     assert len(list(result03.data.keys())) == 1
 
-    result04: dict | PlotResult = measure.bulk(
+    result04 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Normalize=True,
@@ -961,7 +1053,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Mask=empty_mask,
         Perform_Slicewise=True,
     )
-    result05: dict | PlotResult = measure.bulk(
+    result05 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -970,7 +1062,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Mask=empty_mask,
         Perform_Slicewise=True,
     )
-    result06: dict | PlotResult = measure.bulk(
+    result06 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -987,7 +1079,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
     assert len(list(result05.data.keys())) == 1
     assert len(list(result06.data.keys())) == 1
 
-    result07: dict | PlotResult = measure.bulk(
+    result07 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
@@ -996,7 +1088,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result08: dict | PlotResult = measure.bulk(
+    result08 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -1006,7 +1098,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result09: dict | PlotResult = measure.bulk(
+    result09 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -1024,7 +1116,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
     assert len(list(result08.data.keys())) == 1
     assert len(list(result09.data.keys())) == 1
 
-    result10: dict | PlotResult = measure.bulk(
+    result10 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
@@ -1033,7 +1125,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Normalization_Method="Segmented",
         Perform_Slicewise=True,
     )
-    result11: dict | PlotResult = measure.bulk(
+    result11 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -1043,7 +1135,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Normalization_Method="Segmented",
         Perform_Slicewise=True,
     )
-    result12: dict | PlotResult = measure.bulk(
+    result12 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -1061,7 +1153,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
     assert len(list(result11.data.keys())) == 1
     assert len(list(result12.data.keys())) == 1
 
-    result13: dict | PlotResult = measure.bulk(
+    result13 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
@@ -1071,7 +1163,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result14: dict | PlotResult = measure.bulk(
+    result14 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -1082,7 +1174,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result15: dict | PlotResult = measure.bulk(
+    result15 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -1101,7 +1193,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
     assert len(list(result14.data.keys())) == 1
     assert len(list(result15.data.keys())) == 1
 
-    result16: dict | PlotResult = measure.bulk(
+    result16 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
@@ -1110,7 +1202,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Normalization_Method="Phase",
         Perform_Slicewise=True,
     )
-    result17: dict | PlotResult = measure.bulk(
+    result17 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -1120,7 +1212,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Normalization_Method="Phase",
         Perform_Slicewise=True,
     )
-    result18: dict | PlotResult = measure.bulk(
+    result18 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,
@@ -1138,7 +1230,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
     assert len(list(result17.data.keys())) == 1
     assert len(list(result18.data.keys())) == 1
 
-    result19: dict | PlotResult = measure.bulk(
+    result19 = measure.bulk(
         sample_masks["3dgray"],
         Pixel_Size=2,
         Apply_Mask=True,
@@ -1148,7 +1240,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result20: dict | PlotResult = measure.bulk(
+    result20 = measure.bulk(
         sample_masks["3dgray"],
         "Area",
         2,
@@ -1159,7 +1251,7 @@ def test_bulk_plot_empty_masks(sample_masks) -> None:
         Perform_Slicewise=True,
         Normalize_by_Slice=True,
     )
-    result21: dict | PlotResult = measure.bulk(
+    result21 = measure.bulk(
         sample_masks["3dgray"],
         "Length",
         2,

@@ -15,7 +15,7 @@ def test_ValueResult() -> None:
 
     values1: results.ValueResult = results.ValueResult(2)
     assert values1.values == 2
-    assert values1 is None
+    assert values1.units is None
     assert values1.display() == 2
 
     values2: results.ValueResult = results.ValueResult(2, "a.u.")
