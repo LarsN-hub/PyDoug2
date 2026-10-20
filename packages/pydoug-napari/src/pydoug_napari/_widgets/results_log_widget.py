@@ -66,6 +66,6 @@ class ResultsLogWidget(QListWidget):
 
         if isinstance(result, dict):
             text: str = "\n".join(f"  {k}: {v}" for k, v in result.items())
-        else:
+        else:  # pragma: no cover
             text = str(result)
         self.addItem(f"{label}\n{text}")
