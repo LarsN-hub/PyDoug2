@@ -199,7 +199,7 @@ class MainWidget(QTabWidget):
         if "compare" in categories:
             sorted_categories.append("compare")
             categories.remove("compare")
-        if "color" in categories:
-            sorted_categories.append("color")
-            categories.remove("color")
+        if "visualize" in categories:
+            sorted_categories.append("visualize")
+            categories.remove("visualize")
         return sorted_categories + sorted(categories)

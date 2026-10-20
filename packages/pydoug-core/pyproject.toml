@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib",
     "numba",
     "numpy",
+    "openpnm",
     "pandas",
     "pillow",
     "porespy",

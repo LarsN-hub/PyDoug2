@@ -124,7 +124,7 @@ def is_square(imarray: np.ndarray, along_z: bool = True) -> bool:
     return False
 
 
-@register_operation(category="color", display_name="Grayscale to RGB")
+@register_operation(category="visualize", display_name="Grayscale to RGB")
 def gray2rgb(imarray: np.ndarray) -> np.ndarray:
     """
     Make a grayscale image array an RGB image array. Duplicates the grayscale array
@@ -149,7 +149,7 @@ def gray2rgb(imarray: np.ndarray) -> np.ndarray:
         return np.repeat(np.expand_dims(imarray, imarray.ndim), 3, imarray.ndim)
 
 
-@register_operation(category="color", display_name="RGB to Grayscale")
+@register_operation(category="visualize", display_name="RGB to Grayscale")
 def rgb2gray(imarray: np.ndarray, Preserve_Dtype: bool = True) -> np.ndarray:
     """
     Make an RGB image array a grayscale image array. Convenience wrapper around

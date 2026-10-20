@@ -10,7 +10,7 @@ from pydoug_core import util
 from pydoug_core.registry import register_operation
 from pydoug_core.results import PlotResult, ValueResult
 
-__all__ = ["bulk", "surf", "mesh_surface_area", "label_count"]
+__all__ = ["bulk", "surf", "label_count", "mesh_surface_area"]
 
 
 @register_operation(
@@ -43,8 +43,8 @@ def bulk(
     Normalize_by_Slice: bool = False,
 ) -> PlotResult | ValueResult:
     """
-    Measure bulk values (area, length, volume) of segmented data. If there are multiple
-    segmented phases, the measurement for each unique intensity is returned.
+    Measure bulk values (area, length, volume) of segmented phases. If there are
+    multiple phases, the measurement for each unique intensity is returned.
     Convenience wrapper around numpy's count_nonzero:
     https://numpy.org/doc/stable/reference/generated/numpy.count_nonzero.html
 
@@ -306,8 +306,8 @@ def surf(
     Normalize_by_Slice: bool = False,
 ) -> PlotResult | ValueResult:
     """
-    Measure surface values (area or perimeter) of segmented data. If there are multiple
-    segmented phases, the measurement for each unique intensity is returned.
+    Measure surface values (area or perimeter) of segmented phases. If there are
+    multiple segmented phases, the measurement for each unique intensity is returned.
     Convenience wrapper around numpy's append, count_nonzero, hstack, vstack, and
     boolean indexing:
     https://numpy.org/doc/stable/reference/generated/numpy.append.html
@@ -763,6 +763,144 @@ def surf(
 
 @register_operation(
     category="measure",
+    display_name="Label Count",
+    layer_type="labels",
+    output_kind="value",
+    recordable_toggle=True,
+)
+def label_count(imarray: np.ndarray) -> int:
+    """
+    Count the number of unique labels in a labeled segmented image. Convenience wrapper
+    around numpy's max function (labels are generated sequentially, so the max value
+    in a labeled image should be the number of unique labels):
+    https://numpy.org/doc/stable/reference/generated/numpy.max.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The labeled segmented image to count unique labels.
+
+    Returns
+    -------
+    lab_count: int
+        The unique label count.
+    """
+
+    return np.max(imarray)
+
+
+@register_operation(
+    category="measure",
+    display_name="Tortuosity",
+    output_kind="value",
+    recordable_toggle=True,
+)
+def tortuosity(
+    imarray: np.ndarray,
+    Axis: Literal["X", "Y", "Z"] = "Z",
+    Perform_Slicewise: bool = False,
+    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
+    Units: str = "pixels",
+    Y_Lims: tuple[
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+    ] = (0, 0),
+) -> PlotResult | ValueResult:
+    """
+    Find the tortuosity of a binary segmented image along an axis. Convenience wrapper
+    around porespy's simulations.tortuosity_fd:
+    https://porespy.org/autoapi/porespy/simulations/tortuosity_fd.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to find the tortuosity for.
+    Axis: Literal
+        The axis along which to find the tortuosity. Image must be 3D if "Z" is chosen.
+    Pixel_Size: float
+        The edge-length of pixels in real-world units. Only used to plot the x-axis if
+        "Perform Slicewise" is "True".
+    Units: str
+        The real-world units for "Pixel Size". If "um" is provided, the u will be
+        converted to a micro symbol (Greek lowercase mu) automatically. Only used to
+        plot the x-axis if "Perform Slicewise" is "True".
+    Perform_Slicewise: bool
+        Whether to perform the measurement slicewise along the z-axis to return a plot
+        of the tortuosity of each slice (True) or to provide a single tortuosity value
+        for the entire dataset (False). Default is False. Ignored for 2D images.
+    Y_Lims: tuple[float, float]
+        If "Perform Slicewise" is "True", the limits of the plot's y-axis in the form
+        [min, max]. Ignored if both are 0.
+
+    Returns
+    -------
+    tort_val: float
+        The tortuosity of the image.
+    """
+
+    if (not util.is3d(imarray) and Axis == "Z") or (
+        util.is3d(imarray) and Perform_Slicewise and Axis == "Z"
+    ):
+        raise ValueError("Z chosen as axis but image is not 3D!")
+
+    from porespy.simulations import tortuosity_fd
+
+    if Perform_Slicewise and util.is3d(imarray):
+        if Units == "um":
+            Units = r"\mu m"
+        slice_key: str = "Slice"
+
+        tort_dict: dict[str, np.ndarray] = {
+            slice_key: np.arange(0, imarray.shape[0]) * Pixel_Size,
+            "Tortuosity": np.empty(imarray.shape[0]),
+        }
+        for index in range(0, imarray.shape[0]):
+            tort_dict["Tortuosity"][index] = tortuosity_fd(
+                imarray[index].astype(np.bool), util.axstr2int(imarray[index], Axis)
+            ).tortuosity  # type: ignore
+
+        from matplotlib.axes import Axes
+        from matplotlib.figure import Figure
+
+        from pydoug_core.analyze.plot_util import line_ax
+
+        fig: Figure = Figure()
+        ax: Axes = fig.add_subplot()
+        y_lims: tuple[float, float] | None = (
+            None if (Y_Lims[0] == Y_Lims[1] == 0) else Y_Lims
+        )
+        ax = line_ax(
+            tort_dict[slice_key],
+            tort_dict["Tortuosity"],
+            ax,
+            y_lims,
+            rf"Position ($\mathrm{{{Units}}}$)",
+            "Tortuosity",
+            color="blue",
+        )
+        fig.set_layout_engine("constrained")
+
+        return PlotResult(
+            fig,
+            tort_dict,  # type: ignore
+            (slice_key,),
+            {},
+            {slice_key: Units, "Tortuosity": None},
+        )
+
+    tort_val: float = tortuosity_fd(
+        imarray.astype(np.bool), util.axstr2int(imarray, Axis)
+    ).tortuosity  # type: ignore
+
+    return ValueResult({"Tortuosity": tort_val})
+
+
+@register_operation(
+    category="measure",
     display_name="Mesh Surface Area",
     layer_type="surface",
     output_kind="value",
@@ -793,31 +931,3 @@ def mesh_surface_area(
     from skimage.measure import mesh_surface_area
 
     return mesh_surface_area(surface[0], surface[1]) * (Pixel_Size**2)
-
-
-@register_operation(
-    category="measure",
-    display_name="Label Count",
-    layer_type="labels",
-    output_kind="value",
-    recordable_toggle=True,
-)
-def label_count(imarray: np.ndarray) -> int:
-    """
-    Count the number of unique labels in a labeled segmented image. Convenience wrapper
-    around numpy's max function (labels are generated sequentially, so the max value
-    in a labeled image should be the number of unique labels):
-    https://numpy.org/doc/stable/reference/generated/numpy.max.html
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The labeled segmented image to count unique labels.
-
-    Returns
-    -------
-    lab_count: int
-        The unique label count.
-    """
-
-    return np.max(imarray)

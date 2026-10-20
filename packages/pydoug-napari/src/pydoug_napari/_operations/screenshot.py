@@ -75,7 +75,7 @@ def _render_screenshot_impl(
 
 
 @register_operation(
-    category="visualization",
+    category="visualize",
     display_name="Render Image Screenshot",
     captures_viewer_settings=True,
 )

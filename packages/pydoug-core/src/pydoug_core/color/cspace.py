@@ -9,7 +9,7 @@ import numpy as np
 from pydoug_core.registry import register_operation
 
 
-@register_operation(category="color", display_name="Convert Color Space")
+@register_operation(category="visualize", display_name="Convert Color Space")
 def convert_cspace(
     imarray: np.ndarray,
     Input_Color_Space: Literal[
