@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "pydoug-napari"
 version = "0.1.0"
 description = "napari plugin for PyDoug"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 license = "MIT"
 authors = [
     {name = "Douglas Lars Nelson", email = "PyDoug@referable.anonaddy.com"}
