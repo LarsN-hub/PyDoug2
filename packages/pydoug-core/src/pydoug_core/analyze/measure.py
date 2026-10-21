@@ -4,13 +4,17 @@ Measured and calculated values of images.
 
 from typing import Annotated, Literal
 
+import cmasher  # noqa: F401 — imported for its expansion of matplotlib's color maps
 import numpy as np
+from matplotlib import colormaps
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 from pydoug_core.results import PlotResult, ValueResult
 
-__all__ = ["bulk", "surf", "label_count", "mesh_surface_area"]
+__all__ = ["bulk", "surf", "heat_map", "label_count", "mesh_surface_area"]
 
 
 @register_operation(
@@ -213,9 +217,6 @@ def bulk(
                     if key != slice_key:
                         bulk_dict[key] *= Pixel_Size
                         units[key] = Units
-
-        from matplotlib.axes import Axes
-        from matplotlib.figure import Figure
 
         from pydoug_core.analyze.plot_util import multi_line
 
@@ -684,9 +685,6 @@ def surf(
                         if Correct_Overestimation:
                             surf_dict[key] *= np.pi / 4
 
-        from matplotlib.axes import Axes
-        from matplotlib.figure import Figure
-
         from pydoug_core.analyze.plot_util import multi_line
 
         fig: Figure = Figure()
@@ -750,6 +748,107 @@ def surf(
                         surf_dict[key] *= np.pi / 4
 
     return ValueResult(surf_dict, units)
+
+
+@register_operation(
+    category="measure",
+    display_name="Heat Map",
+    output_kind="plot",
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
+    recordable_toggle=True,
+    widget_options={"Color_Map": {"choices": list(colormaps)}},
+)
+def heat_map(
+    imarray: np.ndarray,
+    Color_Map: str = "inferno",
+    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
+    Units: str = "pixels",
+    Colorbar_Label: str = "Thickness",
+    C_Lims: tuple[
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+    ] = (0, 0),
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+) -> PlotResult:
+    """
+    Create a heat map from a 2D projection (these can be created in the "Math" tab.)
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The 2D projection image. 3D images not accepted.
+    Color_Map: Literal
+        The color map to use for the heat map.
+    Pixel_Size: float
+        The edge-length of pixels in real-world units. Note that this does not apply the
+        pixel size to the values in the heat map (these are done when you create the 2D
+        projection), but is instead used for the axis extents in the plot generation.
+        This value should match the value used to create the projection.
+    Units: str
+        The real-world units for "Pixel Size".
+    Colorbar_Label: str
+        The label for the colorbar (units are added automatically from "Units").
+    C_Lims: tuple[float, float]
+        The limits of the map's colorbar in the form [min, max]. Ignored if both are 0.
+    Apply_Mask: bool
+        Whether to mask the region where the value is measured (True) or not (False).
+    Mask: np.ndarray | None
+        If "Apply Mask" is "True", the mask to use.
+    """
+
+    from pydoug_core.analyze.image_info import stats
+    from pydoug_core.analyze.plot_util import add_cbar, hmap_ax
+
+    heat_stats: dict[str, float | int] = stats(imarray, Apply_Mask, Mask)  # type: ignore
+    heat_stats.pop("Dtype Min")
+    heat_stats.pop("Dtype Max")
+    if Apply_Mask and Mask is not None:
+        mask = util.prep_mask(imarray, Mask)
+        eval_array: np.ndarray = np.copy(imarray)
+        eval_array[np.logical_not(mask)] = 0
+        heat_stats["Min Fraction"] = (
+            np.count_nonzero(eval_array[mask] == np.min(eval_array[mask]))
+            / eval_array[mask].size
+        )
+        heat_stats["Max Fraction"] = (
+            np.count_nonzero(eval_array[mask] == np.max(eval_array[mask]))
+            / eval_array[mask].size
+        )
+    else:
+        eval_array = imarray
+        heat_stats["Min Fraction"] = (
+            np.count_nonzero(eval_array == np.min(eval_array)) / eval_array.size
+        )
+        heat_stats["Max Fraction"] = (
+            np.count_nonzero(eval_array == np.max(eval_array)) / eval_array.size
+        )
+
+    fig: Figure = Figure()
+    ax: Axes = fig.add_subplot()
+    c_lims: tuple[float, float] | None = (
+        None if (C_Lims[0] == C_Lims[1] == 0) else C_Lims
+    )
+    display_units: str = r"\mu m" if Units == "um" else Units
+    axes_label: str = rf"Position ($\mathrm{{{display_units}}}$)"
+    cbar_label: str = rf"{Colorbar_Label} ($\mathrm{{{display_units}}}$)"
+    ax, ax_im = hmap_ax(
+        eval_array,
+        ax,
+        Pixel_Size,
+        Color_Map,
+        c_lims,
+        axes_label,
+    )
+    fig.set_layout_engine(layout="constrained")
+    fig = add_cbar(fig, ax_im, cbar_label)
+
+    return PlotResult(fig, {}, (), {"statistics": heat_stats})
 
 
 @register_operation(
@@ -851,9 +950,6 @@ def tortuosity(
             tort_dict["Tortuosity"][index] = tortuosity_fd(
                 imarray[index].astype(np.bool), util.axstr2int(imarray[index], Axis)
             ).tortuosity  # type: ignore
-
-        from matplotlib.axes import Axes
-        from matplotlib.figure import Figure
 
         from pydoug_core.analyze.plot_util import line_ax
 

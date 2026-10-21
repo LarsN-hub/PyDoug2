@@ -6,6 +6,17 @@ import numpy as np
 from skimage.measure import label
 
 from pydoug_core.analyze import measure
+from pydoug_core.results import PlotResult
+
+
+def test_heat_map(sample_2dgray_array, sample_masks) -> None:
+
+    result01: PlotResult = measure.heat_map(sample_2dgray_array, Units="um")
+    result02: PlotResult = measure.heat_map(
+        sample_2dgray_array, Apply_Mask=True, Mask=sample_masks["2dgray"]
+    )
+    assert isinstance(result01, PlotResult)
+    assert isinstance(result02, PlotResult)
 
 
 def test_label_count(sample_masks) -> None:

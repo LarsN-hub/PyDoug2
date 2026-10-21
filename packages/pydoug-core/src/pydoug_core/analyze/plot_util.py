@@ -2,11 +2,16 @@
 Utilities for generating plots.
 """
 
+import cmasher  # noqa: F401 — imported for its expansion of matplotlib's color maps
 import matplotlib
 import numpy as np
 from matplotlib.axes import Axes
+from matplotlib.colorbar import Colorbar
+from matplotlib.contour import ContourSet
+from matplotlib.figure import Figure
+from matplotlib.image import AxesImage
 
-__all__ = ["line_ax", "multi_line", "hist_ax", "stats_ax"]
+__all__ = ["line_ax", "multi_line", "hist_ax", "hmap_ax", "add_cbar", "stats_ax"]
 
 matplotlib.rcParams["font.family"] = "sans-serif"
 matplotlib.rcParams["font.sans-serif"] = ["Arial", "Liberation Sans", "DejaVu Sans"]
@@ -22,8 +27,8 @@ def line_ax(
     color="red",
 ) -> Axes:
     """
-    Generate an axis with a minimal single line plot for any line data. Convenience
-    wrapper around matplotlib's plot:
+    Add a single line plot for any line data to an input Axes. Convenience wrapper
+    around matplotlib's plot:
     https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
 
     Parameters
@@ -46,7 +51,7 @@ def line_ax(
     Returns
     -------
     ax: Axes
-        The input axes with the line plot added.
+        The input Axes with the line plot added.
     """
 
     ax.plot(x_vals, y_vals, color=color, linewidth=2)
@@ -71,7 +76,7 @@ def multi_line(
     add_legend: bool = False,
 ) -> Axes:
     """
-    Generate an axis with as many line plots as required. Convenience wrapper around
+    Add as many line plots as required to an input Axes. Convenience wrapper around
     matplotlib's plot:
     https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
 
@@ -100,7 +105,7 @@ def multi_line(
     Returns
     -------
     ml_ax: Axes
-        The axes with the multi line plot.
+        The input Axes with the multi line plot added.
     """
 
     if isinstance(colors, str):
@@ -156,8 +161,8 @@ def hist_ax(
     x_lims: tuple[float, float] | None = None,
 ) -> Axes:
     """
-    Generate an axis with a minimal histogram plot for the given values. Convenience
-    wrapper around matplotlib's hist:
+    Add a histogram plot for the given values to an input Axes. Convenience wrapper
+    around matplotlib's hist:
     https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 
     Parameters
@@ -176,7 +181,7 @@ def hist_ax(
     Returns
     -------
     hist_ax: Axes
-        The input axes with the histogram plot generated.
+        The input Axes with the histogram added.
     """
 
     hist_ax.hist(bin_centers, bin_centers, weights=hist_vals, edgecolor="k")  # type: ignore
@@ -187,6 +192,85 @@ def hist_ax(
     hist_ax.set_ylabel(y_label, fontsize=15)
     hist_ax.tick_params("both", labelsize=13)
     return hist_ax
+
+
+def hmap_ax(
+    harray: np.ndarray,
+    h_ax: Axes,
+    pixel_size: float = 1,
+    cmap: str = "inferno",
+    c_lims: tuple | None = None,
+    axes_label: str = "Position",
+) -> tuple[Axes, AxesImage]:
+    """
+    Add a heat map of the input 2D image to an input Axes. Convenience wrapper around
+    matplot lib's imshow and colorbar:
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.colorbar.html
+
+    Parameters
+    ----------
+    harray: np.ndarray
+        The 2D projection image used to create the heat map.
+    h_ax: Axes
+        The Axes to add the heat map to.
+    cmap: str
+        The color map to use for the heat map.
+    c_lims: tuple | None
+        The limits for the heat map's color map.
+    axes_label: str
+        The label for the x and y axes of the heat map.
+
+    Returns
+    -------
+    h_ax: Axes
+        The input Axes with the heat map added.
+    """
+
+    ax_im: AxesImage = h_ax.imshow(
+        np.flipud(harray),
+        cmap=cmap,
+        vmin=np.min(harray) if not c_lims else min(c_lims),
+        vmax=np.max(harray) if not c_lims else max(c_lims),
+        origin="lower",
+        interpolation="none",
+        extent=(0, (harray.shape[1] * pixel_size), 0, (harray.shape[0] * pixel_size)),
+    )
+    h_ax.set_xlabel(axes_label, fontsize=15)
+    h_ax.set_ylabel(axes_label, fontsize=15)
+    h_ax.tick_params(axis="both", labelsize=13)
+
+    return h_ax, ax_im
+
+
+def add_cbar(
+    fig: Figure,
+    mappable: AxesImage | ContourSet,
+    cbar_label: str = "Thickness",
+) -> Figure:
+    """
+    Add a colorbar to a figure.
+
+    Parameters
+    ----------
+    fig: Figure
+        The figure to add a colorbar to.
+    mappable: AxesImage | ContourSet
+        The mappable object described by the colorbar.
+    cbar_label: str
+        The label for the colorbar.
+
+    Returns
+    -------
+    fig: Figure
+        The figure after colorbar addition.
+    """
+
+    fig_cbar: Colorbar = fig.colorbar(mappable)
+    fig_cbar.set_label(cbar_label, rotation=270, va="bottom", fontsize=15)
+    fig_cbar.ax.tick_params(labelsize=13)
+
+    return fig
 
 
 def stats_ax(
@@ -207,8 +291,8 @@ def stats_ax(
     include_legend: bool = True,
 ) -> Axes:
     """
-    Generate an axis with a minimal line plot for the given statistics. Convenience
-    wrapper around matplotlib's plot and fill_between:
+    Add a line plot for the given statistics to an input Axes. Convenience wrapper
+    around matplotlib's plot and fill_between:
     https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
     https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.fill_between.html
 
@@ -232,7 +316,7 @@ def stats_ax(
     Returns
     -------
     stats_ax: Axes
-        The input axis with the stats plot generated.
+        The input Axes with the stats plot added.
     """
 
     if plot_mean:

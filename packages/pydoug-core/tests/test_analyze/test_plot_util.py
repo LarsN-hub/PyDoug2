@@ -5,6 +5,8 @@ Tests for PyDoug's analyze.plot_util module.
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from matplotlib.image import AxesImage
 
 from pydoug_core.analyze import plot_util
 
@@ -72,6 +74,16 @@ def test_hist_ax(sample_3dgray_array) -> None:
     hist_vals, bin_centers, _ = hist_distrib(sample_3dgray_array)
     ax: Axes = plot_util.hist_ax(hist_vals, bin_centers, ax, y_max=10)
     assert isinstance(ax, Axes)
+
+
+def test_hmap_ax_and_add_cbar(sample_2dgray_array) -> None:
+
+    fig, ax = plt.subplots(layout="constrained")
+    ax, ax_im = plot_util.hmap_ax(sample_2dgray_array, ax)
+    fig = plot_util.add_cbar(fig, ax_im)
+    assert isinstance(ax, Axes)
+    assert isinstance(ax_im, AxesImage)
+    assert isinstance(fig, Figure)
 
 
 def test_stats_ax() -> None:
