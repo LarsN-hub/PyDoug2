@@ -60,8 +60,7 @@ def bulk(
     Pixel_Size: float
         The edge-length of pixels in real-world units.
     Units: str
-        The real-world units for "Pixel Size". If "um" is provided, the u will be
-        converted to a micro symbol (Greek lowercase mu) automatically.
+        The real-world units for "Pixel Size".
     Normalize: bool
         Whether to normalize the output by dividing it by a normalization factor
         specified in "Normalization Method" (True) or to leave the value absolute
@@ -102,10 +101,8 @@ def bulk(
         The PlotResult object if "Perform Slicewise" is "True".
     """
 
-    if Units == "um":
-        Units = r"\mu m"
     slice_key: str = "Slice"
-    units: dict[str | int | float, str | None] = {slice_key: rf"$\mathrm{{{Units}}}$"}
+    units: dict[str | int | float, str | None] = {slice_key: Units}
     if Normalize_by_Slice and not (Perform_Slicewise and util.is3d(imarray)):
         Normalize_by_Slice = False  # pragma: no cover
 
@@ -154,6 +151,7 @@ def bulk(
         return bulk_dict
 
     if Perform_Slicewise and util.is3d(imarray):
+        display_units: str = r"\mu m" if Units == "um" else Units
         unique_vals: np.ndarray = (
             np.unique(imarray[util.prep_mask(imarray, Mask)])
             if Apply_Mask and Mask is not None
@@ -198,23 +196,23 @@ def bulk(
 
         else:
             if Measurement == "Area":
-                y_label = rf"Area ($\mathrm{{{Units}^{{2}}}}$)"
+                y_label = rf"Area ($\mathrm{{{display_units}^{{2}}}}$)"
                 for key in bulk_dict.keys():
                     if key != slice_key:
                         bulk_dict[key] *= Pixel_Size**2
-                        units[key] = rf"$\mathrm{{{Units}^{{2}}}}$"
+                        units[key] = f"{Units}^2"
             elif Measurement == "Volume":
-                y_label = rf"Volume ($\mathrm{{{Units}^{{3}}}}$)"
+                y_label = rf"Volume ($\mathrm{{{display_units}^{{3}}}}$)"
                 for key in bulk_dict.keys():
                     if key != slice_key:
                         bulk_dict[key] *= Pixel_Size**3
-                        units[key] = rf"$\mathrm{{{Units}^{{3}}}}$"
+                        units[key] = f"{Units}^3"
             else:
-                y_label = rf"Length ($\mathrm{{{Units}}}$)"
+                y_label = rf"Length ($\mathrm{{{display_units}}}$)"
                 for key in bulk_dict.keys():
                     if key != slice_key:
                         bulk_dict[key] *= Pixel_Size
-                        units[key] = rf"$\mathrm{{{Units}}}$"
+                        units[key] = Units
 
         from matplotlib.axes import Axes
         from matplotlib.figure import Figure
@@ -238,7 +236,7 @@ def bulk(
             bulk_dict[slice_key],
             y_vals,
             ax,
-            rf"Position ({units[slice_key]})",
+            rf"Position ($\mathrm{{{display_units}}}$)",
             y_label,
             y_lims,
             data_labels,
@@ -262,13 +260,13 @@ def bulk(
         for key in bulk_dict.keys():
             if Measurement == "Area":
                 bulk_dict[key] *= Pixel_Size**2
-                units[key] = rf"$\mathrm{{{Units}^{{2}}}}$"
+                units[key] = f"{Units}^2"
             elif Measurement == "Volume":
                 bulk_dict[key] *= Pixel_Size**3
-                units[key] = rf"$\mathrm{{{Units}^{{3}}}}$"
+                units[key] = f"{Units}^3"
             else:
                 bulk_dict[key] *= Pixel_Size
-                units[key] = rf"$\mathrm{{{Units}}}$"
+                units[key] = Units
 
     return ValueResult(bulk_dict, units)
 
@@ -331,8 +329,7 @@ def surf(
     Pixel_Size: float
         The edge-length of pixels in real-world units.
     Units: str
-        The real-world units for "Pixel Size". If "um" is provided, the u will be
-        converted to a micro symbol (Greek lowercase mu) automatically.
+        The real-world units for "Pixel Size".
     Correct_Overestimation: bool
         Whether to correct for overestimation of surface measurements inherent to
         pixelated data with Rajon's factors (True) or not (False). Default is True. If
@@ -387,10 +384,8 @@ def surf(
         The PlotResult object if "Perform Slicewise" is "True".
     """
 
-    if Units == "um":
-        Units = r"\mu m"
     slice_key: str = "Slice"
-    units: dict[str | int | float, str | None] = {slice_key: rf"$\mathrm{{{Units}}}$"}
+    units: dict[str | int | float, str | None] = {slice_key: Units}
     if Normalize_by_Slice and not (Perform_Slicewise and util.is3d(imarray)):
         Normalize_by_Slice = False  # pragma: no cover
 
@@ -581,6 +576,7 @@ def surf(
         return surf_dict
 
     if Perform_Slicewise and util.is3d(imarray):
+        display_units: str = r"\mu m" if Units == "um" else Units
         unique_vals: np.ndarray = (
             np.unique(imarray[util.prep_mask(imarray, Mask)])
             if Apply_Mask and Mask is not None
@@ -631,26 +627,27 @@ def surf(
                     units[key] = None if key != slice_key else units[slice_key]
             elif Normalization_Method == "Specific - Total":
                 y_label = (
-                    rf"Specific Surface {Measurement} ($\mathrm{{{Units}^{{-1}}}}$)"
+                    "Specific Surface "
+                    rf"{Measurement} ($\mathrm{{{display_units}^{{-1}}}}$)"
                     if not Normalize_by_Slice
                     else "Positional Specific Surface "
-                    rf"{Measurement} ($\mathrm{{{Units}^{{-1}}}}$)"
+                    rf"{Measurement} ($\mathrm{{{display_units}^{{-1}}}}$)"
                 )
             elif Normalization_Method == "Specific - Segmented":
                 y_label = (
                     "Segmented-Specific Surface "
-                    rf"{Measurement} ($\mathrm{{{Units}^{{-1}}}}$)"
+                    rf"{Measurement} ($\mathrm{{{display_units}^{{-1}}}}$)"
                     if not Normalize_by_Slice
                     else "Positional Segmented-Specific Surface "
-                    rf"{Measurement} ($\mathrm{{{Units}^{{-1}}}}$)"
+                    rf"{Measurement} ($\mathrm{{{display_units}^{{-1}}}}$)"
                 )
             else:
                 y_label = (
                     "Phase-Specific Surface "
-                    rf"{Measurement} ($\mathrm{{{Units}^{{-1}}}}$)"
+                    rf"{Measurement} ($\mathrm{{{display_units}^{{-1}}}}$)"
                     if not Normalize_by_Slice
                     else "Positional Phase-Specific Surface "
-                    rf"{Measurement} ($\mathrm{{{Units}^{{-1}}}}$)"
+                    rf"{Measurement} ($\mathrm{{{display_units}^{{-1}}}}$)"
                 )
             if Normalization_Method in (
                 "Specific - Phase",
@@ -660,9 +657,7 @@ def surf(
                 for key in surf_dict.keys():
                     if key != slice_key:
                         units[key] = (
-                            rf"$\mathrm{{{Units}^{{-1}}}}$"
-                            if key != slice_key
-                            else units[slice_key]
+                            f"{Units}^(-1)" if key != slice_key else units[slice_key]
                         )
                         if Correct_Overestimation and Measurement == "Area":
                             surf_dict[key] *= 2 / 3
@@ -673,19 +668,19 @@ def surf(
 
         else:
             if Measurement == "Area":
-                y_label = rf"Surface Area ($\mathrm{{{Units}^{{2}}}}$)"
+                y_label = rf"Surface Area ($\mathrm{{{display_units}^{{2}}}}$)"
                 for key in surf_dict.keys():
                     if key != slice_key:
                         surf_dict[key] *= Pixel_Size**2
-                        units[key] = rf"$\mathrm{{{Units}^{{2}}}}$"
+                        units[key] = f"{Units}^2"
                         if Correct_Overestimation:
                             surf_dict[key] *= 2 / 3
             else:
-                y_label = rf"Surface Perimeter ($\mathrm{{{Units}}}$)"
+                y_label = rf"Surface Perimeter ($\mathrm{{{display_units}}}$)"
                 for key in surf_dict.keys():
                     if key != slice_key:
                         surf_dict[key] *= Pixel_Size
-                        units[key] = rf"$\mathrm{{{Units}}}$"
+                        units[key] = f"{Units}"
                         if Correct_Overestimation:
                             surf_dict[key] *= np.pi / 4
 
@@ -709,7 +704,7 @@ def surf(
             surf_dict[slice_key],
             y_vals,
             ax,
-            rf"Position ({units[slice_key]})",
+            rf"Position ($\mathrm{{{display_units}}}$)",
             y_label,
             y_lims,
             data_labels,
@@ -729,11 +724,7 @@ def surf(
             "Specific - Total",
         ):
             for key in list(surf_dict.keys()):
-                units[key] = (
-                    rf"$\mathrm{{{Units}^{{-1}}}}$"
-                    if key != slice_key
-                    else units[slice_key]
-                )
+                units[key] = f"{Units}^(-1)" if key != slice_key else units[slice_key]
                 if Correct_Overestimation and Measurement == "Area":
                     surf_dict[key] *= 2 / 3
                 elif Correct_Overestimation and Measurement == "Perimeter":
@@ -749,12 +740,12 @@ def surf(
             if key != slice_key:
                 if Measurement == "Area":
                     surf_dict[key] *= Pixel_Size**2
-                    units[key] = rf"$\mathrm{{{Units}^{{2}}}}$"
+                    units[key] = f"{Units}^2"
                     if Correct_Overestimation:
                         surf_dict[key] *= 2 / 3
                 else:
                     surf_dict[key] *= Pixel_Size
-                    units[key] = rf"$\mathrm{{{Units}}}$"
+                    units[key] = Units
                     if Correct_Overestimation:
                         surf_dict[key] *= np.pi / 4
 
@@ -770,10 +761,9 @@ def surf(
 )
 def label_count(imarray: np.ndarray) -> int:
     """
-    Count the number of unique labels in a labeled segmented image. Convenience wrapper
-    around numpy's max function (labels are generated sequentially, so the max value
-    in a labeled image should be the number of unique labels):
-    https://numpy.org/doc/stable/reference/generated/numpy.max.html
+    Count the number of unique labels in a labeled segmented image. Does not count the
+    background (0) label. Convenience wrapper around numpy's unique:
+    https://numpy.org/doc/stable/reference/generated/numpy.unique.html
 
     Parameters
     ----------
@@ -786,7 +776,8 @@ def label_count(imarray: np.ndarray) -> int:
         The unique label count.
     """
 
-    return np.max(imarray)
+    labs = np.unique(imarray)
+    return labs.size - 1 if 0 in labs else labs.size
 
 
 @register_operation(
@@ -809,7 +800,7 @@ def tortuosity(
             float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
         ],
     ] = (0, 0),
-) -> PlotResult | ValueResult:
+) -> PlotResult | ValueResult:  # pragma: no cover
     """
     Find the tortuosity of a binary segmented image along an axis. Convenience wrapper
     around porespy's simulations.tortuosity_fd:
@@ -825,9 +816,8 @@ def tortuosity(
         The edge-length of pixels in real-world units. Only used to plot the x-axis if
         "Perform Slicewise" is "True".
     Units: str
-        The real-world units for "Pixel Size". If "um" is provided, the u will be
-        converted to a micro symbol (Greek lowercase mu) automatically. Only used to
-        plot the x-axis if "Perform Slicewise" is "True".
+        The real-world units for "Pixel Size". Only used to plot the x-axis if
+        "Perform Slicewise" is "True".
     Perform_Slicewise: bool
         Whether to perform the measurement slicewise along the z-axis to return a plot
         of the tortuosity of each slice (True) or to provide a single tortuosity value
@@ -850,8 +840,7 @@ def tortuosity(
     from porespy.simulations import tortuosity_fd
 
     if Perform_Slicewise and util.is3d(imarray):
-        if Units == "um":
-            Units = r"\mu m"
+        display_units: str = r"\mu m" if Units == "um" else Units
         slice_key: str = "Slice"
 
         tort_dict: dict[str, np.ndarray] = {
@@ -878,7 +867,7 @@ def tortuosity(
             tort_dict["Tortuosity"],
             ax,
             y_lims,
-            rf"Position ($\mathrm{{{Units}}}$)",
+            rf"Position ($\mathrm{{{display_units}}}$)",
             "Tortuosity",
             color="blue",
         )
