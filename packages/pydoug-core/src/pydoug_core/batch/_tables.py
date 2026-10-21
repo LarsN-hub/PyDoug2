@@ -145,10 +145,11 @@ class BatchTables:
         dictionaries as the values.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, save_figures: bool = True) -> None:
 
         self._values: dict[tuple[Path, str], _ValueTable] = {}
         self._plots: dict[Path, list[dict]] = {}
+        self._save_figures = save_figures
 
     @staticmethod
     def handles(result: Any) -> bool:
@@ -274,6 +275,7 @@ class BatchTables:
             The units for the data.
         """
 
+        folder.mkdir(parents=True, exist_ok=True)
         if isinstance(result, ValueResult):
             units = result.units if result.units is not None else units
             result = result.values

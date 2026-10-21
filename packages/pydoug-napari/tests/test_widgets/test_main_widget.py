@@ -2,18 +2,27 @@
 Tests for PyDoug's napari plugin main widget module.
 """
 
+from pathlib import Path
+from shutil import rmtree
+
 from magicclass.widgets import CollapsibleContainer
 from magicgui.widgets import FunctionGui
 from napari.layers import Image
 from napari.viewer import Viewer
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QMessageBox
+from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from pydoug_napari._widgets import main_widget
 
 
-def test_make_main_widget(make_napari_viewer, qtbot, sample_3dgray_array) -> None:
+def test_make_main_widget(
+    make_napari_viewer, qtbot, monkeypatch, sample_3dgray_array, tmp_path
+) -> None:
 
+    def _return_tmp_path(*args, **kwargs):
+        return tmp_path
+
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", _return_tmp_path)
     viewer: Viewer = make_napari_viewer()
     mainwidget: main_widget.MainWidget = main_widget.MainWidget(viewer)
     assert mainwidget.count() >= 1
@@ -45,6 +54,20 @@ def test_make_main_widget(make_napari_viewer, qtbot, sample_3dgray_array) -> Non
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(mainwidget.recorder.steps) == 2, timeout=5000)
     assert len(mainwidget.recorder.steps) == 2
+    assert mainwidget.results_panel.export_all_button is not None
+    qtbot.mouseClick(
+        mainwidget.results_panel.export_all_button, Qt.MouseButton.LeftButton
+    )
+    qtbot.waitUntil(lambda: Path(tmp_path / "Stats/values.csv").exists(), timeout=5000)
+    assert Path(tmp_path / "Stats/values.csv").exists()
+    rmtree(str(Path(tmp_path / "Stats")))
+    assert not Path(tmp_path / "Stats/values.csv").exists()
+    mainwidget.results_panel.log_widget.setCurrentRow(0)  # type: ignore
+    qtbot.mouseClick(
+        mainwidget.results_panel.export_selected_button, Qt.MouseButton.LeftButton
+    )
+    qtbot.waitUntil(lambda: Path(tmp_path / "Stats/values.csv").exists(), timeout=5000)
+    assert Path(tmp_path / "Stats/values.csv").exists()
 
 
 def test_cascade_delete_removes_dependent_steps(

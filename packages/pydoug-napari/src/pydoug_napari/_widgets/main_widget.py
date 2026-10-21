@@ -8,7 +8,7 @@ from magicclass.widgets import CollapsibleContainer, ScrollableContainer
 from napari.layers import Layer
 from napari.utils.events import Event
 from napari.viewer import Viewer
-from qtpy.QtWidgets import QMessageBox, QTabWidget
+from qtpy.QtWidgets import QDockWidget, QMessageBox, QTabWidget
 
 import pydoug_core  # noqa: F401 — imported for its registration side effect
 
@@ -21,7 +21,11 @@ from pydoug_core.registry import list_operations
 from pydoug_napari._widgets.batch_widget import make_batch_widget
 from pydoug_napari._widgets.operation_widget import make_operation_widget
 from pydoug_napari._widgets.recorder_log_widget import RecordingLogWidget
-from pydoug_napari._widgets.results_log_widget import ResultsLog, ResultsLogWidget
+from pydoug_napari._widgets.results_log_widget import (
+    ResultsLog,
+    ResultsLogWidget,
+    ResultsPanel,
+)
 
 
 class MainWidget(QTabWidget):
@@ -44,6 +48,10 @@ class MainWidget(QTabWidget):
         self._cascading: bool = False
         self.operation_widgets: dict[str, CollapsibleContainer] = {}
         self.results_log: ResultsLog = ResultsLog()
+        self.results_log_widget: ResultsLogWidget = ResultsLogWidget(self.results_log)
+        self.results_panel: ResultsPanel = ResultsPanel(
+            self.results_log, self.results_log_widget
+        )
 
         self.addTab(make_batch_widget(self.recorder), "Batch")
         categories: list[str] = self._specify_category_order(
@@ -58,9 +66,25 @@ class MainWidget(QTabWidget):
             RecordingLogWidget(self.recorder), name="Workflow Log", area="bottom"
         )
 
+        results_log_name: str = "Results Log"
         viewer.window.add_dock_widget(
-            ResultsLogWidget(self.results_log), name="Results Log", area="bottom"
+            self.results_panel,
+            name=results_log_name,
+            area="left",
         )
+        dock_widgets: list[QDockWidget] = viewer.window._qt_window.findChildren(
+            QDockWidget
+        )
+        results_dock: QDockWidget | None = None
+        layer_controls_dock: QDockWidget | None = None
+        for dock in dock_widgets:
+            if dock.windowTitle() == results_log_name:
+                results_dock = dock
+            elif dock.windowTitle() == "layer controls":
+                layer_controls_dock = dock
+        if results_dock and layer_controls_dock:
+            viewer.window._qt_window.tabifyDockWidget(layer_controls_dock, results_dock)
+            layer_controls_dock.raise_()
 
         viewer.layers.events.removed.connect(self._on_layer_removed)
 

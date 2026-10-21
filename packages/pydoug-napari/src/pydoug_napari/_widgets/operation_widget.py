@@ -191,13 +191,23 @@ def make_operation_widget(
                     )
 
             else:
+                name: str = operation_spec.display_name
+                dataset: str = (
+                    layer.name
+                    if operation_spec.requires_layer and layer is not None
+                    else name
+                )
                 if isinstance(result, (PlotResult, Figure)):
                     figure: Figure = (
                         result.figure if isinstance(result, PlotResult) else result
                     )
                     (operation_spec.display_result or default_display_plot)(figure)
                     results_log.add(
-                        operation_spec.display_name, "Plot generated, see window"
+                        name,
+                        "Plot generated, see window",
+                        result if isinstance(result, PlotResult) else None,
+                        dataset,
+                        operation_spec.units,
                     )
                     if isinstance(result, PlotResult):
                         for table_name, table in result.tables.items():
@@ -206,9 +216,11 @@ def make_operation_widget(
                                 ValueResult(table, result.units).display(),
                             )
                 elif isinstance(result, ValueResult):
-                    results_log.add(operation_spec.display_name, result.display())
+                    results_log.add(
+                        name, result.display(), result, dataset, operation_spec.units
+                    )
                 else:
-                    results_log.add(operation_spec.display_name, result)
+                    results_log.add(name, result, result, dataset, operation_spec.units)
                 if record_in_workflow and should_record:
                     recorder.record(
                         operation_spec.name,

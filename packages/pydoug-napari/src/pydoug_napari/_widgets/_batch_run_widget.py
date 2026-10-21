@@ -47,9 +47,9 @@ def build_run_batch_widget() -> QWidget:
         for item in sorted(
             image_list.selectedItems(), key=image_list.row, reverse=True
         ):
-            idx: int = image_list.row(item)
-            image_list.takeItem(idx)
-            del image_paths[idx]
+            index: int = image_list.row(item)
+            image_list.takeItem(index)
+            del image_paths[index]
 
     def _clear_list():
         image_list.clear()
