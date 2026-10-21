@@ -1,6 +1,6 @@
-coverage
-pytest
-pytest-cov
-pytest-qt
-ruff
-pre-commit
+coverage==7.15.4
+pytest==9.1.1
+pytest-cov==7.1.0
+pytest-qt==4.5.0
+ruff==0.16.4
+pre-commit==4.6.2
