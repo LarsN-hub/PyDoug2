@@ -54,7 +54,7 @@ class OperationSpec:
         Whether or not the operation should capture viewer sttings (for screenshots).
     requires_layer: bool
         Whether or not the operation requires an input layer.
-    units: str | dict[str, str] | None
+    units: str | dict[float | int | str, str | None] | None
         If returning plots/values, the units to include.
     primary_params: tuple[str, ...]
         Array parameters that mean "the dataset being processed".
@@ -81,7 +81,7 @@ class OperationSpec:
     layer_type: Literal["image", "labels", "surface", "shapes"] = "image"
     captures_viewer_settings: bool = False
     requires_layer: bool = True
-    units: str | dict[str, str] | None = None
+    units: str | dict[float | int | str, str | None] | None = None
     primary_params: tuple[str, ...] = ()
     signature: inspect.Signature = field(init=False)
 
@@ -110,7 +110,7 @@ def register_operation(
     layer_type: Literal["image", "labels", "surface", "shapes"] = "image",
     captures_viewer_settings: bool = False,
     requires_layer: bool = True,
-    units: str | dict[str, str] | None = None,
+    units: str | dict[float | int | str, str | None] | None = None,
     primary_params: tuple[str, ...] = (),
     allow_in_place: bool = False,
 ) -> Callable:
@@ -154,7 +154,7 @@ def register_operation(
         Whether or not the operation should capture viewer sttings (for screenshots).
     requires_layer: bool
         Whether or not the operation requires an input layer.
-    units: str | dict[str, str] | None
+    units: str | dict[float | int | str, str | None] | None
         If returning plots/values, the units to include.
     primary_params: tuple[str, ...]
         Array parameters that mean "the dataset being processed".
