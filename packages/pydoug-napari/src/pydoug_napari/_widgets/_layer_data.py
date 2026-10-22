@@ -2,6 +2,8 @@
 Convert napari layers into plain data for non-napari operations.
 """
 
+from typing import Any
+
 import numpy as np
 from napari.layers import Image, Labels, Shapes, Surface
 
@@ -15,7 +17,7 @@ LAYER_TYPE_MAP: dict = {
 }
 
 
-def layer_payload(layer, live_shapes: bool = False):
+def layer_payload(layer: Any, live_shapes: bool = False):
     """
     Convert a napari layer into the plain data its operation receives.
 

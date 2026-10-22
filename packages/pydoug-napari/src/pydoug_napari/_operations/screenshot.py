@@ -80,7 +80,8 @@ def _render_screenshot_impl(
     captures_viewer_settings=True,
 )
 def render_image_screenshot(
-    imarray: np.ndarray, Settings: dict[str, Any]
+    imarray: np.ndarray,
+    Settings: dict[str, Any],
 ) -> np.ndarray:
     """
     Render `imarray` with the captured display settings in a fully
@@ -104,13 +105,14 @@ def render_image_screenshot(
 
 
 @register_operation(
-    category="visualization",
+    category="visualize",
     display_name="Render Labels Screenshot",
     captures_viewer_settings=True,
     layer_type="labels",
 )
 def render_labels_screenshot(
-    imarray: np.ndarray, Settings: dict[str, Any]
+    imarray: np.ndarray,
+    Settings: dict[str, Any],
 ) -> np.ndarray:
     """
     Render `imarray` with the captured display settings in a fully

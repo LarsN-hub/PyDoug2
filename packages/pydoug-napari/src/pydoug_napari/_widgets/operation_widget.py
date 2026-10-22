@@ -17,7 +17,7 @@ from napari.viewer import Viewer
 
 from pydoug_core.batch.recorder import Recorder
 from pydoug_core.registry import OperationSpec
-from pydoug_core.results import PlotResult, ValueResult
+from pydoug_core.results import PlotResult, ValueResult, VisualResult
 from pydoug_napari._widgets._layer_data import LAYER_TYPE_MAP, layer_payload
 from pydoug_napari._widgets._layer_sync import connect_layer_autoselect
 from pydoug_napari._widgets._settings_capture import to_jsonable
@@ -122,7 +122,7 @@ def make_operation_widget(
             layer_step_id = recorder.step_id_for_layer(layer)
             if layer_step_id is not None:
                 input_refs["layer"] = f"step:{layer_step_id}"
-            elif operation_spec.layer_type in ("image", "labels"):
+            elif operation_spec.layer_type in ("image", "labels", "visual"):
                 input_refs["layer"] = "primary"
             else:  # surface or shapes
                 input_refs["layer"] = recorder.get_or_create_array_ref(
@@ -140,17 +140,15 @@ def make_operation_widget(
                 widget.call_button.text = f"Run {operation_spec.display_name}"
 
         def _on_done(
-            result: dict | Figure | float | int | np.ndarray | str | PlotResult,
+            result: dict | Figure | float | int | np.ndarray | str | PlotResult | ValueResult | VisualResult,
         ) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
 
             Parameters
             ----------
-            result: dict | Figure | float | int | np.ndarray | str | PlotResult
-                The result layer of the operation.
-            results_log: ResultsLog
-                The results log object.
+            result: dict | Figure | float | int | np.ndarray | str | PlotResult | ValueResult | VisualResult
+                The result of the operation.
             """
 
             _reset_button()
@@ -182,6 +180,24 @@ def make_operation_widget(
                     result_layer: Any = add_fn(
                         result, name=f"{operation_spec.display_name}"
                     )
+                if should_record:
+                    recorder.record(
+                        operation_spec.name,
+                        recorded_params,
+                        input_refs=input_refs,
+                        layer_ref=result_layer,
+                    )
+
+            elif operation_spec.output_kind == "visual":
+                add_fn = {
+                    "image": viewer.add_image,
+                    "labels": viewer.add_labels,  # type: ignore
+                }[result.layer_type]  # type: ignore
+                result_layer: Any = add_fn(
+                    result.imarray,  # type: ignore
+                    name=f"{operation_spec.display_name}",
+                    **result.vis_dict,  # type: ignore
+                )
                 if should_record:
                     recorder.record(
                         operation_spec.name,

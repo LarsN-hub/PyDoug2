@@ -34,7 +34,7 @@ class OperationSpec:
         The layer type for each array input.
     array_param_flags: dict[str, str]
         Relevant flags for array inputs.
-    output_kind: Literal["image", "labels", "surface", "plot", "value"]
+    output_kind: Literal["image", "labels", "surface", "plot", "value", "visual"]
         What form of output the operation produces.
     display_result: Callable[[Any], None] | None
         How to interactively display the result.
@@ -71,7 +71,9 @@ class OperationSpec:
     array_params: tuple[str, ...] = ()
     array_param_types: dict[str, str] = field(default_factory=dict)
     array_param_flags: dict[str, str] = field(default_factory=dict)
-    output_kind: Literal["image", "labels", "surface", "plot", "value"] = "image"
+    output_kind: Literal[
+        "image", "labels", "surface", "plot", "value", "visual"
+    ] = "image"
     display_result: Callable[[Any], None] | None = None
     save_result: Callable[[Any, Path], None] | None = None
     recordable_toggle: bool = False
@@ -101,7 +103,9 @@ def register_operation(
     array_params: tuple[str, ...] = (),
     array_param_types: dict[str, str] = {},
     array_param_flags: dict[str, str] = {},
-    output_kind: Literal["image", "labels", "surface", "plot", "value"] = "image",
+    output_kind: Literal[
+        "image", "labels", "surface", "plot", "value", "visual"
+    ] = "image",
     display_result: Callable[[Any], None] | None = None,
     save_result: Callable[[Any, Path], None] | None = None,
     recordable_toggle: bool = False,
@@ -134,7 +138,7 @@ def register_operation(
         The napari layer type for each array input.
     array_param_flags: dict[str, str]
         Relevant flags for array inputs.
-    output_kind: Literal["image", "labels", "surface", "plot", "value"]
+    output_kind: Literal["image", "labels", "surface", "plot", "value", "visual"]
         What form of output the operation produces.
     display_result: Callable[[Any], None] | None
         How to interactively display the result.

@@ -15,6 +15,7 @@ from psygnal import Signal
 
 from pydoug_core.payloads import ShapesData
 from pydoug_core.registry import OperationSpec, get_operation
+from pydoug_core.results import VisualResult
 
 
 def _write_payload(payload: Any, arrays_dir: Path, tag: str) -> str:
@@ -102,9 +103,9 @@ def _payloads_equal(
 
     Parameters
     ----------
-    a: np.ndarray | tuple
+    a: np.ndarray | tuple | ShapesData
         The payload.
-    b: np.ndarray | tuple
+    b: np.ndarray | tuple | ShapesData
         Another instance of the payload.
 
     Returns
@@ -524,6 +525,7 @@ class Recorder:
                 result = spec.func(primary_arg, **other_kwargs, **step.params)
             else:
                 result = spec.func(**other_kwargs, **step.params)
+            result = result.imarray if isinstance(result, VisualResult) else result
             outputs[step.step_id] = result
             yield step, spec, result
 

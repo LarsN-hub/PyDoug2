@@ -6,12 +6,32 @@ import csv
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from matplotlib.figure import Figure
 
 SCALAR_TYPES: tuple = (int, float, str, bool, np.generic)
+
+
+@dataclass
+class VisualResult:
+    """
+    An image array with the intended napari layer type and a dict of visual settings.
+
+    Attributes
+    ----------
+    imarray: np.ndarray
+        The image array.
+    layer_type: Literal["image", "labels"]
+        The layer type to add.
+    vis_dict: dict[str, Any]
+        A dict containing napari key value pairs for the layer to be added.
+    """
+
+    imarray: np.ndarray
+    layer_type: Literal["image", "labels"]
+    vis_dict: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from pydoug_core.batch._tables import BatchTables
 from pydoug_core.io.imwriter import imwrite
+from pydoug_core.results import VisualResult
 
 
 def run_batch(
@@ -56,7 +57,7 @@ def run_batch(
 
     for step in recorder.steps:
         spec: OperationSpec = get_operation(step.operation_name)
-        needs_folder: bool = spec.output_kind not in ("image", "labels") or (
+        needs_folder: bool = spec.output_kind not in ("image", "labels", "visual") or (
             save_every_step and save_images
         )
         if needs_folder:
@@ -76,11 +77,20 @@ def run_batch(
         last_image_result: ndarray | None = None
         for step, spec, result in recorder.iter_replay(primary):
             folder: Path = output_dir / step_folders[step.step_id]
-            if spec.output_kind in ("image", "labels"):
-                last_image_result = result
+            if spec.output_kind in ("image", "labels", "visual"):
+                last_image_result = (
+                    result.imarray
+                    if isinstance(result, VisualResult)
+                    else result
+                )
                 if save_every_step and save_images:
                     out_path: Path = folder / f"{name}.tiff"
-                    imwrite(result, folder, name, "tiff")
+                    imwrite(
+                        result.imarray if isinstance(result, VisualResult) else result,
+                        folder,
+                        name,
+                        "tiff",
+                    )
                     if not out_path.exists():
                         text: str = f"WARNING: failed to write {folder.name} for {name}"
                         yield index, total, text
@@ -89,7 +99,7 @@ def run_batch(
             elif tables.handles(result):
                 tables.add(folder, name, result, spec.units)
             else:
-                default_save_result(result, folder / name)
+                default_save_result(result, folder / name)  # type: ignore
 
         if not save_every_step and save_images and last_image_result is not None:
             out_path: Path = output_dir / f"{name}.tiff"
