@@ -17,7 +17,10 @@ datas, binaries, hiddenimports = [], [], []
 
 for pkg in (
     "app_model",
+    "algotom",
     "cmasher",
+    "edt",
+    "h5py",
     "imageio",
     "magicgui",
     "magicclass",
@@ -29,7 +32,15 @@ for pkg in (
     "napari_resources",
     "napari_svg",
     "npe2",
+    "numba",
+    "numpy",
+    "openpnm",
+    "porespy",
+    "psygnal",
+    "pypardiso",
     "qtpy",
+    "scikit-image",
+    "scipy",
     "superqt",
     "urllib3",
     "vispy",
@@ -41,13 +52,13 @@ for pkg in (
         hiddenimports += h
 
 for pkg in ("pydoug_core", "pydoug_napari", "pydoug_standalone"):
-    hiddenimports += collect_submodules(pkg)
-    datas += collect_data_files(pkg)
-datas += copy_metadata("pydoug-core") + copy_metadata("pydoug-napari")
-datas += [
-    ('assets/images/logo.png', 'assets/images'),
-    ('assets/images/logo.ico', 'assets/images'),
-]
+    cur_datas, cur_binaries, cur_hiddenimports = collect_all(pkg)
+    cur_metadata = copy_metadata(pkg)
+    hiddenimports += cur_hiddenimports
+    datas += cur_datas
+    datas += cur_metadata
+    binaries += cur_binaries
+datas += [('assets/images/logo.ico', 'assets/images')]
 
 a = Analysis(
     ['packages/pydoug-standalone/src/pydoug_standalone/__main__.py'],
@@ -59,7 +70,7 @@ a = Analysis(
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath = ["./packages/pydoug-standalone/src/pydoug_standalone/hooks"],
+    hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
@@ -84,7 +95,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon = "./assets/images/logo.ico"
+    icon="./assets/images/logo.ico"
 )
 coll = COLLECT(
     exe,
