@@ -190,7 +190,15 @@ def make_operation_widget(
                         layer_ref=result_layer,
                     )
 
-            else:
+            else:  # "value", "plot"
+                step_id: str | None = None
+                if record_in_workflow and should_record:
+                    step_id = recorder.record(
+                        operation_spec.name,
+                        recorded_params,
+                        input_refs=input_refs,
+                        layer_ref=None,
+                    )
                 name: str = operation_spec.display_name
                 dataset: str = (
                     layer.name
@@ -208,25 +216,23 @@ def make_operation_widget(
                         result if isinstance(result, PlotResult) else None,
                         dataset,
                         operation_spec.units,
+                        step_id,
                     )
                     if isinstance(result, PlotResult):
                         for table_name, table in result.tables.items():
                             results_log.add(
                                 f"{operation_spec.display_name} ({table_name})",
                                 ValueResult(table, result.units).display(),
+                                step_id=step_id,
                             )
-                elif isinstance(result, ValueResult):
-                    results_log.add(
-                        name, result.display(), result, dataset, operation_spec.units
-                    )
                 else:
-                    results_log.add(name, result, result, dataset, operation_spec.units)
-                if record_in_workflow and should_record:
-                    recorder.record(
-                        operation_spec.name,
-                        recorded_params,
-                        input_refs=input_refs,
-                        layer_ref=None,
+                    results_log.add(
+                        name,
+                        result.display() if isinstance(result, ValueResult) else result,
+                        result,
+                        dataset,
+                        operation_spec.units,
+                        step_id,
                     )
 
         def _on_error(exc: Exception) -> None:

@@ -50,7 +50,7 @@ class MainWidget(QTabWidget):
         self.results_log: ResultsLog = ResultsLog()
         self.results_log_widget: ResultsLogWidget = ResultsLogWidget(self.results_log)
         self.results_panel: ResultsPanel = ResultsPanel(
-            self.results_log, self.results_log_widget
+            self.results_log, self.results_log_widget, self.recorder
         )
 
         self.addTab(make_batch_widget(self.recorder), "Batch")

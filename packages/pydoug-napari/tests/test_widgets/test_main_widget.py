@@ -58,16 +58,29 @@ def test_make_main_widget(
     qtbot.mouseClick(
         mainwidget.results_panel.export_all_button, Qt.MouseButton.LeftButton
     )
-    qtbot.waitUntil(lambda: Path(tmp_path / "Stats/values.csv").exists(), timeout=5000)
-    assert Path(tmp_path / "Stats/values.csv").exists()
-    rmtree(str(Path(tmp_path / "Stats")))
-    assert not Path(tmp_path / "Stats/values.csv").exists()
-    mainwidget.results_panel.log_widget.setCurrentRow(0)  # type: ignore
+    qtbot.waitUntil(
+        lambda: Path(tmp_path / "01_Stats/values.csv").exists(), timeout=5000
+    )
+    assert Path(tmp_path / "01_Stats/values.csv").exists()
+    rmtree(str(Path(tmp_path / "01_Stats")))
+    assert not Path(tmp_path / "01_Stats/values.csv").exists()
+    mainwidget.results_panel.log_widget.setCurrentRow(0)
+    assert mainwidget.results_panel.log_widget.currentRow() == 0
     qtbot.mouseClick(
         mainwidget.results_panel.export_selected_button, Qt.MouseButton.LeftButton
     )
-    qtbot.waitUntil(lambda: Path(tmp_path / "Stats/values.csv").exists(), timeout=5000)
-    assert Path(tmp_path / "Stats/values.csv").exists()
+    qtbot.waitUntil(
+        lambda: Path(tmp_path / "01_Stats/values.csv").exists(), timeout=5000
+    )
+    assert Path(tmp_path / "01_Stats/values.csv").exists()
+    mainwidget.results_panel.log_widget.setCurrentRow(0)
+    assert mainwidget.results_panel.log_widget.currentRow() == 0
+    cur_len: int = mainwidget.results_panel.log_widget.count()
+    qtbot.mouseClick(mainwidget.results_panel.delete_button, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(
+        lambda: mainwidget.results_panel.log_widget.count() == cur_len - 1, timeout=5000
+    )
+    assert mainwidget.results_panel.log_widget.count() == cur_len - 1
 
 
 def test_cascade_delete_removes_dependent_steps(
