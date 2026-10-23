@@ -31,7 +31,7 @@ def to_jsonable(value: Any) -> Any:
     if isinstance(value, np.ndarray):
         return value.tolist()  # pragma: no cover
     if isinstance(value, dict):
-        return {k: to_jsonable(v) for k, v in value.items()}
+        return {to_jsonable(k): to_jsonable(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
         return [to_jsonable(v) for v in value]
     if hasattr(value, "model_dump"):

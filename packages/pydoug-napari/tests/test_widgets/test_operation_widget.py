@@ -585,3 +585,8 @@ def test_shapes_behavior(
     qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: len(recorder.steps) == 1, timeout=5000)
     assert len(recorder.steps) == 1
+
+
+def test_VisualResult_behavior() -> None:
+
+    pass

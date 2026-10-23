@@ -187,7 +187,7 @@ def make_operation_widget(
                         "surface": viewer.add_surface,  # type: ignore
                     }[operation_spec.output_kind]
                     result_layer: Any = add_fn(
-                        result, name=f"{operation_spec.display_name}"
+                        result, name=f"{operation_spec.display_name}", opacity=1
                     )
                 if should_record:
                     recorder.record(
@@ -419,7 +419,6 @@ def make_operation_widget(
             raw: dict[str, Any] = {
                 "blending": target.blending,
                 "canvas_size": [canvas.width(), canvas.height()],
-                "colormap": target.colormap,
                 "camera_angles": list(viewer.scene.camera.angles),
                 "camera_zoom": viewer.scene.camera.zoom,
                 "camera_center": list(viewer.scene.camera.center),
@@ -449,6 +448,23 @@ def make_operation_widget(
                         "interpolation2d": target.interpolation2d,
                         "interpolation3d": target.interpolation3d,
                         "iso_threshold": target.iso_threshold,
+                    }
+                )
+            if target.metadata is not None:  # pragma: no cover
+                if "custom colormap" in target.metadata.keys():
+                    raw.update(
+                        {
+                            "custom colormap": True,
+                            "colormap": target.colormap,
+                        }
+                    )
+                else:
+                    raw.update({"colormap": target.colormap.name})
+            else:  # pragma: no cover
+                raw.update(
+                    {
+                        "custom colormap": False,
+                        "colormap": target.colormap.name,
                     }
                 )
 

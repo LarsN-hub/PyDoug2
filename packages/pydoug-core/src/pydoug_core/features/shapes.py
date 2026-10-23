@@ -21,6 +21,7 @@ def mis(
     Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
     Smooth: bool = True,
     Return_Diameters: bool = False,
+    Round_Values: bool = False,
     Perform_Slicewise: bool = False,
 ) -> np.ndarray:
     """
@@ -45,6 +46,9 @@ def mis(
     Return_Diameters: bool
         Whether to return the diameter of the spheres (True) or the radii (False).
         Default is False.
+    Round_Values: bool
+        Whether to round returned values to the nearest integer (True) or leave as exact
+        floating point distance (False). Default is False.
     Perform_Slicewise: bool
         Whether or not to perform the operation slicewise. Default is False.
 
@@ -60,7 +64,7 @@ def mis(
         print("Image is RGB, MIS not found!")
         return imarray
 
-    def _mis(imarray, Method, Pixel_Size, Smooth, Return_Diameters) -> np.ndarray:
+    def _mis(imarray) -> np.ndarray:
 
         if Method == "Brute Force":
             method: str = "bf"
@@ -83,13 +87,11 @@ def mis(
     if Perform_Slicewise and is3d(imarray):
         mis_array: np.ndarray = np.empty(imarray.shape)
         for index in range(0, imarray.shape[0]):
-            mis_array[index] = _mis(
-                imarray[index], Method, Pixel_Size, Smooth, Return_Diameters
-            )
+            mis_array[index] = _mis(imarray[index])
 
-        return mis_array
+        return np.round(mis_array) if Round_Values else mis_array
 
-    return _mis(imarray, Method, Pixel_Size, Smooth, Return_Diameters)
+    return np.round(_mis(imarray)) if Round_Values else _mis(imarray)
 
 
 @register_operation(category="features", display_name="Blobs")
