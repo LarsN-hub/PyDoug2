@@ -89,9 +89,9 @@ def mis(
         for index in range(0, imarray.shape[0]):
             mis_array[index] = _mis(imarray[index])
 
-        return np.round(mis_array) if Round_Values else mis_array
+        return np.round(mis_array).astype(np.int32) if Round_Values else mis_array
 
-    return np.round(_mis(imarray)) if Round_Values else _mis(imarray)
+    return np.round(_mis(imarray)).astype(np.int32) if Round_Values else _mis(imarray)
 
 
 @register_operation(category="features", display_name="Blobs")
