@@ -12,7 +12,7 @@ from skimage.measure import marching_cubes
 from skimage.morphology import ball
 
 from pydoug_core.registry import register_operation, unregister_operation
-from pydoug_core.results import PlotResult, ValueResult
+from pydoug_core.results import PlotResult, ValueResult, VisualResult
 
 pytest_plugins: list[str] = ["pydoug_core.testing"]
 
@@ -315,6 +315,24 @@ def registered_shapes_primary():
 
     yield "_dummy_shapes_primary"
     unregister_operation("_dummy_shapes_primary")
+
+
+@pytest.fixture
+def registered_visual_result():
+    """
+    Fixture to create a registered "visual result" operation.
+    """
+
+    @register_operation(
+        category="testing",
+        display_name="Dummy Visual Result",
+        output_kind="visual",
+    )
+    def _dummy_visual_result(imarray: np.ndarray) -> VisualResult:  # pragma: no cover
+        return VisualResult(imarray, "image", {})
+
+    yield "_dummy_visual_result"
+    unregister_operation("_dummy_visual_result")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)

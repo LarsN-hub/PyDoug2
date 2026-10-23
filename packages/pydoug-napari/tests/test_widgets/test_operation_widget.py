@@ -587,6 +587,23 @@ def test_shapes_behavior(
     assert len(recorder.steps) == 1
 
 
-def test_VisualResult_behavior() -> None:
+def test_VisualResult_behavior(
+    sample_3dgray_array, make_napari_viewer, qtbot, registered_visual_result
+) -> None:
 
-    pass
+    viewer: Viewer = make_napari_viewer()
+    recorder: Recorder = Recorder()
+    results_log: ResultsLog = ResultsLog()
+    spec: OperationSpec = get_operation(registered_visual_result)
+    widget: CollapsibleContainer = make_operation_widget(
+        spec, viewer, recorder, results_log
+    )
+    qtbot.addWidget(widget.native)
+    subwidget: FunctionGui | None = widget.get_widget("_dispatch")
+    assert subwidget is not None
+    viewer.add_image(sample_3dgray_array)
+    subwidget.layer.value = viewer.layers[0]
+    assert len(viewer.layers) == 1
+    qtbot.mouseClick(subwidget.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: len(viewer.layers) == 2, timeout=5000)
+    assert len(viewer.layers) == 2
