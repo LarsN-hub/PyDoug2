@@ -79,9 +79,7 @@ def run_batch(
             folder: Path = output_dir / step_folders[step.step_id]
             if spec.output_kind in ("image", "labels", "visual"):
                 last_image_result = (
-                    result.imarray
-                    if isinstance(result, VisualResult)
-                    else result
+                    result.imarray if isinstance(result, VisualResult) else result
                 )
                 if save_every_step and save_images:
                     out_path: Path = folder / f"{name}.tiff"

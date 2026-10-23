@@ -140,14 +140,23 @@ def make_operation_widget(
                 widget.call_button.text = f"Run {operation_spec.display_name}"
 
         def _on_done(
-            result: dict | Figure | float | int | np.ndarray | str | PlotResult | ValueResult | VisualResult,
+            result: dict
+            | Figure
+            | float
+            | int
+            | np.ndarray
+            | str
+            | PlotResult
+            | ValueResult
+            | VisualResult,
         ) -> None:
             """
             Calls back on main Qt thread to return result after operation is performed.
 
             Parameters
             ----------
-            result: dict | Figure | float | int | np.ndarray | str | PlotResult | ValueResult | VisualResult
+            result: dict | Figure | float | int | np.ndarray | str | PlotResult |
+            ValueResult | VisualResult
                 The result of the operation.
             """
 
@@ -410,7 +419,7 @@ def make_operation_widget(
             raw: dict[str, Any] = {
                 "blending": target.blending,
                 "canvas_size": [canvas.width(), canvas.height()],
-                "colormap": target.colormap.name,
+                "colormap": target.colormap,
                 "camera_angles": list(viewer.scene.camera.angles),
                 "camera_zoom": viewer.scene.camera.zoom,
                 "camera_center": list(viewer.scene.camera.center),

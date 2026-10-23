@@ -55,7 +55,6 @@ def value_gradient(
     if C_Lims[0] == C_Lims[1] == 0:
         carray: np.ndarray = colormaps[Color_Map](np.linspace(0, 1, gray_count))
     else:
-        print(True)
         r_start: int = (
             (min(C_Lims) + np.iinfo(imarray.dtype).min)
             if np.iinfo(imarray.dtype).min != 0
@@ -67,19 +66,19 @@ def value_gradient(
             else max(C_Lims)
         )
         carray: np.ndarray = np.empty((gray_count, 4))
-        carray[r_start: r_end + 1, :] = colormaps[Color_Map](
+        carray[r_start : (r_end + 1), :] = colormaps[Color_Map](
             np.linspace(0, 1, r_end - r_start + 1)
         )
-        carray[0:r_start] = np.repeat(carray[r_start, :], r_start - 1, 1)
-        carray[r_end:] = np.repeat(
-            carray[r_end, :], np.iinfo(imarray.dtype).max - r_end + 1, 1
+        carray[0:r_start, :] = np.repeat(carray[r_start : (r_start + 1), :], r_start, 0)
+        carray[r_end:, :] = np.repeat(
+            carray[r_end : (r_end + 1), :], np.iinfo(imarray.dtype).max - r_end + 1, 0
         )
 
     return VisualResult(
         imarray,
         "image",
-        {"colormap":
-            {
+        {
+            "colormap": {
                 "colors": carray,
                 "name": f"{Color_Map}_custom",
                 "interpolation": "linear",

@@ -71,9 +71,9 @@ class OperationSpec:
     array_params: tuple[str, ...] = ()
     array_param_types: dict[str, str] = field(default_factory=dict)
     array_param_flags: dict[str, str] = field(default_factory=dict)
-    output_kind: Literal[
-        "image", "labels", "surface", "plot", "value", "visual"
-    ] = "image"
+    output_kind: Literal["image", "labels", "surface", "plot", "value", "visual"] = (
+        "image"
+    )
     display_result: Callable[[Any], None] | None = None
     save_result: Callable[[Any, Path], None] | None = None
     recordable_toggle: bool = False
