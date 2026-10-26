@@ -106,3 +106,45 @@ def test_value_gradient_labels(sample_3dgray_array) -> None:
         result02.vis_dict["colormap"][100]
         == colormaps["inferno"](np.linspace(0, 1, 10))[-1]
     )
+
+
+def test_axial_gradient(sample_masks) -> None:
+
+    with pytest.raises(ValueError):
+        _ = colors.axial_gradient(sample_masks["2dgray"], "Z")
+    result01: VisualResult = colors.axial_gradient(sample_masks["2dgray"])
+    result02: VisualResult = colors.axial_gradient(sample_masks["2dgray"], "X")
+    result03: VisualResult = colors.axial_gradient(sample_masks["3dgray"])
+    result04: VisualResult = colors.axial_gradient(sample_masks["3dgray"], "X")
+    result05: VisualResult = colors.axial_gradient(sample_masks["3dgray"], "Z")
+    result06: VisualResult = colors.axial_gradient(
+        sample_masks["2dgray"], Return_Type="Labels"
+    )
+    result07: VisualResult = colors.axial_gradient(
+        sample_masks["3dgray"], Return_Type="Labels"
+    )
+    result08: VisualResult = colors.axial_gradient(
+        sample_masks["2dgray"], C_Lims=(2, 8)
+    )
+    result09: VisualResult = colors.axial_gradient(
+        sample_masks["3dgray"], C_Lims=(2, 8)
+    )
+
+    assert result01.imarray.shape == sample_masks["2dgray"].shape
+    assert result02.imarray.shape == sample_masks["2dgray"].shape
+    assert result03.imarray.shape == sample_masks["3dgray"].shape
+    assert result04.imarray.shape == sample_masks["3dgray"].shape
+    assert result05.imarray.shape == sample_masks["3dgray"].shape
+    assert result06.imarray.shape == sample_masks["2dgray"].shape
+    assert result07.imarray.shape == sample_masks["3dgray"].shape
+    assert result08.imarray.shape == sample_masks["2dgray"].shape
+    assert result09.imarray.shape == sample_masks["3dgray"].shape
+    assert result01.imarray.dtype != np.dtype(np.bool)
+    assert result02.imarray.dtype != np.dtype(np.bool)
+    assert result03.imarray.dtype != np.dtype(np.bool)
+    assert result04.imarray.dtype != np.dtype(np.bool)
+    assert result05.imarray.dtype != np.dtype(np.bool)
+    assert result06.imarray.dtype != np.dtype(np.bool)
+    assert result07.imarray.dtype != np.dtype(np.bool)
+    assert result08.imarray.dtype != np.dtype(np.bool)
+    assert result09.imarray.dtype != np.dtype(np.bool)
