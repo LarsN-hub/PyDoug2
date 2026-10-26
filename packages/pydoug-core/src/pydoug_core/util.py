@@ -24,6 +24,7 @@ __all__ = [
     "prep_mask",
     "dtype_2_str",
     "str_2_dtype",
+    "min_int_dtype",
 ]
 
 
@@ -522,3 +523,35 @@ def str_2_dtype(dtype_str: str) -> np.dtype:
     if dtype_str.lower() == "float32":
         return np.dtype(np.float32)
     return np.dtype(np.float64)
+
+
+def min_int_dtype(imarray: np.ndarray) -> np.dtype:
+    """
+    Find the lowest bit-count integer format dtype that can accomodate the given image.
+    Returns an unsigned integer dtype if the image has no negative values, otherwise
+    returns a signed integer dtype.
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to evaluate.
+
+    Returns
+    -------
+    min_dtype: np.dtype
+        The minimum bit-count integer format data type for the image.
+    """
+
+    if np.min(imarray) < 0:
+        for dtype in (np.int8, np.int16, np.int32, np.int64):
+            if (
+                np.max(imarray) <= np.iinfo(np.dtype(dtype)).max
+                and np.min(imarray) >= np.iinfo(np.dtype(dtype)).min
+            ):
+                return np.dtype(dtype)
+
+    for dtype in (np.uint8, np.uint16, np.uint32, np.uint64):
+        if np.max(imarray) <= np.iinfo(np.dtype(dtype)).max:
+            return np.dtype(dtype)
+
+    return np.dtype(np.int64)

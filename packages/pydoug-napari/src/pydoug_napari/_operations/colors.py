@@ -22,7 +22,8 @@ def get_cmap(
 ) -> dict:
     """
     Return a napari-readable colormap from matplotlib and cmasher colormaps for the
-    input integer image, colormap string, and color limits.
+    input integer image, colormap string, and color limits. WARNING, this can take an
+    exceptionally long time if the dtype is greater than (u)int16 (e.g., int32).
 
     Parameters
     ----------

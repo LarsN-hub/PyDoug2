@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 import numpy as np
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import is3d, isrgb, rgb2gray
+from pydoug_core.util import is3d, isrgb, min_int_dtype, rgb2gray
 
 __all__ = ["mis", "blobs", "lines", "circles", "centroid"]
 
@@ -89,9 +89,18 @@ def mis(
         for index in range(0, imarray.shape[0]):
             mis_array[index] = _mis(imarray[index])
 
-        return np.round(mis_array).astype(np.int32) if Round_Values else mis_array
+        return (
+            np.round(mis_array).astype(min_int_dtype(mis_array))
+            if Round_Values
+            else mis_array
+        )
 
-    return np.round(_mis(imarray)).astype(np.int32) if Round_Values else _mis(imarray)
+    mis_array: np.ndarray = _mis(imarray)
+    return (
+        np.round(mis_array).astype(min_int_dtype(mis_array))
+        if Round_Values
+        else mis_array
+    )
 
 
 @register_operation(category="features", display_name="Blobs")
