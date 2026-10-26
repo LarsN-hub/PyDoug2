@@ -12,7 +12,7 @@ from pydoug_core.registry import register_operation
 from pydoug_core.results import PlotResult, ValueResult
 from pydoug_core.util import is3d, prep_mask
 
-__all__ = ["hist_distrib", "size_distrib"]
+__all__ = ["hist_distrib", "size_distrib", "dimless_morph_distrib"]
 
 
 def hist_distrib(
@@ -200,14 +200,15 @@ def size_distrib(
 
 @register_operation(
     category="measure",
-    display_name="Aspect Ratio Distribution",
+    display_name="Dimensionless Morphology Distribution",
     layer_type="labels",
     output_kind="plot",
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
 )
-def aspect_ratio_distrib(
+def dimless_morph_distrib(
     labarray: np.ndarray,
+    Measurement: Literal["Aspect Ratio", "Sphericity"] = "Aspect Ratio",
     Bin_Count: Annotated[int, {"min": 0}] = 0,
     Normalize: bool = False,
     Y_Max: Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}] = 0,
@@ -219,9 +220,10 @@ def aspect_ratio_distrib(
     Mask: np.ndarray | None = None,
 ) -> PlotResult | ValueResult:
     """
-    Plot a frequency-weighted histogram of labeled object aspect ratios. Convenience
-    wrapper around scikit-image's exposure.histogram and measure.regionprops as well as
-    matplotlib's hist:
+    Plot a frequency-weighted histogram of dimensionless morphological descriptors of
+    labeled objects in a segmented image. Convenience wrapper around scikit-image's
+    exposure.histogram and measure.regionprops, PyDoug's measure tab's bulk and surface
+    value calculation widgets, and matplotlib's hist:
     https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.histogram
     https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.regionprops
     https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
@@ -230,10 +232,15 @@ def aspect_ratio_distrib(
     ----------
     labarray: np.ndarray
         The labeled segmented image.
-    Pixel_Size: float
-        The edge-length of pixels in real-world units.
-    Units: str
-        The real-world units for "Pixel Size".
+    Measurement: Literal
+        The measurement to perform on each labeled region.
+        - "Aspect Ratio": Find the ratio of the longest diameter to the shortest
+        diameter for each labeled object.
+        - "Sphericity": Find the ratio of the spherical/circular equivalent surface
+        area/perimeter to the measured surface area/perimeter (slashes denote 3D/2D).
+        1 = perfectly spherical/circular while lower indicates further deviation. In
+        practice, some values will be nonsensically greater than 1 due to
+        inconsistencies between surface and bulk calculations with pixelated data.
     Bin_Count: int
         The number of bins to use in the histogram. Ignored if set to 0.
     Normalize: bool
@@ -266,21 +273,47 @@ def aspect_ratio_distrib(
             }
         )
 
-    from skimage.measure import regionprops
-
     labels: np.ndarray = np.unique(values)
     labels = labels[1:] if labels[0] == 0 else labels
-    aspect_ratios: np.ndarray = np.empty(labels.size)
-    props = regionprops(values)
-    for index, region in enumerate(props):
-        aspect_ratios[index] = region.axis_major_length / max(
-            region.axis_minor_length, 0.01
-        )
-    ar_values, ar_bin_centers, ar_stats = hist_distrib(
-        aspect_ratios, Bin_Count, "values", Normalize
+    dimless_values: np.ndarray = np.empty(labels.size)
+
+    if Measurement == "Aspect Ratio":
+        from skimage.measure import regionprops
+
+        x_label: str = "Aspect Ratio"
+        props = regionprops(values)
+        for index, region in enumerate(props):
+            dimless_values[index] = region.axis_major_length / max(
+                region.axis_minor_length, 0.01
+            )
+
+    else:
+        from pydoug_core.analyze.measure import bulk, surf
+
+        x_label: str = "Sphericity"
+        surf_measurement: str = "Area" if is3d(labarray) else "Perimeter"
+        bulk_measurement: str = "Volume" if is3d(labarray) else "Area"
+        surf_result: PlotResult | ValueResult = surf(values, surf_measurement)
+        bulk_result: PlotResult | ValueResult = bulk(values, bulk_measurement)
+        assert isinstance(surf_result, ValueResult)
+        assert isinstance(bulk_result, ValueResult)
+        surf_dict: dict = surf_result.values  # type: ignore
+        bulk_dict: dict = bulk_result.values  # type: ignore
+        for index, label in enumerate(labels):
+            if is3d(labarray):
+                dimless_values[index] = (
+                    (np.cbrt((bulk_dict[label] * 3) / (4 * np.pi)) ** 2) * 4 * np.pi
+                ) / surf_dict[label]
+            else:
+                dimless_values[index] = (
+                    np.sqrt(bulk_dict[label] / np.pi) * 2 * np.pi
+                ) / surf_dict[label]
+
+    hist_values, hist_bin_centers, hist_stats = hist_distrib(
+        dimless_values, Bin_Count, "values", Normalize
     )
-    ar_stats.pop("Dtype Min")
-    ar_stats.pop("Dtype Max")
+    hist_stats.pop("Dtype Min")
+    hist_stats.pop("Dtype Max")
 
     from pydoug_core.analyze.plot_util import hist_ax
 
@@ -290,10 +323,10 @@ def aspect_ratio_distrib(
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
     ax = hist_ax(
-        ar_values,
-        ar_bin_centers,
+        hist_values,
+        hist_bin_centers,
         ax,
-        "Aspect Ratio",
+        x_label,
         "Probability Density" if Normalize else "Counts",
         Y_Max,
         x_lims,
@@ -303,9 +336,9 @@ def aspect_ratio_distrib(
     return PlotResult(
         fig,
         {
-            "Bin Centers": ar_bin_centers,
-            "Probability Density" if Normalize else "Counts": ar_values,
+            "Bin Centers": hist_bin_centers,
+            "Probability Density" if Normalize else "Counts": hist_values,
         },  # type: ignore
         x_columns=("Bin Centers",),
-        tables={"statistics": ar_stats},
+        tables={"statistics": hist_stats},
     )
