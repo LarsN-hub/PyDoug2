@@ -79,7 +79,7 @@ def plot_histogram(
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
 
-    from pydoug_core.analyze.distrib import hist_distrib
+    from pydoug_core.analyze.plot_distrib import hist_distrib
     from pydoug_core.analyze.plot_util import hist_ax
 
     plt.rcParams["font.family"] = "sans-serif"
@@ -105,7 +105,7 @@ def plot_histogram(
         bin_centers,
         ax,
         "Gray Value",
-        "Density" if Normalize else "Counts",
+        "Probability Density" if Normalize else "Counts",
         Y_Max,
         x_lims,
     )
@@ -115,7 +115,7 @@ def plot_histogram(
         figure=fig,
         data={
             "Bin Centers": bin_centers,
-            "Density" if Normalize else "Counts": hist_vals,
+            "Probability Density" if Normalize else "Counts": hist_vals,
         },  # type: ignore
         x_columns=("Bin Centers",),
         tables={"statistics": hist_stats},

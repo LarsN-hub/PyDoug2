@@ -25,8 +25,10 @@ def get_cmap(
     Return a napari-readable colormap from matplotlib and cmasher colormaps for the
     input integer image, colormap string, and color limits. WARNING, this can take an
     exceptionally long time if the dtype is greater than (u)int16 (e.g., int32).
-    Convenience wrapper around matplotlib's colormaps and numpy's linspace:
+    Convenience wrapper around matplotlib's and cmasher's colormaps and numpy's
+    linspace:
     https://matplotlib.org/stable/users/explain/colors/colormaps.html
+    https://cmasher.readthedocs.io/user/introduction.html#colormap-overview
     https://numpy.org/doc/stable/reference/generated/numpy.linspace.html
 
     Parameters
@@ -102,7 +104,11 @@ def value_gradient(
 ) -> VisualResult:
     """
     Gradiate colors in an image based on the grayscale intensity value. Image must have
-    an integer dtype.
+    an integer dtype. Convenience wrapper around matplotlib's and cmasher's colormaps
+    and numpy's linspace:
+    https://matplotlib.org/stable/users/explain/colors/colormaps.html
+    https://cmasher.readthedocs.io/user/introduction.html#colormap-overview
+    https://numpy.org/doc/stable/reference/generated/numpy.linspace.html
 
     Parameters
     ----------
@@ -152,9 +158,13 @@ def axial_gradient(
     """
     Gradiate colors in a segmented image based on the axial position of each segmented
     pixel. All pixels not equal to 0 are considered segmented pixels. Convenience
-    wrapper around numpy's arange and expand_dims:
+    wrapper around matplotlib's and cmasher's colormaps and numpy's arange, expand_dims,
+    and linspace:
+    https://matplotlib.org/stable/users/explain/colors/colormaps.html
+    https://cmasher.readthedocs.io/user/introduction.html#colormap-overview
     https://numpy.org/doc/stable/reference/generated/numpy.arange.html
     https://numpy.org/doc/stable/reference/generated/numpy.expand_dims.html
+    https://numpy.org/doc/stable/reference/generated/numpy.linspace.html
 
     Parameters
     ----------
