@@ -68,7 +68,7 @@ def test_multi_line() -> None:
 
 def test_hist_ax(sample_3dgray_array) -> None:
 
-    from pydoug_core.analyze.distrib import hist_distrib
+    from pydoug_core.analyze.plot_distrib import hist_distrib
 
     _, ax = plt.subplots(layout="constrained")
     hist_vals, bin_centers, _ = hist_distrib(sample_3dgray_array)

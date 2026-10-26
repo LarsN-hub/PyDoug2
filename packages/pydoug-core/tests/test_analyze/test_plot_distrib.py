@@ -76,3 +76,28 @@ def test_size_distrib(sample_masks) -> None:
     assert np.all(result01.data["Counts"] == result03.data["Counts"])  # type: ignore
     assert np.all(result04.data["Bin Centers"] * 2 == result05.data["Bin Centers"])  # type: ignore
     assert np.all(result04.data["Counts"] == result05.data["Counts"])
+
+
+def test_aspect_ratio_distrib(sample_masks) -> None:
+
+    result00: PlotResult | ValueResult = distrib.aspect_ratio_distrib(
+        np.zeros((5, 5, 5))
+    )
+    result01: PlotResult | ValueResult = distrib.aspect_ratio_distrib(
+        label(sample_masks["2dgray"], connectivity=1)  # type: ignore
+    )
+    result02: PlotResult | ValueResult = distrib.aspect_ratio_distrib(
+        label(sample_masks["3dgray"], connectivity=1)  # type: ignore
+    )
+    result03: PlotResult | ValueResult = distrib.aspect_ratio_distrib(
+        label(sample_masks["2dgray"], connectivity=1),  # type: ignore
+        Apply_Mask=True,
+        Mask=sample_masks["2dgray"],
+    )
+
+    assert isinstance(result00, ValueResult)
+    assert isinstance(result01, PlotResult)
+    assert isinstance(result02, PlotResult)
+    assert isinstance(result03, PlotResult)
+    assert np.all(result01.data["Bin Centers"] == result03.data["Bin Centers"])
+    assert np.all(result01.data["Counts"] == result03.data["Counts"])

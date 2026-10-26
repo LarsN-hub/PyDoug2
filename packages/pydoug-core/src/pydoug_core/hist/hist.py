@@ -48,8 +48,9 @@ def plot_histogram(
 ) -> PlotResult:
     """
     Plot an image array's histogram. Convenience wrapper around scikit-image's
-    exposure.histogram:
+    exposure.histogram and matplotlib's hist:
     https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.histogram
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 
     Parameters
     ----------
@@ -97,9 +98,6 @@ def plot_histogram(
 
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
-    x_lims: tuple[float, float] | None = (
-        None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims
-    )
     ax = hist_ax(
         hist_vals,
         bin_centers,
@@ -107,7 +105,7 @@ def plot_histogram(
         "Gray Value",
         "Probability Density" if Normalize else "Counts",
         Y_Max,
-        x_lims,
+        None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims,
     )
     fig.set_layout_engine("constrained")
 
