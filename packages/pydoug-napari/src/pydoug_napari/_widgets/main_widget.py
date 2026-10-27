@@ -205,15 +205,18 @@ class MainWidget(QTabWidget):
         if "filter" in categories:
             sorted_categories.append("filter")
             categories.remove("filter")
-        if "features" in categories:
-            sorted_categories.append("features")
-            categories.remove("features")
+        if "detect" in categories:
+            sorted_categories.append("detect")
+            categories.remove("detect")
         if "segment" in categories:
             sorted_categories.append("segment")
             categories.remove("segment")
         if "morphology" in categories:
             sorted_categories.append("morphology")
             categories.remove("morphology")
+        if "features" in categories:
+            sorted_categories.append("features")
+            categories.remove("features")
         if "info" in categories:
             sorted_categories.append("info")
             categories.remove("info")

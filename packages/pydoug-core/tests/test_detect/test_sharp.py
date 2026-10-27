@@ -1,10 +1,10 @@
 """
-Tests for PyDoug's features.feat module.
+Tests for PyDoug's detect.sharp module.
 """
 
 import numpy as np
 
-from pydoug_core.features import sharp
+from pydoug_core.detect import sharp
 
 
 def test_edges(sample_arrays) -> None:

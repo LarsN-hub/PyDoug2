@@ -12,7 +12,7 @@ from pydoug_core.util import is3d, isrgb
 __all__ = ["edges", "peaks", "corners", "surfaces"]
 
 
-@register_operation(category="features", display_name="Edges")
+@register_operation(category="detect", display_name="Edges")
 def edges(
     imarray: np.ndarray,
     Sigma: Annotated[float, {"min": 0}] = 1,
@@ -94,7 +94,7 @@ def edges(
     )
 
 
-@register_operation(category="features", display_name="Peaks")
+@register_operation(category="detect", display_name="Peaks")
 def peaks(
     imarray: np.ndarray,
     Radius: Annotated[int, {"min": 0}] = 0,
@@ -178,7 +178,7 @@ def peaks(
     return peak_array
 
 
-@register_operation(category="features", display_name="Corners")
+@register_operation(category="detect", display_name="Corners")
 def corners(
     imarray: np.ndarray,
     Method: Literal[
@@ -404,7 +404,7 @@ def corners(
     )
 
 
-@register_operation(category="features", display_name="Surfaces", output_kind="surface")
+@register_operation(category="detect", display_name="Surfaces", output_kind="surface")
 def surfaces(
     imarray: np.ndarray,
     Method: Literal["Lewiner", "Lorensen"] = "Lewiner",

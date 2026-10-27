@@ -34,6 +34,8 @@ def plot_histogram(
     imarray: np.ndarray,
     Bin_Count: Annotated[int, {"min": 1}] = 256,
     Normalize: bool = False,
+    Units: str = "",
+    X_Label: str = "Gray Value",
     Y_Max: Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}] = 0,
     X_Lims: tuple[
         Annotated[
@@ -60,6 +62,13 @@ def plot_histogram(
         The number of bins to use in the histogram. Ignored for integer arrays.
     Normalize: bool
         Whether or not to normalize the counts by the total sum. Default is False.
+    Units: str
+        (Optional) units to add to the x axis. If not provided, no units are added.
+    X_Label: str
+        The label for the x-axis. By changing this, this widget can be used to plot
+        distributions other than simply grayscale values (e.g., a path length
+        distribution after finding path length at each pixel in the "Path Length" widget
+        of the "Features" tab).
     Y_Max: float
         The maximum y-axis value to plot. Automatically determined if 0.
     X_Lims: tuple[float, float]
@@ -93,8 +102,14 @@ def plot_histogram(
     if values.size == 0:
         values = np.array([0], imarray.dtype)
     hist_vals, bin_centers, hist_stats = hist_distrib(
-        values, Bin_Count, normalize=Normalize
+        values, Bin_Count, "values", normalize=Normalize
     )
+    display_units: str = r"\mu m" if Units == "um" else Units
+    x_label: str = (
+        rf"{X_Label} ($\mathrm{{{display_units}}}$)" if Units != "" else X_Label
+    )
+    units: dict = {"Probability Density" if Normalize else "Counts": None}
+    units.update({X_Label: Units if Units != "" else None})
 
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
@@ -102,7 +117,7 @@ def plot_histogram(
         hist_vals,
         bin_centers,
         ax,
-        "Gray Value",
+        x_label,
         "Probability Density" if Normalize else "Counts",
         Y_Max,
         None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims,
@@ -112,11 +127,12 @@ def plot_histogram(
     return PlotResult(
         figure=fig,
         data={
-            "Bin Centers": bin_centers,
+            X_Label: bin_centers,
             "Probability Density" if Normalize else "Counts": hist_vals,
         },  # type: ignore
-        x_columns=("Bin Centers",),
+        x_columns=(X_Label,),
         tables={"statistics": hist_stats},
+        units=units,
     )
 
 

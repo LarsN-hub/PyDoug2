@@ -9,61 +9,7 @@ import numpy as np
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["euclidian_dt", "fft", "radon", "hough"]
-
-
-@register_operation(category="transform", display_name="Distance")
-def euclidian_dt(
-    imarray: np.ndarray,
-    Pixel_Size: Annotated[float, {"step": 0.0001, "min": 0}] = 1,
-    Round_Values: bool = False,
-    Perform_Slicewise: bool = False,
-) -> np.ndarray:
-    """
-    Transform a binary image into the distance domain by calculating the Euclidian
-    distance from each foreground point to the nearest background point. Convenience
-    wrapper around scipy's ndimage.distance_transform_edt:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.distance_transform_edt.html
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image array to be transformed.
-    Pixel_Size: float
-        The real-world length of a single pixel edge.
-    Round_Values: bool
-        Whether to round returned values to the nearest integer (True) or leave as exact
-        floating point distance (False). Default is False.
-    Perform_Slicewise: bool
-        Whether to perform the operation slicewise for 3D images (True) or in bulk
-        (False). Default is False.
-
-    Returns
-    -------
-    edtarray: np.ndarray
-        The image array transformed into the distance domain.
-    """
-
-    from scipy.ndimage import distance_transform_edt as edt
-
-    if Perform_Slicewise and util.is3d(imarray):
-        edtarray: np.ndarray = np.empty(imarray.shape)
-        for index in range(0, imarray.shape[0]):
-            edtarray[index] = edt(util.rgb2gray(imarray[index]), Pixel_Size)
-
-        return (
-            np.round(edtarray).astype(util.min_int_dtype(edtarray))
-            if Round_Values
-            else edtarray
-        )
-
-    edtarray = edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
-
-    return (
-        np.round(edtarray).astype(util.min_int_dtype(edtarray))
-        if Round_Values
-        else edtarray
-    )
+__all__ = ["fft", "radon", "hough"]
 
 
 @register_operation(category="transform", display_name="FFT")

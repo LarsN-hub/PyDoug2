@@ -139,7 +139,7 @@ def size_distrib(
     if np.all(np.unique(values) == np.array([0])):
         return ValueResult(
             {
-                "Bin Centers": np.array([0]),
+                Measurement: np.array([0]),
                 "Probability Density" if Normalize else "Counts": np.array([0]),
             }
         )
@@ -151,11 +151,11 @@ def size_distrib(
     if Measurement in "Area":
         hist_vals *= Pixel_Size**2
         display_units = rf"{display_units}^{{2}}"
-        units["Bin Centers"] = f"{Units}^2"
+        units[Measurement] = f"{Units}^2"
     elif Measurement == "Volume":
         hist_vals *= Pixel_Size**3
         display_units = rf"{display_units}^{{3}}"
-        units["Bin Centers"] = f"{Units}^3"
+        units[Measurement] = f"{Units}^3"
     elif Measurement in ("Equivalent Diameter", "Equivalent Radius"):
         if is3d(labarray):
             hist_vals *= Pixel_Size**3
@@ -165,7 +165,7 @@ def size_distrib(
             hist_vals = np.sqrt(hist_vals / np.pi)
         if Measurement == "Equivalent Diameter":
             hist_vals *= 2
-        units["Bin Centers"] = Units
+        units[Measurement] = Units
     size_vals, size_bin_centers, size_stats = hist_distrib(
         hist_vals, Bin_Count, "values", Normalize
     )
@@ -190,10 +190,10 @@ def size_distrib(
     return PlotResult(
         fig,
         {
-            "Bin Centers": size_bin_centers,
+            Measurement: size_bin_centers,
             "Probability Density" if Normalize else "Counts": size_vals,
         },  # type: ignore
-        x_columns=("Bin Centers",),
+        x_columns=(Measurement,),
         tables={"statistics": size_stats},
         units=units,
     )
@@ -269,7 +269,7 @@ def dimless_morph_distrib(
     if np.all(np.unique(values) == np.array([0])):
         return ValueResult(
             {
-                "Bin Centers": np.array([0]),
+                Measurement: np.array([0]),
                 "Probability Density" if Normalize else "Counts": np.array([0]),
             }
         )
@@ -281,7 +281,6 @@ def dimless_morph_distrib(
     if Measurement == "Aspect Ratio":
         from skimage.measure import regionprops
 
-        x_label: str = "Aspect Ratio"
         props = regionprops(values)
         for index, region in enumerate(props):
             dimless_values[index] = region.axis_major_length / max(
@@ -291,7 +290,6 @@ def dimless_morph_distrib(
     else:
         from pydoug_core.analyze.measure import bulk, surf
 
-        x_label: str = "Sphericity"
         surf_measurement: str = "Area" if is3d(labarray) else "Perimeter"
         bulk_measurement: str = "Volume" if is3d(labarray) else "Area"
         surf_result: PlotResult | ValueResult = surf(values, surf_measurement)
@@ -324,7 +322,7 @@ def dimless_morph_distrib(
         hist_values,
         hist_bin_centers,
         ax,
-        x_label,
+        Measurement,
         "Probability Density" if Normalize else "Counts",
         Y_Max,
         None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims,
@@ -334,10 +332,10 @@ def dimless_morph_distrib(
     return PlotResult(
         fig,
         {
-            "Bin Centers": hist_bin_centers,
+            Measurement: hist_bin_centers,
             "Probability Density" if Normalize else "Counts": hist_values,
         },  # type: ignore
-        x_columns=("Bin Centers",),
+        x_columns=(Measurement,),
         tables={"statistics": hist_stats},
     )
 
@@ -406,7 +404,7 @@ def chord_length_distrib(
     if np.all(np.unique(values) == np.array([0])):
         return ValueResult(
             {
-                "Bin Centers": np.array([0]),
+                "Chord Length": np.array([0]),
                 "Probability Density" if Normalize else "Counts": np.array([0]),
             }
         )
@@ -419,12 +417,12 @@ def chord_length_distrib(
     )
     hist_stats.pop("Dtype Min")
     hist_stats.pop("Dtype Max")
-    display_units: str = r"\mu m" if Units == "um" else Units
-    units: dict = {"Probability Density": None} if Normalize else {"Counts": None}
-    units.update({"Bin Centers": Units})
 
     from pydoug_core.analyze.plot_util import hist_ax
 
+    display_units: str = r"\mu m" if Units == "um" else Units
+    units: dict = {"Probability Density": None} if Normalize else {"Counts": None}
+    units.update({"Chord Length": Units})
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
     ax = hist_ax(
@@ -441,10 +439,10 @@ def chord_length_distrib(
     return PlotResult(
         fig,
         {
-            "Bin Centers": hist_bin_centers,
+            "Chord Length": hist_bin_centers,
             "Probability Density" if Normalize else "Counts": hist_values,
         },  # type: ignore
-        ("Bin Centers",),
+        ("Chord Length",),
         tables={"statistics": hist_stats},
         units=units,
     )

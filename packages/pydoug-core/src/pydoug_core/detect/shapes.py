@@ -7,140 +7,12 @@ from typing import Annotated, Literal
 import numpy as np
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import axstr2int, is3d, isrgb, min_int_dtype, rgb2gray
+from pydoug_core.util import is3d, isrgb, rgb2gray
 
-__all__ = ["mis", "chords", "blobs", "lines", "circles", "centroid"]
-
-
-@register_operation(category="features", display_name="Maximum Inscribed Spheres")
-def mis(
-    imarray: np.ndarray,
-    Method: Literal[
-        "Brute Force", "Convolution", "Distance Transform", "ImageJ"
-    ] = "Distance Transform",
-    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
-    Smooth: bool = True,
-    Return_Diameters: bool = False,
-    Round_Values: bool = False,
-    Perform_Slicewise: bool = False,
-) -> np.ndarray:
-    """
-    Find the maximum inscribed spheres for a binary image. Image must be 2D/3D binary.
-    Convenience wrapper around porespy's filters.local_thickness:
-    https://porespy.org/autoapi/porespy/filters/local_thickness.html#
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image to find maximum inscribed spheres in.
-    Method: Literal
-        The method for finding the inscribed spheres. Default is "Distance Transform".
-        - "Brute Force": Brute force algorithm.
-        - "Distance Transform": Uses distance transforms to dilate/erode each radius.
-        - "ImageJ": Uses ImageJ's algorithm (faster "Brute Force", less accurate).
-        - "Convolution": FFT-based convolution to dilate/erode each radius.
-    Pixel_Size: float
-        The edge length of pixels in real-world units.
-    Smooth: bool
-        Whether to remove small facets at borders (True) or not (False). Default True.
-    Return_Diameters: bool
-        Whether to return the diameter of the spheres (True) or the radii (False).
-        Default is False.
-    Round_Values: bool
-        Whether to round returned values to the nearest integer (True) or leave as exact
-        floating point distance (False). Default is False.
-    Perform_Slicewise: bool
-        Whether or not to perform the operation slicewise. Default is False.
-
-    Returns
-    -------
-    mis_array: np.ndarray
-        The maximum inscribed spheres image.
-    """
-
-    from porespy.filters import local_thickness
-
-    if isrgb(imarray):
-        print("Image is RGB, MIS not found!")
-        return imarray
-
-    def _mis(imarray) -> np.ndarray:
-
-        if Method == "Brute Force":
-            method: str = "bf"
-        elif Method == "Distance Transform":
-            method = "dt"
-        elif Method == "ImageJ":
-            method = "imj"
-        else:
-            method = "conv"
-
-        rad_array: np.ndarray = (
-            local_thickness(imarray.astype(np.bool), method=method, smooth=Smooth)
-            * Pixel_Size
-        )
-
-        if Return_Diameters:
-            return rad_array * 2
-        return rad_array
-
-    if Perform_Slicewise and is3d(imarray):
-        mis_array: np.ndarray = np.empty(imarray.shape)
-        for index in range(0, imarray.shape[0]):
-            mis_array[index] = _mis(imarray[index])
-
-        return (
-            np.round(mis_array).astype(min_int_dtype(mis_array))
-            if Round_Values
-            else mis_array
-        )
-
-    mis_array: np.ndarray = _mis(imarray)
-    return (
-        np.round(mis_array).astype(min_int_dtype(mis_array))
-        if Round_Values
-        else mis_array
-    )
+__all__ = ["blobs", "lines", "circles", "centroid"]
 
 
-@register_operation(category="features", display_name="Chords")
-def chords(
-    imarray: np.ndarray,
-    Axis: Literal["X", "Y", "Z"] = "Y",
-    Spacing: Annotated[int, {"min": 1}] = 1,
-) -> np.ndarray:
-    """
-    Return an image with the segmented phase of a binary image replaced by random
-    chords. This can be used to create a chord length distribution in the "Measure" tab.
-    All non-zero values in the input image will be treated as the segmented phase.
-    Convenience wrapper around porespy's filters.apply_chords:
-    https://porespy.org/autoapi/porespy/filters/apply_chords.html
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image to add chords to.
-    Axis: Literal
-        The axis along which to apply chords. Will return an error if "Z" is selected
-        and the image is not 3D.
-    Spacing: int
-        The spacing between chords (in pixels). Minimum is 1.
-
-    Returns
-    -------
-    chord_array: np.ndarray
-        The image with chords added.
-    """
-
-    if Axis == "Z" and not is3d(imarray):
-        raise ValueError("'Z' axis selected but image is not 3D!")
-
-    from porespy.filters import apply_chords
-
-    return apply_chords(imarray != 0, Spacing, axstr2int(imarray, Axis), False, False)
-
-
-@register_operation(category="features", display_name="Blobs")
+@register_operation(category="detect", display_name="Blobs")
 def blobs(
     imarray: np.ndarray,
     Method: Literal["DoG", "DoH", "LoG"] = "DoH",
@@ -340,7 +212,7 @@ def blobs(
     )
 
 
-@register_operation(category="features", display_name="Lines")
+@register_operation(category="detect", display_name="Lines")
 def lines(
     imarray: np.ndarray,
     Angle_Step: Annotated[float, {"min": 0.1, "step": 0.1}] = 1,
@@ -497,7 +369,7 @@ def lines(
     )
 
 
-@register_operation(category="features", display_name="Circles")
+@register_operation(category="detect", display_name="Circles")
 def circles(
     imarray: np.ndarray,
     Radii: tuple[
@@ -583,7 +455,7 @@ def circles(
     )
 
 
-@register_operation(category="features", display_name="Centroid")
+@register_operation(category="detect", display_name="Centroid")
 def centroid(imarray: np.ndarray) -> np.ndarray:
     """
     Find the centroid of an image. RGB images are converted to grayscale first.

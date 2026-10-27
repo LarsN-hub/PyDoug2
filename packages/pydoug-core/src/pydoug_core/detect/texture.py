@@ -12,7 +12,7 @@ from pydoug_core.util import is3d, isrgb
 __all__ = ["local_binary_pattern"]
 
 
-@register_operation(category="features", display_name="Local Binary Pattern")
+@register_operation(category="detect", display_name="Local Binary Pattern")
 def local_binary_pattern(
     imarray: np.ndarray,
     Method: Literal["Default", "NRI Uniform", "ROR", "Uniform", "Variance"] = "Default",
