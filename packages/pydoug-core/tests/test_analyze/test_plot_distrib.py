@@ -3,6 +3,7 @@ Tests for PyDoug's analyze.plot_distrib module.
 """
 
 import numpy as np
+from porespy.filters import apply_chords
 from skimage.measure import label
 
 from pydoug_core.analyze import plot_distrib as distrib
@@ -119,6 +120,31 @@ def test_sphericity_distrib(sample_masks) -> None:
     result03: PlotResult | ValueResult = distrib.dimless_morph_distrib(
         label(sample_masks["2dgray"], connectivity=1),  # type: ignore
         "Sphericity",
+        Apply_Mask=True,
+        Mask=sample_masks["2dgray"],
+    )
+
+    assert isinstance(result00, ValueResult)
+    assert isinstance(result01, PlotResult)
+    assert isinstance(result02, PlotResult)
+    assert isinstance(result03, PlotResult)
+    assert np.all(result01.data["Bin Centers"] == result03.data["Bin Centers"])
+    assert np.all(result01.data["Counts"] == result03.data["Counts"])
+
+
+def test_chord_length_distrib(sample_masks) -> None:
+
+    result00: PlotResult | ValueResult = distrib.chord_length_distrib(
+        np.zeros((5, 5, 5))
+    )
+    result01: PlotResult | ValueResult = distrib.chord_length_distrib(
+        apply_chords(sample_masks["2dgray"])
+    )
+    result02: PlotResult | ValueResult = distrib.chord_length_distrib(
+        apply_chords(sample_masks["3dgray"])
+    )
+    result03: PlotResult | ValueResult = distrib.chord_length_distrib(
+        apply_chords(sample_masks["2dgray"]),
         Apply_Mask=True,
         Mask=sample_masks["2dgray"],
     )

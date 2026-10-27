@@ -3,6 +3,7 @@ Tests for PyDoug's features.shapes module.
 """
 
 import numpy as np
+import pytest
 from skimage.color import rgb2gray
 from skimage.data import hubble_deep_field as hubble
 from skimage.draw import circle_perimeter, line
@@ -66,6 +67,19 @@ def test_mis(sample_masks, sample_2drgb_array) -> None:
     assert result15.dtype == np.float64
     assert result16.dtype == np.float64
     assert result17.dtype == np.float64
+
+
+def test_add_chords(sample_masks) -> None:
+
+    with pytest.raises(ValueError):
+        _ = shapes.chords(sample_masks["2dgray"], "Z")
+
+    result01: np.ndarray = shapes.chords(sample_masks["2dgray"])
+    result02: np.ndarray = shapes.chords(sample_masks["3dgray"], "Z")
+    assert isinstance(result01, np.ndarray)
+    assert isinstance(result02, np.ndarray)
+    assert result01.dtype == np.dtype(np.bool)
+    assert result02.dtype == np.dtype(np.bool)
 
 
 def test_blobs(sample_2drgb_array) -> None:

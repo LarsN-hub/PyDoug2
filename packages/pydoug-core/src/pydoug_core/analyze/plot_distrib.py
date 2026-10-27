@@ -146,10 +146,16 @@ def size_distrib(
 
     hist_vals, _, _ = hist_distrib(values, source_range="values")
     hist_vals = hist_vals.astype(np.float64)
+    display_units: str = r"\mu m" if Units == "um" else Units
+    units: dict = {"Probability Density": None} if Normalize else {"Counts": None}
     if Measurement in "Area":
         hist_vals *= Pixel_Size**2
+        display_units = rf"{display_units}^{{2}}"
+        units["Bin Centers"] = f"{Units}^2"
     elif Measurement == "Volume":
         hist_vals *= Pixel_Size**3
+        display_units = rf"{display_units}^{{3}}"
+        units["Bin Centers"] = f"{Units}^3"
     elif Measurement in ("Equivalent Diameter", "Equivalent Radius"):
         if is3d(labarray):
             hist_vals *= Pixel_Size**3
@@ -159,6 +165,7 @@ def size_distrib(
             hist_vals = np.sqrt(hist_vals / np.pi)
         if Measurement == "Equivalent Diameter":
             hist_vals *= 2
+        units["Bin Centers"] = Units
     size_vals, size_bin_centers, size_stats = hist_distrib(
         hist_vals, Bin_Count, "values", Normalize
     )
@@ -167,13 +174,6 @@ def size_distrib(
 
     from pydoug_core.analyze.plot_util import hist_ax
 
-    display_units: str = r"\mu m" if Units == "um" else Units
-    if Measurement in ("Area", "Volume"):
-        display_units = (
-            rf"{display_units}^{{2}}"
-            if Measurement == "Area"
-            else rf"{display_units}^{{3}}"
-        )
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
     ax = hist_ax(
@@ -195,6 +195,7 @@ def size_distrib(
         },  # type: ignore
         x_columns=("Bin Centers",),
         tables={"statistics": size_stats},
+        units=units,
     )
 
 
@@ -317,9 +318,6 @@ def dimless_morph_distrib(
 
     from pydoug_core.analyze.plot_util import hist_ax
 
-    x_lims: tuple[float, float] | None = (
-        None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims
-    )
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
     ax = hist_ax(
@@ -329,7 +327,7 @@ def dimless_morph_distrib(
         x_label,
         "Probability Density" if Normalize else "Counts",
         Y_Max,
-        x_lims,
+        None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims,
     )
     fig.set_layout_engine("constrained")
 
@@ -341,4 +339,112 @@ def dimless_morph_distrib(
         },  # type: ignore
         x_columns=("Bin Centers",),
         tables={"statistics": hist_stats},
+    )
+
+
+@register_operation(
+    category="measure",
+    display_name="Chord Length Distribution",
+    output_kind="plot",
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
+)
+def chord_length_distrib(
+    imarray: np.ndarray,
+    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
+    Units: str = "pixels",
+    Bin_Count: Annotated[int, {"min": 0}] = 0,
+    Normalize: bool = False,
+    Y_Max: Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}] = 0,
+    X_Lims: tuple[
+        Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}],
+        Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}],
+    ] = (0, 0),
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+) -> PlotResult | ValueResult:
+    """
+    Create a ditribution of chord lengths for an image with chords generated using the
+    "Chords" widget in the "Features" tab. Convenience wrapper around porespy's
+    metrics.chord_counts, scikit-image's exposure.histogram, and matplotlib's hist:
+    https://porespy.org/autoapi/porespy/metrics/chord_counts.html
+    https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.histogram
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array with chords already added.
+    Pixel_Size: float
+        The edge-length of pixels in real-world units.
+    Units: str
+        The real-world units for "Pixel Size".
+    Bin_Count: int
+        The number of bins to use in the histogram. Ignored if set to 0.
+    Normalize: bool
+        Whether or not to normalize the counts by the total sum. Default is False.
+    Y_Max: float
+        The maximum y-axis value to plot. Automatically determined if 0.
+    X_Lims: tuple[float, float]
+        The limits of the x-axis in the form [min, max]. Ignored if both are 0.
+    Apply_Mask: bool
+        Whether to mask the measurement region (True) or not (False).
+    Mask: np.ndarray | None
+        If "Apply Mask" is "True", the mask to use.
+
+    Returns
+    -------
+    chord_result: PlotResult | ValueResult
+        The chord length distribution result object.
+    """
+
+    if Apply_Mask and Mask is not None:
+        values: np.ndarray = np.copy(imarray)
+        values[np.logical_not(prep_mask(imarray, Mask))] = 0
+    else:
+        values = imarray
+    if np.all(np.unique(values) == np.array([0])):
+        return ValueResult(
+            {
+                "Bin Centers": np.array([0]),
+                "Probability Density" if Normalize else "Counts": np.array([0]),
+            }
+        )
+
+    from porespy.metrics import chord_counts
+
+    lengths: np.ndarray = chord_counts(imarray) * Pixel_Size
+    hist_values, hist_bin_centers, hist_stats = hist_distrib(
+        lengths, Bin_Count, "values", Normalize
+    )
+    hist_stats.pop("Dtype Min")
+    hist_stats.pop("Dtype Max")
+    display_units: str = r"\mu m" if Units == "um" else Units
+    units: dict = {"Probability Density": None} if Normalize else {"Counts": None}
+    units.update({"Bin Centers": Units})
+
+    from pydoug_core.analyze.plot_util import hist_ax
+
+    fig: Figure = Figure()
+    ax: Axes = fig.add_subplot()
+    ax = hist_ax(
+        hist_values,
+        hist_bin_centers,
+        ax,
+        rf"Chord Length ($\mathrm{{{display_units}}}$)",
+        "Probability Density" if Normalize else "Counts",
+        Y_Max,
+        None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims,
+    )
+    fig.set_layout_engine("constrained")
+
+    return PlotResult(
+        fig,
+        {
+            "Bin Centers": hist_bin_centers,
+            "Probability Density" if Normalize else "Counts": hist_values,
+        },  # type: ignore
+        ("Bin Centers",),
+        tables={"statistics": hist_stats},
+        units=units,
     )

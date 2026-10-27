@@ -16,6 +16,7 @@ __all__ = ["euclidian_dt", "fft", "radon", "hough"]
 def euclidian_dt(
     imarray: np.ndarray,
     Pixel_Size: Annotated[float, {"step": 0.0001, "min": 0}] = 1,
+    Round_Values: bool = False,
     Perform_Slicewise: bool = False,
 ) -> np.ndarray:
     """
@@ -30,6 +31,9 @@ def euclidian_dt(
         The image array to be transformed.
     Pixel_Size: float
         The real-world length of a single pixel edge.
+    Round_Values: bool
+        Whether to round returned values to the nearest integer (True) or leave as exact
+        floating point distance (False). Default is False.
     Perform_Slicewise: bool
         Whether to perform the operation slicewise for 3D images (True) or in bulk
         (False). Default is False.
@@ -47,9 +51,19 @@ def euclidian_dt(
         for index in range(0, imarray.shape[0]):
             edtarray[index] = edt(util.rgb2gray(imarray[index]), Pixel_Size)
 
-        return edtarray
+        return (
+            np.round(edtarray).astype(util.min_int_dtype(edtarray))
+            if Round_Values
+            else edtarray
+        )
 
-    return edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
+    edtarray = edt(util.rgb2gray(imarray), Pixel_Size)  # type: ignore
+
+    return (
+        np.round(edtarray).astype(util.min_int_dtype(edtarray))
+        if Round_Values
+        else edtarray
+    )
 
 
 @register_operation(category="transform", display_name="FFT")

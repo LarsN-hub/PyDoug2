@@ -7,9 +7,9 @@ from typing import Annotated, Literal
 import numpy as np
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import is3d, isrgb, min_int_dtype, rgb2gray
+from pydoug_core.util import axstr2int, is3d, isrgb, min_int_dtype, rgb2gray
 
-__all__ = ["mis", "blobs", "lines", "circles", "centroid"]
+__all__ = ["mis", "chords", "blobs", "lines", "circles", "centroid"]
 
 
 @register_operation(category="features", display_name="Maximum Inscribed Spheres")
@@ -101,6 +101,43 @@ def mis(
         if Round_Values
         else mis_array
     )
+
+
+@register_operation(category="features", display_name="Chords")
+def chords(
+    imarray: np.ndarray,
+    Axis: Literal["X", "Y", "Z"] = "Y",
+    Spacing: Annotated[int, {"min": 1}] = 1,
+) -> np.ndarray:
+    """
+    Return an image with the segmented phase of a binary image replaced by random
+    chords. This can be used to create a chord length distribution in the "Measure" tab.
+    All non-zero values in the input image will be treated as the segmented phase.
+    Convenience wrapper around porespy's filters.apply_chords:
+    https://porespy.org/autoapi/porespy/filters/apply_chords.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to add chords to.
+    Axis: Literal
+        The axis along which to apply chords. Will return an error if "Z" is selected
+        and the image is not 3D.
+    Spacing: int
+        The spacing between chords (in pixels). Minimum is 1.
+
+    Returns
+    -------
+    chord_array: np.ndarray
+        The image with chords added.
+    """
+
+    if Axis == "Z" and not is3d(imarray):
+        raise ValueError("'Z' axis selected but image is not 3D!")
+
+    from porespy.filters import apply_chords
+
+    return apply_chords(imarray != 0, Spacing, axstr2int(imarray, Axis), False, False)
 
 
 @register_operation(category="features", display_name="Blobs")
