@@ -7,23 +7,6 @@ import numpy as np
 from pydoug_core.trans import space
 
 
-def test_euclidian_dt_returns(sample_arrays) -> None:
-
-    result1: np.ndarray = space.euclidian_dt(sample_arrays["2dgray"])
-    result2: np.ndarray = space.euclidian_dt(sample_arrays["2dgray"], 2)
-    result3: np.ndarray = space.euclidian_dt(sample_arrays["2drgb"])
-    result4: np.ndarray = space.euclidian_dt(
-        sample_arrays["2dgray"], Perform_Slicewise=True
-    )
-    result5: np.ndarray = space.euclidian_dt(
-        sample_arrays["3dgray"], 2, Perform_Slicewise=True
-    )
-    assert np.all(result1 * 2 == result2)
-    assert result3.shape == result1.shape
-    assert np.all(result4 == result1)
-    assert result5.shape == sample_arrays["3dgray"].shape
-
-
 def test_fft(sample_arrays) -> None:
 
     result1: np.ndarray = space.fft(sample_arrays["2dgray"])

@@ -2,15 +2,51 @@
 Standalone entry point to render a screenshot off the main Qt thread.
 """
 
-import json
 import sys
-from pathlib import Path
-from typing import Any
 
 import numpy as np
-from napari import Viewer
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication
+
+
+def restore_cmap(corrupt_cmap: dict) -> dict:
+    """
+    Restore a colormap dictionary to napari-readable format.
+
+    Parameters
+    ----------
+    corrupt_cmap: dict
+        The jsonable colormap dictionary.
+
+    Returns
+    -------
+    restore_cmap: dict
+        The napari-readable colormap dictionary.
+    """
+
+    restored_cmap: dict = {}
+
+    if "color_dict" in corrupt_cmap.keys():
+        for key in corrupt_cmap["color_dict"].keys():
+            rest_key = key
+            if isinstance(key, str):
+                try:
+                    rest_key = int(key)
+                except Exception:
+                    try:
+                        rest_key = float(key)
+                    except Exception:
+                        rest_key = None
+            restored_cmap[rest_key] = np.array(corrupt_cmap["color_dict"][key])
+
+    else:
+        carray: np.ndarray = np.empty(
+            (len(corrupt_cmap["colors"]), len(corrupt_cmap["colors"][0]))
+        )
+        for index, row in enumerate(corrupt_cmap["colors"]):
+            carray[index, :] = np.array(row)
+        restored_cmap["colors"] = carray
+        restored_cmap["name"] = corrupt_cmap["name"]
+
+    return restored_cmap
 
 
 def main(config_path: str) -> None:  # pragma: no cover
@@ -24,19 +60,38 @@ def main(config_path: str) -> None:  # pragma: no cover
         The path to the configuration json file.
     """
 
+    import json
+    from pathlib import Path
+    from typing import Any
+
+    import numpy as np
+    from napari import Viewer
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QApplication
+
     config: Any = json.loads(Path(config_path).read_text())
     imarray: np.ndarray = np.load(config["array_path"])
     settings: dict = config["settings"]
+    if (
+        "custom colormap" in settings.keys()
+        and settings["custom colormap"]
+        and isinstance(settings["colormap"], dict)
+    ):
+        settings["colormap"] = restore_cmap(settings["colormap"])
 
     app = QApplication.instance() or QApplication([])
     viewer: Viewer = Viewer(show=False)
 
     try:
         if settings["layer_type"] == "labels":
+            if isinstance(settings["colormap"], dict):
+                cmap: dict | None = settings["colormap"]
+            else:
+                cmap = None
             viewer.add_labels(  # type: ignore
                 imarray,
                 blending=settings["blending"],
-                colormap=settings["colormap"],
+                colormap=cmap,
                 depiction=settings["depiction"],
                 iso_gradient_mode=settings["iso_gradient_mode"],
                 opacity=settings["opacity"],

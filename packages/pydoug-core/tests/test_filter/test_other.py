@@ -28,3 +28,18 @@ def test_entropy(sample_arrays):
     assert result8.dtype == np.float64
     assert np.all(result1 == result5)
     assert np.all(result3 == result7)
+
+
+def test_noise(sample_arrays) -> None:
+
+    result1: np.ndarray = other.noise(sample_arrays["2dgray"])
+    result2: np.ndarray = other.noise(sample_arrays["3dgray"])
+    result3: np.ndarray = other.noise(sample_arrays["2drgb"])
+    result4: np.ndarray = other.noise(sample_arrays["3drgb"])
+    result5: np.ndarray = other.noise(sample_arrays["2dgray"], "S&P", False)
+
+    assert result1.dtype == sample_arrays["2dgray"].dtype
+    assert result2.dtype == sample_arrays["3dgray"].dtype
+    assert result3.dtype == sample_arrays["2drgb"].dtype
+    assert result4.dtype == sample_arrays["3drgb"].dtype
+    assert result5.dtype == np.float64

@@ -163,14 +163,14 @@ def test_axlengths_returns(sample_arrays) -> None:
     assert (
         util.axlengths(sample_arrays["2dgray"])["y"] == sample_arrays["2dgray"].shape[0]
     )
-    assert util.axlengths(sample_arrays["2dgray"])["z"] is None
+    assert util.axlengths(sample_arrays["2dgray"])["z"] == 0
     assert (
         util.axlengths(sample_arrays["2drgb"])["x"] == sample_arrays["2drgb"].shape[1]
     )
     assert (
         util.axlengths(sample_arrays["2drgb"])["y"] == sample_arrays["2drgb"].shape[0]
     )
-    assert util.axlengths(sample_arrays["2drgb"])["z"] is None
+    assert util.axlengths(sample_arrays["2drgb"])["z"] == 0
     assert (
         util.axlengths(sample_arrays["3dgray"])["x"] == sample_arrays["3dgray"].shape[2]
     )
@@ -309,3 +309,30 @@ def test_dtype_2_str() -> None:
     assert result5 == "Float64"
     assert result6 == "Bool"
     assert result7 == "Float64"
+
+
+def test_str_2_dtype() -> None:
+
+    assert util.str_2_dtype("Uint8") == np.uint8
+    assert util.str_2_dtype("Uint16") == np.uint16
+    assert util.str_2_dtype("Int16") == np.int16
+    assert util.str_2_dtype("Float32") == np.float32
+    assert util.str_2_dtype("Bool") == np.bool
+    assert util.str_2_dtype("Float64") == np.float64
+
+
+def test_min_int_dtype(sample_2dgray_array) -> None:
+
+    assert util.min_int_dtype(sample_2dgray_array) == np.dtype(np.uint8)
+    assert util.min_int_dtype(sample_2dgray_array.astype(np.uint16)) == np.dtype(
+        np.uint8
+    )
+    assert util.min_int_dtype(np.ones((5, 5)) * 65536) == np.dtype(np.uint32)
+    assert util.min_int_dtype(np.ones((5, 5)) * 4300000000) == np.dtype(np.uint64)
+    assert util.min_int_dtype(np.ones((5, 5)) * -10) == np.dtype(np.int8)
+    assert util.min_int_dtype(np.ones((5, 5)) * -200) == np.dtype(np.int16)
+    assert util.min_int_dtype(np.ones((5, 5)) * -33000) == np.dtype(np.int32)
+    assert util.min_int_dtype(np.ones((5, 5)) * -2200000000) == np.dtype(np.int64)
+    assert util.min_int_dtype(np.ones((5, 5)) * 20000000000000000000) == np.dtype(
+        np.int64
+    )

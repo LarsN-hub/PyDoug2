@@ -1,11 +1,11 @@
 """
-Tests for PyDoug's features.texture module.
+Tests for PyDoug's detect.texture module.
 """
 
 import numpy as np
 from skimage.data import brick
 
-from pydoug_core.features import texture
+from pydoug_core.detect import texture
 
 
 def test_local_binary_pattern(sample_2drgb_array):

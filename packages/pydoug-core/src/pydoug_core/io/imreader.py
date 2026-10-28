@@ -2,16 +2,10 @@
 Reading image files.
 """
 
-import os
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import h5py
-import imageio.v3 as iio
 import numpy as np
-
-from pydoug_core import util
-from pydoug_core.io import io_util
 
 __all__ = ["imread", "seqread"]
 
@@ -146,6 +140,8 @@ def imread(path: None | Path | str) -> None | np.ndarray:
     if not path:
         return None
 
+    from imageio.v3 import imread as iioread
+
     path = Path(path)
     if path.suffix in [".h5", ".hdf", ".hdf5", ".he5"]:
         try:
@@ -161,7 +157,7 @@ def imread(path: None | Path | str) -> None | np.ndarray:
             return None
     else:
         try:
-            imarray: np.ndarray = iio.imread(path)
+            imarray: np.ndarray = iioread(path)
             if imarray.shape == (0,):
                 return None
             return imarray
@@ -199,6 +195,12 @@ def seqread(path: None | Path | str, numworkers: int | None = 1) -> None | np.nd
     if not path:
         return None
 
+    import os
+    from concurrent.futures import ThreadPoolExecutor
+
+    from pydoug_core import util
+    from pydoug_core.io.io_util import _auto_worker_count
+
     path = Path(path)
     try:
         filenames: list[str] = sorted(os.listdir(path))
@@ -226,7 +228,7 @@ def seqread(path: None | Path | str, numworkers: int | None = 1) -> None | np.nd
                     rgb = False
                     xyshape = firstarray.shape[-2:]
                 if numworkers is None:
-                    numworkers = io_util._auto_worker_count(firstarray, len(filenames))
+                    numworkers = _auto_worker_count(firstarray, len(filenames))
                 continue
         with ThreadPoolExecutor(max_workers=numworkers) as executor:
             readresults = list(

@@ -3,19 +3,35 @@ Tests for PyDoug's hist.hist module.
 """
 
 import numpy as np
-from matplotlib.figure import Figure
 
 from pydoug_core.hist import hist
+from pydoug_core.results import PlotResult
 
 
 def test_plot_histogram(sample_3dgray_array, sample_masks) -> None:
 
-    fig1: Figure = hist.plot_histogram(sample_3dgray_array, Normalize=True)
-    fig2: Figure = hist.plot_histogram(
+    result1: PlotResult = hist.plot_histogram(
+        sample_3dgray_array,
+        Normalize=True,
+        X_Lims=(0, 10),
+    )
+    result2: PlotResult = hist.plot_histogram(
         sample_3dgray_array, Apply_Mask=True, Mask=sample_masks["3dgray"]
     )
-    assert isinstance(fig1, Figure)
-    assert isinstance(fig2, Figure)
+    result3: PlotResult = hist.plot_histogram(
+        sample_3dgray_array,
+        Normalize=True,
+        Y_Max=10,
+    )
+    result4: PlotResult = hist.plot_histogram(
+        sample_3dgray_array,
+        Apply_Mask=True,
+        Mask=np.zeros(sample_3dgray_array.shape, np.bool),
+    )
+    assert isinstance(result1, PlotResult)
+    assert isinstance(result2, PlotResult)
+    assert isinstance(result3, PlotResult)
+    assert isinstance(result4, PlotResult)
 
 
 def test_invert(sample_3dgray_array) -> None:
@@ -97,6 +113,24 @@ def test_equalize(sample_3dgray_array, sample_2dgray_array, sample_masks) -> Non
         Apply_Mask=True,
         Mask=sample_masks["3dgray"],
     )
+    result9: np.ndarray = hist.equalize(
+        sample_2dgray_array,
+        "Global",
+        Apply_Mask=True,
+        Mask=np.zeros(sample_2dgray_array.shape, np.bool),
+    )
+    result10: np.ndarray = hist.equalize(
+        sample_2dgray_array,
+        "Rank",
+        Apply_Mask=True,
+        Mask=np.zeros(sample_2dgray_array.shape, np.bool),
+    )
+    result11: np.ndarray = hist.equalize(
+        sample_2dgray_array,
+        "CLAHE",
+        Apply_Mask=True,
+        Mask=np.zeros(sample_2dgray_array.shape, np.bool),
+    )
     assert result1.dtype == sample_3dgray_array.dtype
     assert result2.dtype == sample_3dgray_array.dtype
     assert result3.dtype == sample_3dgray_array.dtype
@@ -105,6 +139,9 @@ def test_equalize(sample_3dgray_array, sample_2dgray_array, sample_masks) -> Non
     assert result6.dtype == sample_2dgray_array.dtype
     assert result7.dtype == sample_3dgray_array.dtype
     assert result8.dtype == sample_3dgray_array.dtype
+    assert result9.dtype == sample_2dgray_array.dtype
+    assert result10.dtype == sample_2dgray_array.dtype
+    assert result11.dtype == sample_2dgray_array.dtype
 
 
 def test_adjust(sample_2dgray_array) -> None:
@@ -135,8 +172,21 @@ def test_local_contrast(sample_3dgray_array, sample_2dgray_array, sample_masks) 
         sample_2dgray_array, Method="Local Extrema", Apply_Mask=True, Mask=test_mask
     )
     result5: np.ndarray = hist.local_contrast(sample_3dgray_array)
+    result6: np.ndarray = hist.local_contrast(
+        sample_2dgray_array,
+        Apply_Mask=True,
+        Mask=np.zeros(sample_2dgray_array.shape, np.bool),
+    )
+    result7: np.ndarray = hist.local_contrast(
+        sample_2dgray_array,
+        "Local Extrema",
+        Apply_Mask=True,
+        Mask=np.zeros(sample_2dgray_array.shape, np.bool),
+    )
     assert result1.dtype == sample_2dgray_array.dtype
     assert result2.dtype == sample_2dgray_array.dtype
     assert result3.dtype == sample_2dgray_array.dtype
     assert result4.dtype == sample_2dgray_array.dtype
     assert result5.dtype == sample_3dgray_array.dtype
+    assert result6.dtype == sample_2dgray_array.dtype
+    assert result7.dtype == sample_2dgray_array.dtype

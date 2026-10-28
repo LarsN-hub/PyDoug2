@@ -106,7 +106,7 @@ def test_build_run_batch_widget_run(
 ) -> None:
 
     record: Recorder = Recorder()
-    record.record("_threshold", {}, {}, None)
+    record.record("_threshold", {}, {"layer": "primary"}, None)
     record.save(Path(tmp_path / "test_batch_run_workflow"))
     widget: QWidget = batch_run_widget.build_run_batch_widget()
     qtbot.addWidget(widget)

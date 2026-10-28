@@ -5,14 +5,8 @@ Labeling algorithms for segmented images.
 from typing import Annotated, Literal
 
 import numpy as np
-from scipy.ndimage import distance_transform_edt
-from skimage.feature import peak_local_max
-from skimage.measure import label as conn_label
-from skimage.morphology import ball, disk
-from skimage.segmentation import watershed as ws
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import is3d, isrgb
 
 __all__ = ["connectivity", "watershed"]
 
@@ -55,6 +49,8 @@ def connectivity(
     lab_array: np.ndarray
         The labeled segmented image.
     """
+
+    from skimage.measure import label as conn_label
 
     return conn_label(imarray, Background, connectivity=Connectivity)  # type: ignore
 
@@ -130,9 +126,17 @@ def watershed(
         The image after watershed labeling.
     """
 
+    from pydoug_core.util import is3d, isrgb
+
     if isrgb(imarray):
         print("Image is RGB, watershed not performed!")
         return imarray
+
+    from scipy.ndimage import distance_transform_edt
+    from skimage.feature import peak_local_max
+    from skimage.measure import label as conn_label
+    from skimage.morphology import ball, disk
+    from skimage.segmentation import watershed as ws
 
     if Connectivity > 2 and Perform_Slicewise or not is3d(imarray):
         Connectivity = 2

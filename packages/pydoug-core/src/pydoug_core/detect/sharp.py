@@ -1,29 +1,18 @@
 """
-Detect sharp features in images like corners, edges, and peaks.
+Detect sharp features in images like corners, edges, peaks, and surfaces.
 """
 
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.feature import (
-    canny,
-    corner_fast,
-    corner_harris,
-    corner_kitchen_rosenfeld,
-    corner_moravec,
-    corner_peaks,
-    corner_shi_tomasi,
-    peak_local_max,
-)
-from skimage.morphology import ball, disk
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb
 
-__all__ = ["edges", "peaks", "corners"]
+__all__ = ["edges", "peaks", "corners", "surfaces"]
 
 
-@register_operation(category="features", display_name="Edges")
+@register_operation(category="detect", display_name="Edges")
 def edges(
     imarray: np.ndarray,
     Sigma: Annotated[float, {"min": 0}] = 1,
@@ -70,6 +59,8 @@ def edges(
         print("Image is RGB, edge detection not performed!")
         return imarray
 
+    from skimage.feature import canny
+
     if Thresholds[0] > Thresholds[1]:
         thresholds: tuple = (Thresholds[1], Thresholds[0])
     else:
@@ -103,7 +94,7 @@ def edges(
     )
 
 
-@register_operation(category="features", display_name="Peaks")
+@register_operation(category="detect", display_name="Peaks")
 def peaks(
     imarray: np.ndarray,
     Radius: Annotated[int, {"min": 0}] = 0,
@@ -140,6 +131,9 @@ def peaks(
     peak_array: np.ndarray
         A binary image where True values are local peaks in the original image.
     """
+
+    from skimage.feature import peak_local_max
+    from skimage.morphology import ball, disk
 
     abs_thresh: float | None = Absolute_Threshold
     if abs_thresh == 0:
@@ -184,7 +178,7 @@ def peaks(
     return peak_array
 
 
-@register_operation(category="features", display_name="Corners")
+@register_operation(category="detect", display_name="Corners")
 def corners(
     imarray: np.ndarray,
     Method: Literal[
@@ -285,6 +279,16 @@ def corners(
     if isrgb(imarray):
         print("Image is RGB, corner identification not performed!")
         return imarray
+
+    from skimage.feature import (
+        corner_fast,
+        corner_harris,
+        corner_kitchen_rosenfeld,
+        corner_moravec,
+        corner_peaks,
+        corner_shi_tomasi,
+    )
+    from skimage.morphology import disk
 
     abs_thresh: float | None = Absolute_Threshold
     if abs_thresh == 0:
@@ -398,3 +402,46 @@ def corners(
         abs_thresh,
         rel_thresh,
     )
+
+
+@register_operation(category="detect", display_name="Surfaces", output_kind="surface")
+def surfaces(
+    imarray: np.ndarray,
+    Method: Literal["Lewiner", "Lorensen"] = "Lewiner",
+    Level: Annotated[float, {"min": 0}] = 0,
+    Step_Size: Annotated[int, {"min": 1}] = 1,
+) -> tuple:
+    """
+    Create a surface mesh from a binary 3D image with the marching cubes method.
+    Convenience wrapper around scikit-image's measure.marching_cubes:
+    https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.marching_cubes
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to create a surface mesh for.
+    Method: Literal
+        The method to use for the marching cubes algorithm. Default is "Lewiner".
+        - "Lewiner": More modern (2003), optimized algorithm.
+        - "Lorensen": Original (1987) algorithm.
+    Level: float
+        The contour value to search for isosurfaces. If 0, automatically calculated.
+    Step_Size: int
+        The step size (in voxles). Higher = faster but more coarse.
+
+    Returns
+    -------
+    surf_tuple: tuple
+        The surface tuple containing (vertices, faces, values)
+    """
+
+    from skimage.measure import marching_cubes
+
+    level: float | None = Level
+    if level == 0:
+        level = None
+    verts, faces, _, values = marching_cubes(
+        imarray, level, step_size=Step_Size, method=Method.lower()
+    )
+
+    return verts, faces, values

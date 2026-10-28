@@ -5,7 +5,6 @@ Texture-based features.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.feature import local_binary_pattern as lbp
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb
@@ -13,7 +12,7 @@ from pydoug_core.util import is3d, isrgb
 __all__ = ["local_binary_pattern"]
 
 
-@register_operation(category="features", display_name="Local Binary Pattern")
+@register_operation(category="detect", display_name="Local Binary Pattern")
 def local_binary_pattern(
     imarray: np.ndarray,
     Method: Literal["Default", "NRI Uniform", "ROR", "Uniform", "Variance"] = "Default",
@@ -51,6 +50,8 @@ def local_binary_pattern(
     if isrgb(imarray):
         print("Image is RGB, local binary pattern not calculated!")
         return imarray
+
+    from skimage.feature import local_binary_pattern as lbp
 
     def _lbp(imarray, Method, Number_of_Points, Radius) -> np.ndarray:
         if Method == "Default":

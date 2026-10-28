@@ -2,6 +2,7 @@
 Manipulate the dimensions of images.
 """
 
+from math import ceil, floor
 from typing import Annotated, Literal
 
 import numpy as np
@@ -9,98 +10,160 @@ import numpy as np
 from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["trim_pad", "make_3d", "join"]
+__all__ = ["refine_pad_bounds", "refine_trim_bounds", "trim_pad", "make_3d", "join"]
 
 
-def _refine_pad_bounds(
+def refine_pad_bounds(
     imarray: np.ndarray,
-    bounds_as_slices: bool,
-    x_bounds: tuple[int, int],
-    y_bounds: tuple[int, int],
-    z_bounds: tuple[int, int],
-) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    bounds_as_slice_indices: bool,
+    x_bounds: list[int],
+    y_bounds: list[int],
+    z_bounds: list[int],
+) -> tuple[list[int], list[int], list[int]]:
+    """
+    Refine user input pad bounds into trim_pad readable pad bounds.
 
-    ax_lengths: dict[str, int | None] = util.axlengths(imarray)
-    bounds_dict: dict[str, tuple[int, int]] = {
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image that will be padded.
+    bounds_as_slice_indices: bool
+        True: Treat bounds as [ignore, target_ax_length]. Convert to False format below.
+        False: Treat bounds as [front_pad, end_pad]. Return as such.
+    x_bounds: list[int]
+        List of user input x-axis bounds.
+        If "bounds_as_slice_indices" is "True", format is [ignore, target_x_length].
+        If "bounds_as_slice_indices" is "False", format is [front_pad, end_pad].
+    y_bounds: list[int]
+        List of user input y-axis bounds.
+        If "bounds_as_slice_indices" is "True", format is [ignore, target_y_length].
+        If "bounds_as_slice_indices" is "False", format is [front_pad, end_pad].
+    z_bounds: list[int]
+        List of user input z-axis bounds.
+        If "bounds_as_slice_indices" is "True", format is [ignore, target_z_length].
+        If "bounds_as_slice_indices" is "False", format is [front_pad, end_pad].
+
+    Returns
+    -------
+    bounds: tuple
+        Tuple of each axis bounds as lists [front_pad, end_pad].
+    """
+
+    ax_lengths: dict[str, int] = util.axlengths(imarray)
+    bounds_dict: dict[str, list[int]] = {
         "x": x_bounds,
         "y": y_bounds,
         "z": z_bounds,
     }
 
-    if bounds_as_slices:
-        for key in ("x", "y", "z"):
-            if ax_lengths[key] is None:
-                continue
-            if bounds_dict[key][0] < 0:
-                bounds_dict[key] = (0, bounds_dict[key][1])
-            if bounds_dict[key][1] < 0:
-                bounds_dict[key] = (bounds_dict[key][0], 0)
-
-    else:
-        for key in ("x", "y", "z"):
-            if ax_lengths[key] is None:
-                continue
-            if bounds_dict[key][1] < ax_lengths[key]:  # type: ignore
-                bounds_dict[key] = (bounds_dict[key][0], ax_lengths[key])  # type: ignore
-            combined_value: int = bounds_dict[key][1] - ax_lengths[key]  # type: ignore
-            bounds_dict[key] = (
-                round(combined_value / 2),
-                combined_value - round(combined_value / 2),
+    for key in ("x", "y", "z"):
+        if bounds_as_slice_indices:
+            target_length: int = (
+                ax_lengths[key]
+                if bounds_dict[key][1] < ax_lengths[key]
+                else bounds_dict[key][1]
             )
+            if target_length > 0 and ax_lengths[key] == 0:
+                bounds_dict[key][0] = floor((target_length - ax_lengths[key] - 1) / 2)
+                bounds_dict[key][1] = ceil((target_length - ax_lengths[key] - 1) / 2)
+            else:
+                bounds_dict[key][0] = floor((target_length - ax_lengths[key]) / 2)
+                bounds_dict[key][1] = ceil((target_length - ax_lengths[key]) / 2)
+
+        else:
+            bounds_dict[key][0] = 0 if bounds_dict[key][0] < 0 else bounds_dict[key][0]
+            bounds_dict[key][1] = 0 if bounds_dict[key][1] < 0 else bounds_dict[key][1]
 
     return bounds_dict["x"], bounds_dict["y"], bounds_dict["z"]
 
 
-def _refine_trim_bounds(
+def refine_trim_bounds(
     imarray: np.ndarray,
-    bounds_as_slices: bool,
-    x_bounds: tuple[int, int],
-    y_bounds: tuple[int, int],
-    z_bounds: tuple[int, int],
-) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    bounds_as_slice_indices: bool,
+    x_bounds: list[int],
+    y_bounds: list[int],
+    z_bounds: list[int],
+) -> tuple[list[int], list[int], list[int]]:
+    """
+    Refine user input trim bounds into trim_pad readable trim bounds.
 
-    ax_lengths: dict[str, int | None] = util.axlengths(imarray)
-    bounds_dict: dict[str, tuple[int, int]] = {
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image that will be trimmed.
+    bounds_as_slice_indices: bool
+        True: Treat bounds as [start_index, end_index). Return as such.
+        False: Treat bounds as [front_trim, end_trim]. Convert to True format above.
+    x_bounds: list[int]
+        List of user input x-axis bounds.
+        If "bounds_as_slice_indices" is "True", format is [start_index, end_index).
+        If "bounds_as_slice_indices" is "False", format is [front_trim, end_trim].
+    y_bounds: list[int]
+        List of user input y-axis bounds.
+        If "bounds_as_slice_indices" is "True", format is [start_index, end_index).
+        If "bounds_as_slice_indices" is "False", format is [front_trim, end_trim].
+    z_bounds: list[int]
+        List of user input z-axis bounds.
+        If "bounds_as_slice_indices" is "True", format is [start_index, end_index).
+        If "bounds_as_slice_indices" is "False", format is [front_trim, end_trim].
+
+    Returns
+    -------
+    bounds: tuple
+        Tuple of each axis bounds as lists [start_index, end_index).
+    """
+
+    ax_lengths: dict[str, int] = util.axlengths(imarray)
+    bounds_dict: dict[str, list[int]] = {
         "x": x_bounds,
         "y": y_bounds,
         "z": z_bounds,
     }
 
-    if bounds_as_slices:
-        for key in ("x", "y", "z"):
-            if ax_lengths[key] is None:
-                continue
-            if bounds_dict[key][0] < 0:
-                bounds_dict[key] = (0, bounds_dict[key][1])
-            if bounds_dict[key][0] >= ax_lengths[key]:  # type: ignore
-                bounds_dict[key] = (ax_lengths[key] - 1, bounds_dict[key][1])  # type: ignore
-            if bounds_dict[key][1] < 0:
-                bounds_dict[key] = (bounds_dict[key][0], 0)
-            if bounds_dict[key][1] >= ax_lengths[key]:  # type: ignore
-                bounds_dict[key] = (bounds_dict[key][0], ax_lengths[key] - 1)  # type: ignore
-            if sum(bounds_dict[key]) > ax_lengths[key] - 1:  # type: ignore
-                while True:
-                    bounds_dict[key] = (
-                        max(bounds_dict[key][0] - 1, 0),
-                        max(bounds_dict[key][1] - 1, 0),
-                    )
-                    if sum(bounds_dict[key]) <= ax_lengths[key] - 1:  # type: ignore
-                        break
-            bounds_dict[key] = (
-                bounds_dict[key][0],
-                ax_lengths[key] - bounds_dict[key][1],  # type: ignore
+    for key in ("x", "y", "z"):
+        if bounds_dict[key] == [0, 0]:
+            bounds_dict[key][1] = ax_lengths[key]
+            continue
+        if ax_lengths[key] == 0:
+            bounds_dict[key] = [0, 0]
+            continue
+
+        if bounds_as_slice_indices:
+            for index in range(0, len(bounds_dict[key])):
+                bounds_dict[key][index] = (
+                    0 if bounds_dict[key][index] < 0 else bounds_dict[key][index]
+                )
+                bounds_dict[key][index] = (
+                    ax_lengths[key]
+                    if bounds_dict[key][index] > ax_lengths[key]
+                    else bounds_dict[key][index]
+                )
+            bounds_dict[key][1] = (
+                bounds_dict[key][0]
+                if bounds_dict[key][0] > bounds_dict[key][1]
+                else bounds_dict[key][1]
+            )
+            bounds_dict[key][0] = (
+                ax_lengths[key] - 1
+                if bounds_dict[key][0] == ax_lengths[key]
+                else bounds_dict[key][0]
+            )
+            bounds_dict[key][1] = (
+                bounds_dict[key][0] + 1
+                if bounds_dict[key][1] == bounds_dict[key][0]
+                else bounds_dict[key][1]
             )
 
-    else:
-        for key in ("x", "y", "z"):
-            if ax_lengths[key] is None:
-                continue
-            if bounds_dict[key][1] <= 0:
-                bounds_dict[key] = (bounds_dict[key][0], 1)
-            if bounds_dict[key][1] > ax_lengths[key]:  # type: ignore
-                bounds_dict[key] = (bounds_dict[key][0], ax_lengths[key])  # type: ignore
-            left_val: int = round((ax_lengths[key] - bounds_dict[key][1]) / 2)  # type: ignore
-            bounds_dict[key] = (left_val, ax_lengths[key] - left_val)  # type: ignore
+        else:
+            bounds_dict[key][1] = 1 if bounds_dict[key][1] < 1 else bounds_dict[key][1]
+            bounds_dict[key][1] = (
+                ax_lengths[key]
+                if bounds_dict[key][1] > ax_lengths[key]
+                else bounds_dict[key][1]
+            )
+            trim_amount: int = ax_lengths[key] - bounds_dict[key][1]
+            bounds_dict[key][0] = floor(trim_amount / 2)
+            bounds_dict[key][1] = ax_lengths[key] - ceil(trim_amount / 2)
 
     return bounds_dict["x"], bounds_dict["y"], bounds_dict["z"]
 
@@ -113,7 +176,7 @@ def _refine_trim_bounds(
 def trim_pad(
     imarray: np.ndarray,
     Method: Literal["Pad", "Trim"] = "Trim",
-    Bounds_as_Slices: bool = False,
+    Bounds_as_Slice_Indices: bool = True,
     X_Bounds: tuple[
         Annotated[int, {"min": 0, "max": 100000}],
         Annotated[int, {"min": 0, "max": 100000}],
@@ -130,10 +193,10 @@ def trim_pad(
     In_Place: bool = False,
 ) -> np.ndarray:
     """
-    Trim or pad the dimensions of an image. Convenience wrapper around numpy's pad,
-    squeeze, and slice indexing:
-    https://numpy.org/doc/stable/reference/generated/numpy.pad.html#numpy-pad
-    https://numpy.org/doc/stable/reference/generated/numpy.squeeze.html#numpy-squeeze
+    Trim or pad the dimensions of an image. Pat attention to [] vs. () inclusivity vs.
+    exclusivity in the bounds descriptions. Convenience wrapper around numpy's pad and
+    slice indexing:
+    https://numpy.org/doc/stable/reference/generated/numpy.pad.html
     https://numpy.org/doc/stable/user/basics.indexing.html
 
     Parameters
@@ -142,33 +205,46 @@ def trim_pad(
         The image to be trimmed or padded.
     Method: Literal["Pad", "Trim"]
         The method to use (padding or trimming). Default is "Trim".
-    Bounds_as_Slices: bool
-        Whether the input bounds should be treated as slices or dimensions.
-        True will trim/pad the input number of slices from/to each axis.
-        False will trim/pad the input image to the specified dimensions on each axis.
-        Default is False.
+    Bounds_as_Slice_Indices: bool
+        Whether the input bounds should be treated as slice indices in the current image
+        (True) or slice amounts to trim/pad to/from each axis (False). Default is False.
     X_Bounds: tuple
-        The bounds to use for the trimming/padding the x-axis.
-        If "Bounds as Slices" is True, the left bound will be trimmed/padded from/to the
-        left side of the x-axis and the right bound will be trimmed/padded from/to the
-        right side of the x-axis.
-        If "Bounds as Slices" is False, only the right bound will be used as the final
-        dimension length of the x-axis. Values are trimmed/padded evenly from each side.
+        The x-axis bounds.
+        If "Method" is "Trim":
+        If "Bounds as Slice Indices" is "True": [start_index, end_index).
+        If "Bounds as Slice Indices" is "False": [front_trim_amount, end_trim_amount].
+        For convenience, if "Bounds as Slice Indices" is "True" and both bounds are the
+        same value, only that index is returned (no need for +1 exclusive upper bound).
+        This can be used to easily return a size 1 axis.
+        If "Method" is "Pad":
+        If "Bounds as Slice Indices" is "True": (ignored, target_axis_length].
+        If "Bounds as Slice Indices" is "False": [front_pad_amount, end_pad_amount].
+        Note that [] is inclusive and () is exclusive.
     Y_Bounds: tuple
-        The bounds to use for the trimming/padding the y-axis.
-        If "Bounds as Slices" is True, the left bound will be trimmed/padded from/to the
-        left side of the y-axis and the right bound will be trimmed/padded from/to the
-        right side of the y-axis.
-        If "Bounds as Slices" is False, only the right bound will be used as the final
-        dimension length of the y-axis. Values are trimmed/padded evenly from each side.
+        The y-axis bounds.
+        If "Method" is "Trim":
+        If "Bounds as Slice Indices" is "True": [start_index, end_index).
+        If "Bounds as Slice Indices" is "False": [front_trim_amount, end_trim_amount].
+        For convenience, if "Bounds as Slice Indices" is "True" and both bounds are the
+        same value, only that index is returned (no need for +1 exclusive upper bound).
+        This can be used to easily return a size 1 axis.
+        If "Method" is "Pad":
+        If "Bounds as Slice Indices" is "True": (ignored, target_axis_length].
+        If "Bounds as Slice Indices" is "False": [front_pad_amount, end_pad_amount].
+        Note that [] is inclusive and () is exclusive.
     Z_Bounds: tuple
-        The bounds to use for the trimming/padding the z-axis.
-        If "Bounds as Slices" is True, the left bound will be trimmed/padded from/to the
-        left side of the z-axis and the right bound will be trimmed/padded from/to the
-        right side of the z-axis.
-        If "Bounds as Slices" is False, only the right bound will be used as the final
-        dimension length of the z-axis. Values are trimmed/padded evenly from each side.
-        Ignored if the image is not 3D.
+        The z-axis bounds.
+        If "Method" is "Trim":
+        If "Bounds as Slice Indices" is "True": [start_index, end_index).
+        If "Bounds as Slice Indices" is "False": [front_trim_amount, end_trim_amount].
+        For convenience, if "Bounds as Slice Indices" is "True" and both bounds are the
+        same value, only that index is returned (no need for +1 exclusive upper bound).
+        This can be used to easily return a size 1 axis.
+        For z-axis only, if the returned image has 1 slice, it will convert to 2D.
+        If "Method" is "Pad":
+        If "Bounds as Slice Indices" is "True": (ignored, target_axis_length].
+        If "Bounds as Slice Indices" is "False": [front_pad_amount, end_pad_amount].
+        Note that [] is inclusive and () is exclusive.
     Padded_Color: int
         What intensity to use for added pixels if "Method" is "Pad". Default is 0.
     In_Place: bool
@@ -186,42 +262,69 @@ def trim_pad(
         if util.is3d(imarray) and Z_Bounds == (0, 0):
             return imarray
         elif not util.is3d(imarray):
-            return imarray
+            if Method == "Trim":
+                return imarray
+            elif Method == "Pad" and Z_Bounds == (0, 0):
+                return imarray
+
+    if In_Place:
+        tparray: np.ndarray = imarray
+    else:
+        tparray = np.copy(imarray)
 
     if Method == "Pad":
-        X_Bounds, Y_Bounds, Z_Bounds = _refine_pad_bounds(
-            imarray, Bounds_as_Slices, X_Bounds, Y_Bounds, Z_Bounds
+        x_bounds, y_bounds, z_bounds = refine_pad_bounds(
+            tparray,
+            Bounds_as_Slice_Indices,
+            list(X_Bounds),
+            list(Y_Bounds),
+            list(Z_Bounds),
         )
-        if util.is3d(imarray):
-            bounds: tuple = (Z_Bounds, Y_Bounds, X_Bounds)
+        if util.is3d(tparray):
+            bounds: list[list[int]] = [z_bounds, y_bounds, x_bounds]
         else:
-            bounds: tuple = (Y_Bounds, X_Bounds)
-        if In_Place:
-            imarray = np.pad(imarray, bounds, constant_values=Padded_Color)
-            return imarray
-        else:
-            tparray = np.pad(imarray, bounds, constant_values=Padded_Color)
+            bounds = [y_bounds, x_bounds]
+        if x_bounds == y_bounds == z_bounds == [0, 0]:
             return tparray
+        if util.isrgb(imarray):
+            bounds.append([0, 0])
+        tparray = np.pad(tparray, bounds, constant_values=Padded_Color)
+        if not util.is3d(tparray) and z_bounds != [0, 0]:
+            bounds.insert(0, z_bounds)
+            bounds[1] = [0, 0]
+            bounds[2] = [0, 0]
+            tparray = np.pad(
+                np.expand_dims(tparray, axis=0),
+                bounds,
+                constant_values=Padded_Color,
+            )
+        return tparray
 
+    x_bounds, y_bounds, z_bounds = refine_trim_bounds(
+        tparray, Bounds_as_Slice_Indices, list(X_Bounds), list(Y_Bounds), list(Z_Bounds)
+    )
+    if util.is3d(tparray):
+        if (
+            x_bounds == [0, imarray.shape[2]]
+            and y_bounds == [0, imarray.shape[1]]
+            and z_bounds == [0, imarray.shape[0]]
+        ):
+            return tparray
+        tparray = tparray[
+            z_bounds[0] : z_bounds[1],
+            y_bounds[0] : y_bounds[1],
+            x_bounds[0] : x_bounds[1],
+        ]
+        if tparray.shape[0] == 1:
+            tparray = tparray[0]
     else:
-        X_Bounds, Y_Bounds, Z_Bounds = _refine_trim_bounds(
-            imarray, Bounds_as_Slices, X_Bounds, Y_Bounds, Z_Bounds
-        )
-        if util.is3d(imarray):
-            return np.squeeze(
-                imarray[
-                    Z_Bounds[0] : Z_Bounds[1],
-                    Y_Bounds[0] : Y_Bounds[1],
-                    X_Bounds[0] : X_Bounds[1],
-                ]
-            )
-        else:
-            return np.squeeze(
-                imarray[
-                    Y_Bounds[0] : Y_Bounds[1],
-                    X_Bounds[0] : X_Bounds[1],
-                ]
-            )
+        if x_bounds == [0, imarray.shape[1]] and y_bounds == [0, imarray.shape[0]]:
+            return tparray
+        tparray = tparray[
+            y_bounds[0] : y_bounds[1],
+            x_bounds[0] : x_bounds[1],
+        ]
+    return tparray
 
 
 @register_operation(category="manipulate", display_name="Make 3D")

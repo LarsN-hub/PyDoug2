@@ -5,7 +5,6 @@ Utilities for dynamically updating magicgui widget selections.
 from typing import Any
 
 from magicgui.widgets import FunctionGui
-from napari.utils.events import Event
 from napari.viewer import Viewer
 
 
@@ -29,6 +28,8 @@ def connect_layer_autoselect(
     autoselect: bool
         Whether or not to automatically update the layer selection.
     """
+
+    from napari.utils.events import Event
 
     field: Any = getattr(widget, param_name)
 

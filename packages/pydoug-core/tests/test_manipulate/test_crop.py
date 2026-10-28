@@ -68,11 +68,15 @@ def test_crop(sample_arrays) -> None:
     assert result12.shape == result6.shape
 
     result13: np.ndarray = crop.crop(
-        sample_arrays["2dgray"], np.ones(sample_arrays["2dgray"].shape)
+        sample_arrays["2dgray"], np.ones(sample_arrays["2dgray"].shape, np.bool)
     )
     assert np.all(result13 == sample_arrays["2dgray"])
+    result14: np.ndarray = crop.crop(
+        sample_arrays["2dgray"], np.zeros(sample_arrays["2dgray"].shape, np.bool)
+    )
+    assert np.all(result14 == sample_arrays["2dgray"])
 
     single_slice_mask: np.ndarray = np.zeros(sample_arrays["3dgray"].shape, np.bool)
     single_slice_mask[3, :, :] = 1
-    result14: np.ndarray = crop.crop(sample_arrays["3dgray"], single_slice_mask)
-    assert result14.ndim == 2
+    result15: np.ndarray = crop.crop(sample_arrays["3dgray"], single_slice_mask)
+    assert result15.ndim == 2

@@ -2,107 +2,17 @@
 Detect shapes in images like blobs, lines, and circles.
 """
 
-from math import sqrt
 from typing import Annotated, Literal
 
 import numpy as np
-from porespy.filters import local_thickness
-from skimage.draw import circle_perimeter, line
-from skimage.feature import blob_dog, blob_doh, blob_log
-from skimage.measure import centroid as ctrd
-from skimage.transform import (
-    hough_circle,
-    hough_circle_peaks,
-    hough_line,
-    hough_line_peaks,
-    probabilistic_hough_line,
-)
 
 from pydoug_core.registry import register_operation
 from pydoug_core.util import is3d, isrgb, rgb2gray
 
-__all__ = ["mis", "blobs", "lines", "circles", "centroid"]
+__all__ = ["blobs", "lines", "circles", "centroid"]
 
 
-@register_operation(category="features", display_name="Maximum Inscribed Spheres")
-def mis(
-    imarray: np.ndarray,
-    Method: Literal[
-        "Brute Force", "Convolution", "Distance Transform", "ImageJ"
-    ] = "Distance Transform",
-    Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
-    Smooth: bool = True,
-    Return_Diameters: bool = False,
-    Perform_Slicewise: bool = False,
-) -> np.ndarray:
-    """
-    Find the maximum inscribed spheres for a binary image. Image must be 2D/3D binary.
-    Convenience wrapper around porespy's filters.local_thickness:
-    https://porespy.org/autoapi/porespy/filters/local_thickness.html#
-
-    Parameters
-    ----------
-    imarray: np.ndarray
-        The image to find maximum inscribed spheres in.
-    Method: Literal
-        The method for finding the inscribed spheres. Default is "Distance Transform".
-        - "Brute Force": Brute force algorithm.
-        - "Distance Transform": Uses distance transforms to dilate/erode each radius.
-        - "ImageJ": Uses ImageJ's algorithm (faster "Brute Force", less accurate).
-        - "Convolution": FFT-based convolution to dilate/erode each radius.
-    Pixel_Size: float
-        The edge length of pixels in real-world units.
-    Smooth: bool
-        Whether to remove small facets at borders (True) or not (False). Default True.
-    Return_Diameters: bool
-        Whether to return the diameter of the spheres (True) or the radii (False).
-        Default is False.
-    Perform_Slicewise: bool
-        Whether or not to perform the operation slicewise. Default is False.
-
-    Returns
-    -------
-    mis_array: np.ndarray
-        The maximum inscribed spheres image.
-    """
-
-    if isrgb(imarray):
-        print("Image is RGB, MIS not found!")
-        return imarray
-
-    def _mis(imarray, Method, Pixel_Size, Smooth, Return_Diameters) -> np.ndarray:
-
-        if Method == "Brute Force":
-            method: str = "bf"
-        elif Method == "Distance Transform":
-            method = "dt"
-        elif Method == "ImageJ":
-            method = "imj"
-        else:
-            method = "conv"
-
-        rad_array: np.ndarray = (
-            local_thickness(imarray.astype(np.bool), method=method, smooth=Smooth)
-            * Pixel_Size
-        )
-
-        if Return_Diameters:
-            return rad_array * 2
-        return rad_array
-
-    if Perform_Slicewise and is3d(imarray):
-        mis_array: np.ndarray = np.empty(imarray.shape)
-        for index in range(0, imarray.shape[0]):
-            mis_array[index] = _mis(
-                imarray[index], Method, Pixel_Size, Smooth, Return_Diameters
-            )
-
-        return mis_array
-
-    return _mis(imarray, Method, Pixel_Size, Smooth, Return_Diameters)
-
-
-@register_operation(category="features", display_name="Blobs")
+@register_operation(category="detect", display_name="Blobs")
 def blobs(
     imarray: np.ndarray,
     Method: Literal["DoG", "DoH", "LoG"] = "DoH",
@@ -183,6 +93,10 @@ def blobs(
     if isrgb(imarray):
         print("Image is RGB, blob identification not performed!")
         return imarray
+
+    from math import sqrt
+
+    from skimage.feature import blob_dog, blob_doh, blob_log
 
     abs_thresh: float | None = Absolute_Threshold
     if abs_thresh == 0:
@@ -298,7 +212,7 @@ def blobs(
     )
 
 
-@register_operation(category="features", display_name="Lines")
+@register_operation(category="detect", display_name="Lines")
 def lines(
     imarray: np.ndarray,
     Angle_Step: Annotated[float, {"min": 0.1, "step": 0.1}] = 1,
@@ -349,6 +263,13 @@ def lines(
     if isrgb(imarray):
         print("Image is RGB, lines detection not performed!")
         return imarray
+
+    from skimage.draw import line
+    from skimage.transform import (
+        hough_line,
+        hough_line_peaks,
+        probabilistic_hough_line,
+    )
 
     if Threshold == 0:
         thresh: float | None = None
@@ -448,7 +369,7 @@ def lines(
     )
 
 
-@register_operation(category="features", display_name="Circles")
+@register_operation(category="detect", display_name="Circles")
 def circles(
     imarray: np.ndarray,
     Radii: tuple[
@@ -489,6 +410,9 @@ def circles(
     if isrgb(imarray):
         print("Image is RGB, lines detection not performed!")
         return imarray
+
+    from skimage.draw import circle_perimeter
+    from skimage.transform import hough_circle, hough_circle_peaks
 
     radii: np.ndarray = np.arange(Radii[0], Radii[1] + 1, Radii[2])
     if Threshold == 0:
@@ -531,7 +455,7 @@ def circles(
     )
 
 
-@register_operation(category="features", display_name="Centroid")
+@register_operation(category="detect", display_name="Centroid")
 def centroid(imarray: np.ndarray) -> np.ndarray:
     """
     Find the centroid of an image. RGB images are converted to grayscale first.
@@ -548,6 +472,8 @@ def centroid(imarray: np.ndarray) -> np.ndarray:
     centroid_array: np.ndarray
         An image with the same shape as the input with only the centroid.
     """
+
+    from skimage.measure import centroid as ctrd
 
     coords: tuple = ctrd(rgb2gray(imarray))
     centroid_array: np.ndarray = np.zeros(rgb2gray(imarray).shape, np.bool)

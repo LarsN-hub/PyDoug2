@@ -5,21 +5,11 @@ Plot and modify an image array's histogram.
 from typing import Annotated, Literal
 
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-from skimage import exposure
-from skimage import util as skutil
-from skimage.filters.rank import (
-    autolevel,
-    enhance_contrast,
-)
-from skimage.filters.rank import equalize as equalize_rank
 from skimage.morphology import ball, disk
 
 from pydoug_core import util
-from pydoug_core.analyze import plot_util
 from pydoug_core.registry import register_operation
+from pydoug_core.results import PlotResult
 
 __all__ = [
     "plot_histogram",
@@ -30,9 +20,6 @@ __all__ = [
     "adjust",
     "local_contrast",
 ]
-
-plt.rcParams["font.family"] = "sans-serif"
-plt.rcParams["font.sans-serif"] = "Arial"
 
 
 @register_operation(
@@ -47,13 +34,25 @@ def plot_histogram(
     imarray: np.ndarray,
     Bin_Count: Annotated[int, {"min": 1}] = 256,
     Normalize: bool = False,
+    Units: str = "",
+    X_Label: str = "Gray Value",
+    Y_Max: Annotated[float, {"min": 0, "max": 1000000000000000, "step": 0.0001}] = 0,
+    X_Lims: tuple[
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+        Annotated[
+            float, {"min": -1000000000000000, "max": 1000000000000000, "step": 0.0001}
+        ],
+    ] = (0, 0),
     Apply_Mask: bool = False,
     Mask: np.ndarray | None = None,
-) -> Figure:
+) -> PlotResult:
     """
     Plot an image array's histogram. Convenience wrapper around scikit-image's
-    exposure.histogram:
+    exposure.histogram and matplotlib's hist:
     https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.histogram
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 
     Parameters
     ----------
@@ -63,6 +62,17 @@ def plot_histogram(
         The number of bins to use in the histogram. Ignored for integer arrays.
     Normalize: bool
         Whether or not to normalize the counts by the total sum. Default is False.
+    Units: str
+        (Optional) units to add to the x axis. If not provided, no units are added.
+    X_Label: str
+        The label for the x-axis. By changing this, this widget can be used to plot
+        distributions other than simply grayscale values (e.g., a path length
+        distribution after finding path length at each pixel in the "Path Length" widget
+        of the "Features" tab).
+    Y_Max: float
+        The maximum y-axis value to plot. Automatically determined if 0.
+    X_Lims: tuple[float, float]
+        The limits of the x-axis in the form [min, max]. Ignored if both are 0.
     Apply_Mask: bool
         Whether or not to apply a mask. Default is False.
     Mask: np.ndarray | None
@@ -71,25 +81,59 @@ def plot_histogram(
 
     Returns
     -------
-    hist_fig: plt.Figure
-        The figure containing the histogram plot.
+    plot_result: PlotResult
+        The PlotResult object containing the plot figure and the data.
     """
+
+    from matplotlib import pyplot as plt
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
+
+    from pydoug_core.analyze.plot_distrib import hist_distrib
+    from pydoug_core.analyze.plot_util import hist_ax
+
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = "Arial"
 
     if Apply_Mask and Mask is not None:
         values: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         values = np.copy(imarray)
+    if values.size == 0:
+        values = np.array([0], imarray.dtype)
+    hist_vals, bin_centers, hist_stats = hist_distrib(
+        values, Bin_Count, "values", normalize=Normalize
+    )
+    display_units: str = r"\mu m" if Units == "um" else Units
+    x_label: str = (
+        rf"{X_Label} ($\mathrm{{{display_units}}}$)" if Units != "" else X_Label
+    )
+    units: dict = {"Probability Density" if Normalize else "Counts": None}
+    units.update({X_Label: Units if Units != "" else None})
+
     fig: Figure = Figure()
     ax: Axes = fig.add_subplot()
-    ax = plot_util.hist_ax(values, ax, Bin_Count, normalize=Normalize)
-    ax.set_xlabel("Gray Value", fontsize=15)
-    if Normalize:
-        ax.set_ylabel("Probability", fontsize=15)
-    else:
-        ax.set_ylabel("Counts", fontsize=15)
-    ax.tick_params("both", labelsize=13)
+    ax = hist_ax(
+        hist_vals,
+        bin_centers,
+        ax,
+        x_label,
+        "Probability Density" if Normalize else "Counts",
+        Y_Max,
+        None if (X_Lims[0] == X_Lims[1] == 0) else X_Lims,
+    )
     fig.set_layout_engine("constrained")
-    return fig
+
+    return PlotResult(
+        figure=fig,
+        data={
+            X_Label: bin_centers,
+            "Probability Density" if Normalize else "Counts": hist_vals,
+        },  # type: ignore
+        x_columns=(X_Label,),
+        tables={"statistics": hist_stats},
+        units=units,
+    )
 
 
 @register_operation(category="histogram", display_name="Invert")
@@ -109,7 +153,9 @@ def invert(imarray: np.ndarray) -> np.ndarray:
         The ivnerted image array.
     """
 
-    return skutil.invert(imarray)
+    from skimage.util import invert as skinvert
+
+    return skinvert(imarray)
 
 
 @register_operation(category="histogram", display_name="Normalize")
@@ -159,6 +205,8 @@ def normalize(
     if Input_Range == "Image" and Output_Range == "Image":
         return imarray
 
+    from skimage.exposure import rescale_intensity
+
     if Input_Range == "Manual":
         input: str | tuple[float, float] = Manual_Input
     else:
@@ -168,7 +216,7 @@ def normalize(
     else:
         output = Output_Range.lower()
 
-    return exposure.rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
+    return rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
 
 
 @register_operation(category="histogram", display_name="Saturate")
@@ -266,6 +314,9 @@ def equalize(
         The histogram-equalized image array.
     """
 
+    from skimage.exposure import equalize_adapthist, equalize_hist
+    from skimage.filters.rank import equalize as equalize_rank
+
     def _equalize(
         imarray: np.ndarray,
         Method: Literal["Global", "CLAHE", "Rank"],
@@ -279,15 +330,17 @@ def equalize(
 
         if Method == "Global":
             if Apply_Mask and Mask is not None:
+                if not np.any(Mask):
+                    return imarray
                 return util.convert_dtype(
-                    exposure.equalize_hist(imarray, mask=Mask),
+                    equalize_hist(imarray, mask=Mask),
                     input_dtype,  # type: ignore
                 )
-            return util.convert_dtype(exposure.equalize_hist(imarray), input_dtype)  # type: ignore
+            return util.convert_dtype(equalize_hist(imarray), input_dtype)  # type: ignore
 
         if Method == "CLAHE":
             return util.convert_dtype(
-                exposure.equalize_adapthist(imarray, Radius * 2, CLAHE_Clip_Limit),
+                equalize_adapthist(imarray, Radius * 2, CLAHE_Clip_Limit),
                 input_dtype,  # type: ignore
             )
 
@@ -376,14 +429,16 @@ def adjust(
         The contrast-adjusted image array.
     """
 
+    from skimage.exposure import adjust_gamma, adjust_log, adjust_sigmoid
+
     if Method == "Gamma":
-        return exposure.adjust_gamma(imarray, Gamma, Gain)
+        return adjust_gamma(imarray, Gamma, Gain)
 
     if Method == "Log":
-        return exposure.adjust_log(imarray, Gain, Inverse)
+        return adjust_log(imarray, Gain, Inverse)
 
     if Method == "Sigmoid":
-        return exposure.adjust_sigmoid(imarray, Sigmoid_Cutoff, Gain, Inverse)
+        return adjust_sigmoid(imarray, Sigmoid_Cutoff, Gain, Inverse)
 
 
 @register_operation(
@@ -424,6 +479,8 @@ def local_contrast(
     enhanced_array: np.ndarray
         The contrast-enhanced image array.
     """
+
+    from skimage.filters.rank import autolevel, enhance_contrast
 
     if util.is3d(imarray):
         footprint = ball(Radius)

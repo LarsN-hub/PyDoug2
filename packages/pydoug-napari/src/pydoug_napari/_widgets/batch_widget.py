@@ -2,14 +2,7 @@
 Batch processing widget for PyDoug's napari plugin.
 """
 
-from pathlib import Path
-
-from magicclass.widgets import CollapsibleContainer, ScrollableContainer
-from magicgui import magicgui
-from qtpy.QtWidgets import QVBoxLayout, QWidget
-
-from pydoug_core import util
-from pydoug_napari._widgets._batch_run_widget import build_run_batch_widget
+from qtpy.QtWidgets import QWidget
 
 
 def make_batch_widget(recorder) -> QWidget:
@@ -26,6 +19,15 @@ def make_batch_widget(recorder) -> QWidget:
     container: QWidget
         The batch processing container widget.
     """
+
+    from pathlib import Path
+
+    from magicclass.widgets import CollapsibleContainer, ScrollableContainer
+    from magicgui import magicgui
+    from qtpy.QtWidgets import QVBoxLayout
+
+    from pydoug_core import util
+    from pydoug_napari._widgets._batch_run_widget import build_run_batch_widget
 
     @magicgui(Parent_Folder={"mode": "d"}, call_button="Save Workflow")
     def save_widget(

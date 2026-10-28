@@ -5,7 +5,6 @@ Methods for segmenting and labeling RGB images.
 from typing import Annotated
 
 import numpy as np
-from skimage.segmentation import felzenszwalb, quickshift, slic
 
 from pydoug_core.registry import register_operation
 
@@ -40,6 +39,8 @@ def fz(
     seg_array: np.ndarray
         The segmented image.
     """
+
+    from skimage.segmentation import felzenszwalb
 
     return felzenszwalb(imarray, Scale, Sigma, Minimum_Size)
 
@@ -77,6 +78,8 @@ def qs(
     seg_array: np.ndarray
         The segmented image.
     """
+
+    from skimage.segmentation import quickshift
 
     return quickshift(imarray, Ratio, Kernel_Size, Maximum_Distance, sigma=Sigma)
 
@@ -120,6 +123,8 @@ def sl(
     seg_array: np.ndarray
         The segmented image.
     """
+
+    from skimage.segmentation import slic
 
     return slic(
         imarray,

@@ -5,13 +5,11 @@ Intensity-based thresholding operations to segment images.
 from typing import Annotated, Any, Literal
 
 import numpy as np
-from skimage.filters import apply_hysteresis_threshold
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
-from pydoug_core.segment import segment_util
 
-__all__ = ["threshold_array", "hist_threshold", "hysteresis"]
+__all__ = ["threshold_array", "reassign", "hist_threshold", "hysteresis"]
 
 
 def threshold_array(
@@ -199,12 +197,16 @@ def hist_threshold(
         The segmented image array.
     """
 
+    from pydoug_core.segment.segment_util import calc_thresholds
+
     if Apply_Mask and Mask is not None:
         eval_array: np.ndarray = imarray[util.prep_mask(imarray, Mask)]
     else:
         eval_array = imarray
+    if eval_array.size == 0:
+        eval_array = np.array([0], imarray.dtype)
 
-    thresh_vals: Any = segment_util.calc_thresholds(
+    thresh_vals: Any = calc_thresholds(
         eval_array, Method, Otsu_Classes, Bin_Count, Max_Iteration_Count
     )
 
@@ -247,6 +249,8 @@ def hysteresis(
     thresh_array: np.ndarray
         The segmented image array.
     """
+
+    from skimage.filters import apply_hysteresis_threshold
 
     return util.convert_dtype(
         apply_hysteresis_threshold(imarray, min(Thresholds), max(Thresholds)), "Uint8"

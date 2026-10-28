@@ -1,10 +1,10 @@
 """
-Tests for PyDoug's features.feat module.
+Tests for PyDoug's detect.sharp module.
 """
 
 import numpy as np
 
-from pydoug_core.features import sharp
+from pydoug_core.detect import sharp
 
 
 def test_edges(sample_arrays) -> None:
@@ -105,3 +105,13 @@ def test_corners(sample_arrays) -> None:
     assert result16.dtype == np.bool
     assert result17.dtype == np.bool
     assert result18.dtype == np.bool
+
+
+def test_surfaces(sample_masks) -> None:
+
+    result1: tuple = sharp.surfaces(sample_masks["3dgray"])
+    result2: tuple = sharp.surfaces(sample_masks["3dgray"], Level=0.5)
+    assert isinstance(result1, tuple)
+    assert isinstance(result2, tuple)
+    assert len(result1) == 3
+    assert len(result2) == 3

@@ -1,15 +1,14 @@
 """
-Masking and logic operations.
+Logic operations.
 """
 
 from typing import Annotated, Literal
 
 import numpy as np
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
 
-__all__ = ["apply_mask", "logic"]
+__all__ = ["apply_mask", "projection", "logic"]
 
 
 @register_operation(
@@ -57,18 +56,68 @@ def apply_mask(
         The masked image array.
     """
 
+    from pydoug_core.util import prep_mask
+
     if In_Place:
         if Method == "In":
-            imarray[util.prep_mask(imarray, Mask)] = Masked_Color
+            imarray[prep_mask(imarray, Mask)] = Masked_Color
         else:
-            imarray[np.logical_not(util.prep_mask(imarray, Mask))] = Masked_Color
+            imarray[np.logical_not(prep_mask(imarray, Mask))] = Masked_Color
         return imarray
     masked_array: np.ndarray = np.copy(imarray)
     if Method == "In":
-        masked_array[util.prep_mask(masked_array, Mask)] = Masked_Color
+        masked_array[prep_mask(masked_array, Mask)] = Masked_Color
     else:
-        masked_array[np.logical_not(util.prep_mask(masked_array, Mask))] = Masked_Color
+        masked_array[np.logical_not(prep_mask(masked_array, Mask))] = Masked_Color
     return masked_array
+
+
+@register_operation(category="math", display_name="2D Projection")
+def projection(
+    imarray: np.ndarray,
+    Method: Literal["First", "Last", "Thickness"] = "Thickness",
+    Pixel_Size: Annotated[float, {"min": 0, "max": 1000000, "step": 0.0001}] = 1,
+) -> np.ndarray:
+    """
+    Generate a 2D projection of binary 3D image. Can either count all pixels in a column
+    to return thickness or find the height of the first/last pixel in the column to
+    return height. Convenience wrapper around numpy's count_nonzero, argwhere, and flip:
+    https://numpy.org/doc/stable/reference/generated/numpy.count_nonzero.html
+    https://numpy.org/doc/stable/reference/generated/numpy.argwhere.html
+    https://numpy.org/doc/stable/reference/generated/numpy.flip.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The 3D binary image to create a projection from.
+    Method: Literal
+        The method for creating the projection. Default is "Thickness".
+        - "First": Return the position of the first non-zero pixel along the z-axis.
+        - "Last": Return the position of the last non-zero pixel along the z-axis.
+        - "Thickness": Return the number of non-zero pixels along the z-axis by column.
+    Pixel_Size: float
+        The pixel edge length in real-world units. This value is multiplied by the
+        output to return the thickness or position in real-world units.
+
+    Returns
+    -------
+    proj_array: np.ndarray
+        The projected image.
+    """
+
+    from pydoug_core.util import is3d, isrgb
+
+    if not is3d(imarray) or isrgb(imarray):
+        print("Image is either RGB or 2D, projection not created!")
+        return imarray
+
+    if Method == "First":
+        return np.argmax(imarray, axis=0) * Pixel_Size
+
+    elif Method == "Last":
+        return np.argmax(np.flip(imarray, axis=0), axis=0) * Pixel_Size
+
+    return np.count_nonzero(imarray, axis=0) * Pixel_Size
 
 
 @register_operation(
@@ -106,21 +155,21 @@ def logic(
         The image after the logical operation.
     """
 
+    from pydoug_core.util import convert_dtype
+
     log_array: np.ndarray = np.zeros(imarray.shape, np.bool)
     if Method == "Intersect":
         log_array[
-            util.convert_dtype(imarray, "Bool")
-            & util.convert_dtype(Logic_Layer, "Bool")
+            convert_dtype(imarray, "Bool") & convert_dtype(Logic_Layer, "Bool")
         ] = True
     elif Method == "Subtract":
         log_array[
-            util.convert_dtype(imarray, "Bool")
-            & np.logical_not(util.convert_dtype(Logic_Layer, "Bool"))
+            convert_dtype(imarray, "Bool")
+            & np.logical_not(convert_dtype(Logic_Layer, "Bool"))
         ] = True
     else:
         log_array[
-            util.convert_dtype(imarray, "Bool")
-            | util.convert_dtype(Logic_Layer, "Bool")
+            convert_dtype(imarray, "Bool") | convert_dtype(Logic_Layer, "Bool")
         ] = True
 
     return log_array

@@ -5,29 +5,8 @@ Filters that detect gradients and edges.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.filters import (
-    farid,
-    farid_h,
-    farid_v,
-    laplace,
-    prewitt,
-    prewitt_h,
-    prewitt_v,
-    roberts,
-    roberts_neg_diag,
-    roberts_pos_diag,
-    scharr,
-    scharr_h,
-    scharr_v,
-    sobel,
-    sobel_h,
-    sobel_v,
-)
-from skimage.filters.rank import gradient as rank_grad
-from skimage.morphology import ball, disk
 
 from pydoug_core.registry import register_operation
-from pydoug_core.util import is3d, isrgb
 
 __all__ = ["gradient"]
 
@@ -113,6 +92,29 @@ def gradient(
     grad_array: np.ndarray
         The gradient filtered image.
     """
+
+    from skimage.filters import (
+        farid,
+        farid_h,
+        farid_v,
+        laplace,
+        prewitt,
+        prewitt_h,
+        prewitt_v,
+        roberts,
+        roberts_neg_diag,
+        roberts_pos_diag,
+        scharr,
+        scharr_h,
+        scharr_v,
+        sobel,
+        sobel_h,
+        sobel_v,
+    )
+    from skimage.filters.rank import gradient as rank_grad
+    from skimage.morphology import ball, disk
+
+    from pydoug_core.util import is3d, isrgb
 
     def _grad(
         imarray, Method, K_Size, Radius, Horizontal, Vertical, Edge_Mode, Constant_Value

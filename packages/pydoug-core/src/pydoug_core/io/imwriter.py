@@ -2,16 +2,9 @@
 Writing image files
 """
 
-import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-import h5py
-import imageio.v3 as iio
 import numpy as np
-
-from pydoug_core import util
-from pydoug_core.io import io_util
 
 __all__ = ["imwrite", "seqwrite"]
 
@@ -32,12 +25,24 @@ def _write(imarray: np.ndarray, path: Path, ext: str) -> None:
 
     if path.exists():
         raise FileExistsError
-    if ext in ["h5", "hdf", "hdf5", "he5"]:
-        hdfile: h5py.File = h5py.File(path, "w")
-        _ = hdfile.create_dataset("data", data=imarray)
-        hdfile.close()
+    if imarray.dtype == np.bool:
+        from skimage.util import img_as_ubyte
+
+        data: np.ndarray = img_as_ubyte(imarray)
     else:
-        iio.imwrite(path, imarray)
+        data = imarray
+
+    if ext in ["h5", "hdf", "hdf5", "he5"]:
+        import h5py
+
+        hdfile: h5py.File = h5py.File(path, "w")
+        _ = hdfile.create_dataset("data", data=data)
+        hdfile.close()
+
+    else:
+        from imageio.v3 import imwrite as iiowrite
+
+        iiowrite(path, data)
 
 
 def imwrite(
@@ -96,6 +101,12 @@ def seqwrite(
         The extension to use for writing each file.
     """
 
+    import os
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    from pydoug_core.io.io_util import _auto_worker_count
+    from pydoug_core.util import is3d
+
     path = Path(path)
     path = path / f"{name}"
     try:
@@ -110,7 +121,7 @@ def seqwrite(
         print(f"Error creating directory {path}: {e}")
         return None
 
-    if not util.is3d(imarray):
+    if not is3d(imarray):
         imwrite(imarray, path, name, ext)
         return
 
@@ -122,7 +133,7 @@ def seqwrite(
         imwrite(imarray[index], path, filenames[index], ext)
 
     if numworkers is None:
-        numworkers = io_util._auto_worker_count(imarray[0], imarray.shape[0])
+        numworkers = _auto_worker_count(imarray[0], imarray.shape[0])
 
     if numworkers > 1:
         try:

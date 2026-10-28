@@ -67,8 +67,7 @@ def test_run_batch(
     assert Path(tmp_path / "test_runner_output1/test2.tiff").exists()
     assert Path(tmp_path / "test_runner_output1/02__nothing_plot/test1.png").exists()
     assert Path(tmp_path / "test_runner_output1/02__nothing_plot/test2.png").exists()
-    assert Path(tmp_path / "test_runner_output1/03__nothing_calc/test1.json").exists()
-    assert Path(tmp_path / "test_runner_output1/03__nothing_calc/test2.json").exists()
+    assert Path(tmp_path / "test_runner_output1/03__nothing_calc/values.csv").exists()
 
     result2: list[tuple[int, int, str]] = list(
         runner.run_batch(
@@ -86,8 +85,7 @@ def test_run_batch(
     assert Path(tmp_path / "test_runner_output2/01__nothing/test2.tiff").exists()
     assert Path(tmp_path / "test_runner_output2/02__nothing_plot/test1.png").exists()
     assert Path(tmp_path / "test_runner_output2/02__nothing_plot/test2.png").exists()
-    assert Path(tmp_path / "test_runner_output2/03__nothing_calc/test1.json").exists()
-    assert Path(tmp_path / "test_runner_output2/03__nothing_calc/test2.json").exists()
+    assert Path(tmp_path / "test_runner_output2/03__nothing_calc/values.csv").exists()
 
     result3: list[tuple[int, int, str]] = list(
         runner.run_batch(
@@ -104,8 +102,7 @@ def test_run_batch(
     assert len(os.listdir(Path(tmp_path / "test_runner_output3"))) == 2
     assert Path(tmp_path / "test_runner_output3/02__nothing_plot/test1.png").exists()
     assert Path(tmp_path / "test_runner_output3/02__nothing_plot/test2.png").exists()
-    assert Path(tmp_path / "test_runner_output3/03__nothing_calc/test1.json").exists()
-    assert Path(tmp_path / "test_runner_output3/03__nothing_calc/test2.json").exists()
+    assert Path(tmp_path / "test_runner_output3/03__nothing_calc/values.csv").exists()
 
 
 def test_run_batch_no_primary(

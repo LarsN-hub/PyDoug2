@@ -2,20 +2,10 @@
 Denoising images.
 """
 
-from math import ceil
 from typing import Annotated, Literal
 
 import numpy as np
 import pywt
-from skimage.filters.rank import mean_bilateral as rank_bilateral
-from skimage.morphology import disk
-from skimage.restoration import (
-    denoise_bilateral,
-    denoise_nl_means,
-    denoise_tv_bregman,
-    denoise_tv_chambolle,
-    denoise_wavelet,
-)
 
 from pydoug_core import util
 from pydoug_core.registry import register_operation
@@ -85,6 +75,12 @@ def bilateral(
     dnarray: np.ndarray
         The denoised image.
     """
+
+    from math import ceil
+
+    from skimage.filters.rank import mean_bilateral as rank_bilateral
+    from skimage.morphology import disk
+    from skimage.restoration import denoise_bilateral
 
     output_dtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
     output_dtype_str: str = util.dtype_2_str(output_dtype)
@@ -209,6 +205,8 @@ def nl_means(
         The denoised image.
     """
 
+    from skimage.restoration import denoise_nl_means
+
     output_dtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
 
     if Slicewise and util.is3d(imarray):
@@ -281,6 +279,8 @@ def tv_bregman(
     dnarray: np.ndarray
         The denoised image.
     """
+
+    from skimage.restoration import denoise_tv_bregman
 
     output_dtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
     output_dtype_str: str = util.dtype_2_str(output_dtype)
@@ -356,6 +356,8 @@ def tv_chambolle(
     dnarray: np.ndarray
         The denoised image.
     """
+
+    from skimage.restoration import denoise_tv_chambolle
 
     output_dtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
     output_dtype_str: str = util.dtype_2_str(output_dtype)
@@ -443,6 +445,8 @@ def wavelet(
     dnarray: np.ndarray
         The denoised image.
     """
+
+    from skimage.restoration import denoise_wavelet
 
     output_dtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
     output_dtype_str: str = util.dtype_2_str(output_dtype)

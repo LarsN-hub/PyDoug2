@@ -5,13 +5,9 @@ Headless batch runner to apply a workflow to multiple image datasets.
 from collections.abc import Iterator
 from pathlib import Path
 
-from numpy import ndarray
-
-from pydoug_core.batch._result_save import default_save_result
-from pydoug_core.batch.recorder import OperationSpec, Recorder
-from pydoug_core.io.imreader import imread, seqread
+from pydoug_core.batch._tables import BatchTables
 from pydoug_core.io.imwriter import imwrite
-from pydoug_core.registry import get_operation
+from pydoug_core.results import VisualResult
 
 
 def run_batch(
@@ -41,6 +37,13 @@ def run_batch(
         The total number of images to be processed.
     """
 
+    from numpy import ndarray
+
+    from pydoug_core.batch._result_save import default_save_result
+    from pydoug_core.batch.recorder import OperationSpec, Recorder
+    from pydoug_core.io.imreader import imread, seqread
+    from pydoug_core.registry import get_operation
+
     recorder: Recorder = Recorder()
     recorder.load(Path(workflow_dir))
     output_dir = Path(output_dir)
@@ -54,11 +57,13 @@ def run_batch(
 
     for step in recorder.steps:
         spec: OperationSpec = get_operation(step.operation_name)
-        needs_folder: bool = spec.output_kind not in ("image", "labels") or (
+        needs_folder: bool = spec.output_kind not in ("image", "labels", "visual") or (
             save_every_step and save_images
         )
         if needs_folder:
             (output_dir / step_folders[step.step_id]).mkdir(parents=True, exist_ok=True)
+
+    tables: BatchTables = BatchTables()
 
     for index, path in enumerate(image_paths, start=1):
         name: str = path.stem if path.is_file() else path.name
@@ -72,16 +77,27 @@ def run_batch(
         last_image_result: ndarray | None = None
         for step, spec, result in recorder.iter_replay(primary):
             folder: Path = output_dir / step_folders[step.step_id]
-            if spec.output_kind in ("image", "labels"):
-                last_image_result = result
+            if spec.output_kind in ("image", "labels", "visual"):
+                last_image_result = (
+                    result.imarray if isinstance(result, VisualResult) else result
+                )
                 if save_every_step and save_images:
                     out_path: Path = folder / f"{name}.tiff"
-                    imwrite(result, folder, name, "tiff")
+                    imwrite(
+                        result.imarray if isinstance(result, VisualResult) else result,
+                        folder,
+                        name,
+                        "tiff",
+                    )
                     if not out_path.exists():
                         text: str = f"WARNING: failed to write {folder.name} for {name}"
                         yield index, total, text
-            else:
+            elif spec.save_result is not None:  # pragma: no cover
                 (spec.save_result or default_save_result)(result, folder / name)
+            elif tables.handles(result):
+                tables.add(folder, name, result, spec.units)
+            else:
+                default_save_result(result, folder / name)  # type: ignore
 
         if not save_every_step and save_images and last_image_result is not None:
             out_path: Path = output_dir / f"{name}.tiff"
@@ -92,5 +108,7 @@ def run_batch(
                     total,
                     f"WARNING: failed to write final image for {name}",
                 )
+
+        tables.write()
 
     yield total, total, "Finished processing all images!"

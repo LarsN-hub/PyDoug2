@@ -2,10 +2,6 @@
 Take a screenshot and record its parameters in the workflow.
 """
 
-import json
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +29,11 @@ def _render_screenshot_impl(
     screenshot_array: np.ndarray
         The screenshot as a 2D image.
     """
+
+    import json
+    import subprocess
+    import sys
+    import tempfile
 
     with tempfile.TemporaryDirectory() as tmp_str:
         tmp: Path = Path(tmp_str)
@@ -74,12 +75,13 @@ def _render_screenshot_impl(
 
 
 @register_operation(
-    category="visualization",
+    category="visualize",
     display_name="Render Image Screenshot",
     captures_viewer_settings=True,
 )
 def render_image_screenshot(
-    imarray: np.ndarray, Settings: dict[str, Any]
+    imarray: np.ndarray,
+    Settings: dict[str, Any],
 ) -> np.ndarray:
     """
     Render `imarray` with the captured display settings in a fully
@@ -103,13 +105,14 @@ def render_image_screenshot(
 
 
 @register_operation(
-    category="visualization",
+    category="visualize",
     display_name="Render Labels Screenshot",
     captures_viewer_settings=True,
     layer_type="labels",
 )
 def render_labels_screenshot(
-    imarray: np.ndarray, Settings: dict[str, Any]
+    imarray: np.ndarray,
+    Settings: dict[str, Any],
 ) -> np.ndarray:
     """
     Render `imarray` with the captured display settings in a fully

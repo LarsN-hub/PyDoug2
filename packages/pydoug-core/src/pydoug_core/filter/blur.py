@@ -5,11 +5,7 @@ Filters that blur or smooth images.
 from typing import Annotated, Literal
 
 import numpy as np
-from skimage.filters import gaussian, median
-from skimage.filters.rank import mean, modal
-from skimage.morphology import ball, disk
 
-from pydoug_core import util
 from pydoug_core.registry import register_operation
 
 __all__ = ["smooth"]
@@ -75,6 +71,12 @@ def smooth(
     smooth_array: np.ndarray
         The smoothed image.
     """
+
+    from skimage.filters import gaussian, median
+    from skimage.filters.rank import mean, modal
+    from skimage.morphology import ball, disk
+
+    from pydoug_core import util
 
     def _smooth(
         imarray,

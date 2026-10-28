@@ -12,10 +12,21 @@ import pytest
 import pydoug_core  # noqa: F401 — imported for its registration side effect
 from pydoug_core.batch import recorder
 from pydoug_core.io import imreader, imwriter
+from pydoug_core.payloads import ShapesData
 
 
 class DummyLayer:
     def __init__(self, data: np.ndarray | None) -> None:
+        self.data = data
+
+
+class DummySurfaceLayer:
+    def __init__(self, data: tuple | None) -> None:
+        self.data = data
+
+
+class DummyShapesLayer:
+    def __init__(self, data: ShapesData | None) -> None:
         self.data = data
 
 
@@ -52,11 +63,11 @@ def test_Recorder_record_and_step_id_for_layer() -> None:
     assert record.steps[1].step_id == record.step_id_for_layer(layer_ref)
 
 
-def test_Recorder_get_or_create_array_ref() -> None:
+def test_Recorder_get_or_create_array_ref(sample_2dgray_array) -> None:
 
     record: recorder.Recorder = recorder.Recorder()
-    layer1: DummyLayer = DummyLayer(None)
-    layer2: DummyLayer = DummyLayer(None)
+    layer1: DummyLayer = DummyLayer(sample_2dgray_array)
+    layer2: DummyLayer = DummyLayer(sample_2dgray_array)
     ref1: str = record.get_or_create_array_ref(layer1)
     ref2: str = record.get_or_create_array_ref(layer1)
     ref3: str = record.get_or_create_array_ref(layer2)
@@ -200,13 +211,13 @@ def test_resolve(sample_2dgray_array) -> None:
     outputs[record.step_id_for_layer(layer2)] = alt_array2
     array_ref: str = record.get_or_create_array_ref(layer3)
 
-    result1: np.ndarray | None = record._resolve(
+    result1: np.ndarray | tuple | ShapesData | None = record._resolve(
         "primary", sample_2dgray_array, outputs
     )
     assert result1 is not None
     assert np.all(result1 == sample_2dgray_array)
 
-    result2: np.ndarray | None = record._resolve(
+    result2: np.ndarray | tuple | ShapesData | None = record._resolve(
         f"step:{record.step_id_for_layer(layer1)}",
         sample_2dgray_array,
         outputs,
@@ -214,7 +225,7 @@ def test_resolve(sample_2dgray_array) -> None:
     assert result2 is not None
     assert np.all(result2 == alt_array1)
 
-    result3: np.ndarray | None = record._resolve(
+    result3: np.ndarray | tuple | ShapesData | None = record._resolve(
         f"step:{record.step_id_for_layer(layer2)}",
         sample_2dgray_array,
         outputs,
@@ -222,29 +233,34 @@ def test_resolve(sample_2dgray_array) -> None:
     assert result3 is not None
     assert np.all(result3 == alt_array2)
 
-    result4: np.ndarray | None = record._resolve(
+    result4: np.ndarray | tuple | ShapesData | None = record._resolve(
         array_ref, sample_2dgray_array, outputs
     )
     assert result4 is not None
     assert np.all(result4 == alt_array3)
 
     with pytest.raises(ValueError):
-        _: np.ndarray | None = record._resolve("fail", sample_2dgray_array, outputs)
+        _: np.ndarray | tuple | ShapesData | None = record._resolve(
+            "fail", sample_2dgray_array, outputs
+        )
 
 
 def test_Recorder_replay_and_iter_replay(
     sample_2dgray_array,
     tmp_path,
     registered_nothing,
+    registered_nothing_no_layer,
 ) -> None:
 
     alt_array1: np.ndarray = np.copy(sample_2dgray_array)
     alt_array2: np.ndarray = np.copy(sample_2dgray_array)
     alt_array3: np.ndarray = np.copy(sample_2dgray_array)
+    alt_array4: np.ndarray = np.copy(sample_2dgray_array)
     record: recorder.Recorder = recorder.Recorder()
     layer1: DummyLayer = DummyLayer(alt_array1)
     layer2: DummyLayer = DummyLayer(alt_array2)
     layer3: DummyLayer = DummyLayer(alt_array3)
+    layer4: DummyLayer = DummyLayer(alt_array4)
     record.record("_nothing", {}, {"layer": "primary"}, layer1)
     record.record(
         "_nothing",
@@ -255,10 +271,62 @@ def test_Recorder_replay_and_iter_replay(
         },
         layer3,
     )
+    record.record(
+        "_nothing_no_layer",
+        {},
+        {},
+        layer4,
+    )
     record.save(Path(tmp_path / "test_workflow_replay"))
     record2: recorder.Recorder = recorder.Recorder()
     record2.load(Path(tmp_path / "test_workflow_replay"))
     result: np.ndarray | dict | Any = record2.replay(sample_2dgray_array)
     assert result is not None
     assert isinstance(result, np.ndarray)
-    assert np.all(result == sample_2dgray_array)
+    assert not np.all(result == sample_2dgray_array)
+
+
+def test_surface_behavior(sample_masks, registered_nothing_surface, tmp_path) -> None:
+
+    record: recorder.Recorder = recorder.Recorder()
+    dummy_tuple: tuple = (np.array([[0, 0, 0]]), np.array([[1, 1, 1]]), np.array([5]))
+    dummy_tuple2: tuple = (np.array([[1, 2, 3]]), np.array([[4, 5, 6]]), np.array([7]))
+    layer1: DummySurfaceLayer = DummySurfaceLayer(dummy_tuple)
+    layer2: DummySurfaceLayer = DummySurfaceLayer(dummy_tuple2)
+    record.record(
+        "_nothing_surface",
+        {},
+        {"layer": "primary", "dummy_surface": record.get_or_create_array_ref(layer1)},
+        layer2,
+    )
+    record.save(Path(tmp_path / "test_surface_replay"))
+    record2: recorder.Recorder = recorder.Recorder()
+    record2.load(Path(tmp_path / "test_surface_replay"))
+    result: Any = record2.replay(sample_masks["3dgray"])
+    assert result is not None
+    assert isinstance(result, tuple)
+
+
+def test_shapes_behavior(
+    sample_2dgray_array, registered_nothing_shapes, tmp_path
+) -> None:
+
+    record: recorder.Recorder = recorder.Recorder()
+    shapes: ShapesData = ShapesData([np.array([[1, 2], [3, 4]])], ["line"])
+    layer1: DummyShapesLayer = DummyShapesLayer(shapes)
+    layer2: DummyLayer = DummyLayer(sample_2dgray_array)
+    record.record(
+        "_nothing_shapes",
+        {},
+        {
+            "dummy_shapes": record.get_or_create_array_ref(layer1, shapes),
+            "imarray": record.get_or_create_array_ref(layer2),
+        },
+        None,
+    )
+    record.save(Path(tmp_path / "test_shapes_replay"))
+    record2: recorder.Recorder = recorder.Recorder()
+    record2.load(Path(tmp_path / "test_shapes_replay"))
+    result: Any = record2.replay(sample_2dgray_array)
+    assert result is not None
+    assert isinstance(result, int)

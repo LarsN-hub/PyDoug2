@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-import skimage.util as skutil
-from skimage.color import rgb2gray as skrgb2gray
 
 from pydoug_core.registry import register_operation
 
@@ -25,6 +23,8 @@ __all__ = [
     "tidypath",
     "prep_mask",
     "dtype_2_str",
+    "str_2_dtype",
+    "min_int_dtype",
 ]
 
 
@@ -125,7 +125,7 @@ def is_square(imarray: np.ndarray, along_z: bool = True) -> bool:
     return False
 
 
-@register_operation(category="color", display_name="Grayscale to RGB")
+@register_operation(category="visualize", display_name="Grayscale to RGB")
 def gray2rgb(imarray: np.ndarray) -> np.ndarray:
     """
     Make a grayscale image array an RGB image array. Duplicates the grayscale array
@@ -150,7 +150,7 @@ def gray2rgb(imarray: np.ndarray) -> np.ndarray:
         return np.repeat(np.expand_dims(imarray, imarray.ndim), 3, imarray.ndim)
 
 
-@register_operation(category="color", display_name="RGB to Grayscale")
+@register_operation(category="visualize", display_name="RGB to Grayscale")
 def rgb2gray(imarray: np.ndarray, Preserve_Dtype: bool = True) -> np.ndarray:
     """
     Make an RGB image array a grayscale image array. Convenience wrapper around
@@ -164,6 +164,8 @@ def rgb2gray(imarray: np.ndarray, Preserve_Dtype: bool = True) -> np.ndarray:
     Preserve_Dtype: bool
         Whether or not to preserve the dtype of the original image. Default is True.
     """
+
+    from skimage.color import rgb2gray as skrgb2gray
 
     if isrgb(imarray):
         if Preserve_Dtype:
@@ -224,18 +226,27 @@ def convert_dtype(
         The converted image array.
     """
 
+    from skimage.util import (
+        img_as_bool,
+        img_as_float32,
+        img_as_float64,
+        img_as_int,
+        img_as_ubyte,
+        img_as_uint,
+    )
+
     if New_Type == "Bool" and imarray.dtype != np.bool:
-        return skutil.img_as_bool(imarray)
+        return img_as_bool(imarray)
     if New_Type == "Uint8" and imarray.dtype != np.uint8:
-        return skutil.img_as_ubyte(imarray)
+        return img_as_ubyte(imarray)
     if New_Type == "Uint16" and imarray.dtype != np.uint16:
-        return skutil.img_as_uint(imarray)
+        return img_as_uint(imarray)
     if New_Type == "Int16" and imarray.dtype != np.int16:
-        return skutil.img_as_int(imarray)
+        return img_as_int(imarray)
     if New_Type == "Float32" and imarray.dtype != np.float32:
-        return skutil.img_as_float32(imarray)
+        return img_as_float32(imarray)
     if New_Type == "Float64" and imarray.dtype != np.float64:
-        return skutil.img_as_float64(imarray)
+        return img_as_float64(imarray)
     return imarray
 
 
@@ -337,7 +348,7 @@ def axint2str(imarray: np.ndarray, axis: int = 0) -> Literal["X", "Y", "Z", "C"]
     return "C"
 
 
-def axlengths(imarray: np.ndarray) -> dict[str, int | None]:
+def axlengths(imarray: np.ndarray) -> dict[str, int]:
     """
     Return the axial lengths of an image array in a dictionary.
 
@@ -349,14 +360,13 @@ def axlengths(imarray: np.ndarray) -> dict[str, int | None]:
     Returns
     -------
     axlengths: dict[str, int | None]
-        A dictionary containing the axial lengths in the format "x": 50. Always returns
-        inegers for "x" and "y" but will return "None" for "z" in case of a 2D array.
+        A dictionary containing the axial lengths in the format "x": "axis length".
     """
 
     if is3d(imarray):
         return {"x": imarray.shape[2], "y": imarray.shape[1], "z": imarray.shape[0]}
     else:
-        return {"x": imarray.shape[1], "y": imarray.shape[0], "z": None}
+        return {"x": imarray.shape[1], "y": imarray.shape[0], "z": 0}
 
 
 def tidypath(filepath: Path, ext: str = "json") -> Path:
@@ -461,7 +471,7 @@ def prep_mask(imarray: np.ndarray, maskarray: np.ndarray) -> np.ndarray:
 
 def dtype_2_str(dtype: np.dtype) -> str:
     """
-    Convert a numpy dtype to a string usable by pydoug_core.hist.convert_dtype.
+    Convert a numpy dtype to a string usable by pydoug_core.util.convert_dtype.
 
     Parameters
     ----------
@@ -485,3 +495,63 @@ def dtype_2_str(dtype: np.dtype) -> str:
     if dtype == np.float32:
         return "Float32"
     return "Float64"
+
+
+def str_2_dtype(dtype_str: str) -> np.dtype:
+    """
+    Convert a string to a numpy dtype.
+
+    Parameters
+    ----------
+    dtype_str: str
+        The dtype string to convert.
+
+    Returns
+    -------
+    dtype_str: np.dtype
+        The dtype.
+    """
+
+    if dtype_str.lower() == "uint8":
+        return np.dtype(np.uint8)
+    if dtype_str.lower() == "uint16":
+        return np.dtype(np.uint16)
+    if dtype_str.lower() == "int16":
+        return np.dtype(np.int16)
+    if dtype_str.lower() == "bool":
+        return np.dtype(np.bool)
+    if dtype_str.lower() == "float32":
+        return np.dtype(np.float32)
+    return np.dtype(np.float64)
+
+
+def min_int_dtype(imarray: np.ndarray) -> np.dtype:
+    """
+    Find the lowest bit-count integer format dtype that can accomodate the given image.
+    Returns an unsigned integer dtype if the image has no negative values, otherwise
+    returns a signed integer dtype.
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image array to evaluate.
+
+    Returns
+    -------
+    min_dtype: np.dtype
+        The minimum bit-count integer format data type for the image.
+    """
+
+    if np.min(imarray) < 0:
+        for dtype in (np.int8, np.int16, np.int32, np.int64):
+            if (
+                np.max(imarray) <= np.iinfo(np.dtype(dtype)).max
+                and np.min(imarray) >= np.iinfo(np.dtype(dtype)).min
+            ):
+                return np.dtype(dtype)
+
+    for dtype in (np.uint8, np.uint16, np.uint32, np.uint64):
+        if np.max(imarray) <= np.iinfo(np.dtype(dtype)).max:
+            return np.dtype(dtype)
+
+    return np.dtype(np.int64)

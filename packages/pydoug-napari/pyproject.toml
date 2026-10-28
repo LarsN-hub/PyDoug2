@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "pydoug-napari"
 version = "0.1.0"
 description = "napari plugin for PyDoug"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 license = "MIT"
 authors = [
     {name = "Douglas Lars Nelson", email = "PyDoug@referable.anonaddy.com"}
@@ -20,19 +20,19 @@ keywords = [
 ]
 dependencies = [
     "pydoug-core",
-    "magic-class",
-    "magicgui",
-    "PySide6",
-    "napari>=0.9.0",
-    "qtpy",
+    "magic-class==0.7.23",
+    "magicgui==0.10.2",
+    "PySide6==6.11.2",
+    "napari==0.9.2",
+    "qtpy==2.4.3",
 ]
 
 [project.optional-dependencies]
 testing = [
-    "pytest",
-    "pytest-cov",
-    "pytest-qt",
-    "napari[testing]",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "pytest-qt==4.5.0",
+    "napari[testing]==0.9.2",
 ]
 
 [project.entry-points."napari.manifest"]

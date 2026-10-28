@@ -6,8 +6,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-from pydoug_core.io.imwriter import imwrite, seqwrite
-
 
 def write_image(path: Path | str, data: Any, metadata: dict) -> list[str] | None:
     """
@@ -23,6 +21,8 @@ def write_image(path: Path | str, data: Any, metadata: dict) -> list[str] | None
     attributes: dict
         The layer attributes.
     """
+
+    from pydoug_core.io.imwriter import imwrite
 
     path = Path(path)
     imwrite(data, path.parent, path.stem, path.suffix.lstrip("."))
@@ -45,6 +45,8 @@ def write_image_sequence(
     metadata: dict
         The layer attributes.
     """
+
+    from pydoug_core.io.imwriter import seqwrite
 
     path = Path(path)
     name: str = path.stem
