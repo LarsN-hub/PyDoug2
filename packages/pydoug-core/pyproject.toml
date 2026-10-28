@@ -5,7 +5,8 @@ build-backend = "hatchling.build"
 [project]
 name = "pydoug-core"
 version = "0.1.0"
-description = "Core I/O, image processing and analysis, and batch logic and script for PyDoug"
+description = "Core I/O, image processing and analysis, and batch logic for PyDoug"
+readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
 authors = [
@@ -16,7 +17,7 @@ keywords = [
     "image segmentation",
     "microscopy",
     "tomography",
-    "scientific imaging"
+    "scientific imaging",
 ]
 dependencies = [
     "algotom==1.7.0",
@@ -30,14 +31,18 @@ dependencies = [
     "porespy==3.1.0",
     "psygnal==0.15.1",
     "scikit-image==0.26.0",
-    "scipy==1.18.0"
+    "scipy==1.18.0",
 ]
 
 [project.optional-dependencies]
 testing = [
     "pytest==9.1.1",
-    "pytest-cov==7.1.0"
+    "pytest-cov==7.1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/LarsN-hub/PyDoug2"
+Issues = "https://github.com/LarsN-hub/PyDoug2/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pydoug_core"]

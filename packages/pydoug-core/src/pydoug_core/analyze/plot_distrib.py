@@ -12,7 +12,12 @@ from pydoug_core.registry import register_operation
 from pydoug_core.results import PlotResult, ValueResult
 from pydoug_core.util import is3d, prep_mask
 
-__all__ = ["hist_distrib", "size_distrib", "dimless_morph_distrib"]
+__all__ = [
+    "hist_distrib",
+    "size_distrib",
+    "dimless_morph_distrib",
+    "chord_length_distrib",
+]
 
 
 def hist_distrib(
@@ -71,6 +76,7 @@ def hist_distrib(
     output_kind="plot",
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
+    recordable_toggle=True,
 )
 def size_distrib(
     labarray: np.ndarray,
@@ -206,6 +212,7 @@ def size_distrib(
     output_kind="plot",
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
+    recordable_toggle=True,
 )
 def dimless_morph_distrib(
     labarray: np.ndarray,
@@ -346,6 +353,7 @@ def dimless_morph_distrib(
     output_kind="plot",
     array_params=("Mask",),
     array_param_flags={"Mask": "Apply_Mask"},
+    recordable_toggle=True,
 )
 def chord_length_distrib(
     imarray: np.ndarray,

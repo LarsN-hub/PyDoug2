@@ -20,7 +20,7 @@ All operations performed on a single dataset are recorded and can be exported fo
 
 Those with minimal programming experience can easily add their own functionality to PyDoug without having to understand the inner working of the napari GUI and widget assembly. In fact, most widgets that operate advanced image processing algorithms can be added to PyDoug with a single function. In this way, you can focus on the science and math while PyDoug automatically handles the widget implementation using the [magicui](https://pyapp-kit.github.io/magicgui/), [magic-class](https://hanjinliu.github.io/magic-class/), [napari](https://napari.org/stable/), and [Qt for Python](https://wiki.qt.io/Qt_for_Python) libraries behind the scenes.
 
-### Tooltips
+### Documentation
 
 All widgets and their included buttons and inputs have tooltips to explain what they do with links to the source library for a more detailed explanation. You can also automatically generate tooltips for your own added functions by simply including a [numpy-style docstring](https://www.sphinx-doc.org/en/master/usage/extensions/example_numpy.html) at the top of your function.
 
@@ -43,7 +43,13 @@ Note, currently only available on Windows, Linux coming soon!
 6. IMPORTANT: DO NOT remove the .exe file or the "_internal" folder from the PyDoug folder.
 7. The .exe file can be pinned to your Start menu or taskbar for easy access if you wish.
 
-**`pip` Install Coming Soon**
+**`pip` Install**
+
+1. Create a fresh virtual environment.
+2. Activate the environment.
+3. Install your preferred Qt backend: `pip install pyside6` or `pip install pyqt6`.
+4. Use `pip install pydoug-core pydoug-napari` to install PyDoug.
+5. Launch napari with `napari` and then activate the PyDoug plugin in the plugins menu.
 
 **Developers**:
 
@@ -204,9 +210,9 @@ array_param_flags: dict[str, str]
         - Requires "Apply_Mask" to be a boolean parameter in the function.
         - If Apply_Mask is False, will not record the selected Mask layer.
 
-output_kind: Literal["image", "labels", "plot", "value"] = "image"
-    Whether the operation should output an image/labels layer, plot, or value.
-    Default is "image".
+output_kind: Literal["image", "labels", "plot", "value", "visual"] = "image"
+    Whether the operation should output an image/labels layer, plot, value, or
+    visually customized image/labels layer. Default is "image".
     Example: output_kind="plot"
         - Specifies that the operation returns a plot, not an image.
 
@@ -243,13 +249,38 @@ allow_in_place: bool
 live_preview: bool
     DO NOT USE.
 
-layer_type: Literal["image", "labels"] = "image"
+layer_type: Literal["image", "labels", "surface", "shapes"] = "image"
     The layer type for the input image array.
-    Useful if a widget produces a labels layer and you want to process it later.
+    Useful if a widget produces a non-image layer and you want to process it later.
     Default is "image".
     Example: layer_type="labels"
         - Lets the input numpy array be from a labels layer instead of an image.
 
 captures_viewer_settings: bool = False
+    DO NOT USE.
+
+requires_layer: bool
+    Whether the widget requires an input layer or not. Default is True.
+    Useful for widgets that produce their own image data without an input image.
+    Example: requires_layer=False
+        Will not ask the the user for an input image layer.
+
+units: str | dict[float | int | str, str | None] | None
+    If output_kind is "value", the units to include.
+    Can be a single string unit to apply to all produced values or can be a dictionary
+    containing units for each category of the output data.
+    Note that these can also be specified by the user in the widget by using PlotResult
+    or ValueResult outputs instead of just outputting plot figures or value tables.
+    Example: units="mm"
+        Will add "mm" as units to all output values.
+
+primary_params: tuple[str, ...]
+    Array parameters that indicate which layer is being processed. Useful if you do not
+    want the first parameter to be the array beign processed.
+    Example: array_params=("Image Layer",)
+        Uses the parameter "Image Layer" as the array being processed rather than the
+        first parameter (which is the default behavior).
+
+signature: Inspect.Signature
     DO NOT USE.
 ```

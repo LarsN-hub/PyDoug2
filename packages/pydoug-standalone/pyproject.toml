@@ -9,8 +9,8 @@ description = "Standalone launcher for PyDoug app (PyInstaller entry point)"
 requires-python = ">=3.13"
 license = "MIT"
 dependencies = [
-    "pydoug-core",
-    "pydoug-napari",
+    "pydoug-core~=0.1.0",
+    "pydoug-napari~=0.1.0",
     "pyinstaller==6.22.2",
     "third-party-license-file-generator==2025.12.31.post2"
 ]
