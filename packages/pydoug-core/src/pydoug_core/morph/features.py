@@ -9,7 +9,7 @@ import numpy as np
 from pydoug_core.registry import register_operation
 from pydoug_core.util import axstr2int, is3d, isrgb, min_int_dtype
 
-__all__ = ["euclidian_dt", "mis", "chords"]
+__all__ = ["euclidian_dt", "mis", "chords", "path_metrics"]
 
 
 @register_operation(category="features", display_name="Distance")
@@ -197,30 +197,44 @@ def chords(
     return apply_chords(imarray != 0, Spacing, axstr2int(imarray, Axis), False, False)
 
 
-@register_operation(category="features", display_name="Path Length")
-def path_length(
+@register_operation(category="features", display_name="Path Metrics")
+def path_metrics(
     imarray: np.ndarray,
+    Measurement: Literal["Density", "Length"] = "Length",
     Axis: Literal["X", "Y", "Z"] = "Y",
+    Estimate_Boundaries: bool = False,
     Connectivity: Literal[1, 2, 3] = 2,
     Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
-    Estimate_Boundaries: bool = False,
-    Round_Values: bool = False,
+    Round_Length_Values: bool = False,
+    Normalize_Density_Values: bool = False,
 ) -> np.ndarray:
     """
-    Find the minimum path length from one end of the chosen axis to the other through
-    each pixel. This can be used to create a path length distribution by plotting the
-    histogram of the output image. Convenience wrapper around scikit-image's
-    graph.pixel_graph and scipy's sparse.csgraph.dijkstra:
+    Find metrics about the path along an axis through each pixel. Convenience wrapper
+    around scikit-image's graph.pixel_graph, scipy's sparse.csgraph.dijkstra, and
+    numpy's array manipulation and searching functionality:
     https://scikit-image.org/docs/stable/api/skimage.graph.html#skimage.graph.pixel_graph
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.dijkstra.html#scipy.sparse.csgraph.dijkstra
+    https://numpy.org/doc/stable/reference/routines.array-manipulation.html
+    https://numpy.org/doc/stable/reference/routines.sort.html
 
     Parameters
     ----------
     imarray: np.ndarray
         The segmented image.
+    Measurement: Literal
+        The path metric to measure. Default is "Length".
+        - "Density": Measures the number of paths found in "Length" that travel through
+        each pixel. Note that this is FAR more computationally expensive than "Length".
+        - "Length": Measures the shortest distance from one boundary through each pixel
+        to the opposite boundary.
     Axis: Literal
-        The axis along which to find the path length. Raises an error if "Z" is selected
-        and the image is not 3D.
+        The axis along which to find paths. Raises an error if "Z" is selected and the
+        image is not 3D.
+    Estimate_Boundaries: bool
+        Whether to estimate the boundaries of the segmented region along the axis (True)
+        or to just use the axis borders (False). If False and no connected segmented
+        pixels contact both axis boundaries, no path lengths will be measured. If True,
+        assumes the nearest and furthest segmented pixel in each column are boundaries.
     Connectivity: Literal[1, 2, 3]
         The method to use for determing segment connectivity. Default is 2.
         - 1: Only pixels with faces in contact are considered connected.
@@ -233,14 +247,9 @@ def path_length(
             - In 3D, this means the surrounding 26 voxels.
     Pixel_Size: float
         The edge-length of pixels in real-world units.
-    Estimate_Boundaries: bool
-        Whether to estimate the boundaries of the segmented region along the axis (True)
-        or to just use the axis borders (False). If False and no connected segmented
-        pixels contact both axis boundaries, no path lengths will be measured. If True,
-        assumes the nearest and furthest segmented pixel in each column are boundaries.
-    Round_Values: bool
-        Whether to round returned values to the nearest integer (True) or leave as exact
-        floating point distance (False). Default is False.
+    Round_Length_Values: bool
+        Whether to round values returned if "Measurement" is "Length" to the nearest
+        integer (True) or leave as exact floating point distance (False). Default False.
 
     Returns
     -------
@@ -257,13 +266,7 @@ def path_length(
     if Connectivity == 3 and not is3d(imarray):
         Connectivity = 2
 
-    from scipy.sparse.csgraph import dijkstra
-    from skimage.graph import pixel_graph
-
     eval_array: np.ndarray = imarray != 0
-    graph, nodes = pixel_graph(
-        eval_array, connectivity=Connectivity, sparse_type="array"
-    )
     axint: int = axstr2int(imarray, Axis)
 
     if Estimate_Boundaries:
@@ -279,23 +282,73 @@ def path_length(
             )
         )
         check_array: np.ndarray = np.count_nonzero(eval_array, axis=axint) != 0
-        top_coords: list[np.ndarray] = []
-        bot_coords: list[np.ndarray] = []
-        for ax_index in range(0, imarray.ndim):
-            cur_top: np.ndarray = (
-                top_indices
-                if ax_index == axint
-                else np.arange(0, imarray.shape[ax_index])
-            )
-            cur_top = np.delete(cur_top, np.argwhere(np.logical_not(check_array)))
-            top_coords.append(cur_top)
-            cur_bot: np.ndarray = (
-                bot_indices
-                if ax_index == axint
-                else np.arange(0, imarray.shape[ax_index])
-            )
-            cur_bot = np.delete(cur_bot, np.argwhere(np.logical_not(check_array)))
-            bot_coords.append(cur_bot)
+
+        if not is3d(imarray):
+            top_coords: list[np.ndarray] = []
+            bot_coords: list[np.ndarray] = []
+            for ax_index in range(0, imarray.ndim):
+                if ax_index == axint:
+                    cur_top: np.ndarray = top_indices
+                    cur_bot: np.ndarray = bot_indices
+                else:
+                    cur_top = np.arange(0, imarray.shape[ax_index])
+                    cur_bot = np.arange(0, imarray.shape[ax_index])
+                cur_top = np.delete(cur_top, np.argwhere(np.logical_not(check_array)))
+                cur_bot = np.delete(cur_bot, np.argwhere(np.logical_not(check_array)))
+                top_coords.append(cur_top)
+                bot_coords.append(cur_bot)
+
+        else:
+            if axint == 0:
+                rep_ax: int = 1
+                rep_inds: tuple[int, int] = (1, 2)
+                con_inds: tuple[int, int] = (2, 1)
+            elif axint == 1:
+                rep_ax = 0
+                rep_inds = (0, 2)
+                con_inds = (2, 0)
+            else:
+                rep_ax = 0
+                rep_inds = (0, 1)
+                con_inds = (1, 0)
+            top_coords = []
+            bot_coords = []
+            for ax_index in range(0, 3):
+                if ax_index == axint:
+                    top_coords.append(
+                        np.delete(
+                            np.ravel(top_indices),
+                            np.argwhere(np.logical_not(np.ravel(check_array))),
+                        )
+                    )
+                    bot_coords.append(
+                        np.delete(
+                            np.ravel(bot_indices),
+                            np.argwhere(np.logical_not(np.ravel(check_array))),
+                        )
+                    )
+                elif ax_index == rep_ax:
+                    top_coords.append(
+                        np.delete(
+                            np.repeat(
+                                np.arange(0, imarray.shape[rep_inds[0]]),
+                                imarray.shape[rep_inds[1]],
+                            ),
+                            np.argwhere(np.logical_not(np.ravel(check_array))),
+                        )
+                    )
+                    bot_coords.append(np.copy(top_coords[ax_index]))
+                else:
+                    top_coords.append(
+                        np.delete(
+                            np.concat(
+                                [np.arange(0, imarray.shape[con_inds[0]])]
+                                * imarray.shape[con_inds[1]]
+                            ),
+                            np.argwhere(np.logical_not(np.ravel(check_array))),
+                        )
+                    )
+                    bot_coords.append(np.copy(top_coords[ax_index]))
         top_array[tuple(top_coords)] = 1
         bot_array[tuple(bot_coords)] = 1
 
@@ -312,15 +365,75 @@ def path_length(
             top_array[:, :, 1:] = 0
             bot_array[:, :, :-1] = 0
 
+    from scipy.sparse.csgraph import dijkstra
+    from skimage.graph import pixel_graph
+
+    graph, nodes = pixel_graph(
+        eval_array, connectivity=Connectivity, sparse_type="array"
+    )
     top_nodes: np.ndarray = np.squeeze(np.argwhere(np.ravel(top_array)))
     bot_nodes: np.ndarray = np.squeeze(np.argwhere(np.ravel(bot_array)))
     top_indices: np.ndarray = np.searchsorted(nodes, top_nodes)
     bot_indices: np.ndarray = np.searchsorted(nodes, bot_nodes)
-    top_dist = dijkstra(graph, indices=top_indices, min_only=True)
-    bot_dist = dijkstra(graph, indices=bot_indices, min_only=True)
-    tot_dist: np.ndarray = (top_dist + bot_dist) * Pixel_Size
-    tot_dist[tot_dist == np.inf] = 0
-    plarray: np.ndarray = np.zeros(imarray.shape)
-    plarray[np.unravel_index(nodes, imarray.shape)] = tot_dist
 
-    return np.round(plarray).astype(min_int_dtype(plarray)) if Round_Values else plarray
+    if Measurement == "Length":
+        plarray: np.ndarray = np.zeros(imarray.shape, np.float64)
+        top_dist: np.ndarray = dijkstra(graph, indices=top_indices, min_only=True)
+        bot_dist: np.ndarray = dijkstra(graph, indices=bot_indices, min_only=True)
+        tot_dist: np.ndarray = (top_dist + bot_dist) * Pixel_Size
+        tot_dist[tot_dist == np.inf] = 0
+        plarray[np.unravel_index(nodes, plarray.shape)] = tot_dist
+
+        return (
+            np.round(plarray).astype(min_int_dtype(plarray))
+            if Round_Length_Values
+            else plarray
+        )
+
+    else:
+        plarray: np.ndarray = np.zeros(imarray.shape, np.int32)
+        top_dist, top_pred, _ = dijkstra(
+            graph, indices=top_indices, return_predecessors=True, min_only=True
+        )
+        bot_dist, bot_pred, _ = dijkstra(
+            graph, indices=bot_indices, return_predecessors=True, min_only=True
+        )
+        top_pred[top_pred != -9999] = nodes[top_pred[top_pred != -9999]]
+        bot_pred[bot_pred != -9999] = nodes[bot_pred[bot_pred != -9999]]
+        nodes = np.delete(nodes, np.logical_or(top_dist == np.inf, bot_dist == np.inf))
+        top_pred = np.delete(
+            top_pred, np.logical_or(top_dist == np.inf, bot_dist == np.inf)
+        )
+        bot_pred = np.delete(
+            bot_pred, np.logical_or(top_dist == np.inf, bot_dist == np.inf)
+        )
+        unique_paths: list[list] = []
+        unique_path_count: int = 0
+
+        for node in nodes:
+            top_path: list = []
+            node_index = np.squeeze(np.argwhere(nodes == node))
+            while True:
+                top_path.append(nodes[node_index])
+                if top_pred[node_index] == -9999:
+                    break
+                node_index = np.squeeze(np.argwhere(nodes == top_pred[node_index]))
+            bot_path: list = []
+            node_index = np.squeeze(np.argwhere(nodes == node))
+            while True:
+                bot_path.append(nodes[node_index])
+                if bot_pred[node_index] == -9999:
+                    break
+                node_index = np.squeeze(np.argwhere(nodes == bot_pred[node_index]))
+            if bot_path[0] == top_path[0]:
+                bot_path.pop(0)
+            path: list = sorted(top_path + bot_path)
+            if path not in unique_paths:
+                unique_paths.append(path)
+                unique_path_count += 1
+                plarray[np.unravel_index(path, plarray.shape)] += 1
+
+        if Normalize_Density_Values:
+            return plarray / unique_path_count if unique_path_count > 0 else plarray
+
+        return plarray.astype(min_int_dtype(plarray))

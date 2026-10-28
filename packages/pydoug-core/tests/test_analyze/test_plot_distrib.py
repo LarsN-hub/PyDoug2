@@ -71,11 +71,15 @@ def test_size_distrib(sample_masks) -> None:
     assert isinstance(result05, PlotResult)
     assert isinstance(result06, PlotResult)
     assert np.all(
-        result00.values["Bin Centers"] == result00.values["Counts"] == np.array([0])  # type: ignore
+        result00.values["Equivalent Diameter"]
+        == result00.values["Counts"]
+        == np.array([0])  # type: ignore
     )
-    assert np.all(result01.data["Bin Centers"] == result03.data["Bin Centers"] * 2)  # type: ignore
+    assert np.all(
+        result01.data["Equivalent Diameter"] == result03.data["Equivalent Radius"] * 2  # type: ignore
+    )  # type: ignore
     assert np.all(result01.data["Counts"] == result03.data["Counts"])  # type: ignore
-    assert np.all(result04.data["Bin Centers"] * 2 == result05.data["Bin Centers"])  # type: ignore
+    assert np.all(result04.data["Area"] * 2 == result05.data["Volume"])  # type: ignore
     assert np.all(result04.data["Counts"] == result05.data["Counts"])
 
 
@@ -100,7 +104,7 @@ def test_aspect_ratio_distrib(sample_masks) -> None:
     assert isinstance(result01, PlotResult)
     assert isinstance(result02, PlotResult)
     assert isinstance(result03, PlotResult)
-    assert np.all(result01.data["Bin Centers"] == result03.data["Bin Centers"])
+    assert np.all(result01.data["Aspect Ratio"] == result03.data["Aspect Ratio"])
     assert np.all(result01.data["Counts"] == result03.data["Counts"])
 
 
@@ -128,7 +132,7 @@ def test_sphericity_distrib(sample_masks) -> None:
     assert isinstance(result01, PlotResult)
     assert isinstance(result02, PlotResult)
     assert isinstance(result03, PlotResult)
-    assert np.all(result01.data["Bin Centers"] == result03.data["Bin Centers"])
+    assert np.all(result01.data["Sphericity"] == result03.data["Sphericity"])
     assert np.all(result01.data["Counts"] == result03.data["Counts"])
 
 
@@ -153,5 +157,5 @@ def test_chord_length_distrib(sample_masks) -> None:
     assert isinstance(result01, PlotResult)
     assert isinstance(result02, PlotResult)
     assert isinstance(result03, PlotResult)
-    assert np.all(result01.data["Bin Centers"] == result03.data["Bin Centers"])
+    assert np.all(result01.data["Chord Length"] == result03.data["Chord Length"])
     assert np.all(result01.data["Counts"] == result03.data["Counts"])
