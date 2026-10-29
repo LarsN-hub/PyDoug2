@@ -14,7 +14,14 @@ from pydoug_core import util
 from pydoug_core.registry import register_operation
 from pydoug_core.results import PlotResult, ValueResult
 
-__all__ = ["bulk", "surf", "heat_map", "label_count", "mesh_surface_area"]
+__all__ = [
+    "bulk",
+    "surf",
+    "heat_map",
+    "label_count",
+    "mesh_surface_area",
+    "fractal_dim",
+]
 
 
 @register_operation(
@@ -1016,3 +1023,88 @@ def mesh_surface_area(
     from skimage.measure import mesh_surface_area
 
     return mesh_surface_area(surface[0], surface[1]) * (Pixel_Size**2)
+
+
+@register_operation(
+    category="measure",
+    display_name="Fractal Dimension",
+    output_kind="plot",
+    recordable_toggle=True,
+)
+def fractal_dim(
+    imarray: np.ndarray,
+    Method: Literal["Box Count", "Mandelbrot"] = "Box Count",
+    Box_Count_Bins: Annotated[int, {"min": 1}] = 10,
+    Plot_Trendline: bool = True,
+    Y_Lims: tuple[
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+    ] = (1, 1),
+    X_Lims: tuple[
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+    ] = (1, 1),
+) -> PlotResult:
+    """
+    Calculate the fractal dimension of a binary segmented image by plotting counts vs.
+    size at different scales. Non-binary images are first converted (all non-zero pixels
+    are treated as the segmented phase). Convenience wrapper around porespy's
+    metrics.boxcount:
+    https://porespy.org/autoapi/porespy/metrics/boxcount.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The segmented image.
+    Method: Literal
+        The method used to find the fractal dimension.
+        - "Box Count": Break the dataset into smaller and smaller boxes, counting the
+        ratio of the segmented phase present at each scale.
+        - "Mandelbrot": Use the original Mandelbrot formula.
+    Box_Count_Bins: int
+        If "Method" is "Box Count", the number of bins to use. Default is 10.
+    Plot_Trendline: bool
+        Whether to plot the trendline (True) or not (False). The slope of the trendline
+        is the fractal dimension. Default is True.
+    Y_Lims: tuple[float, float]
+        The limits of the plot's y-axis in the form [min, max]. Ignored if both are 1.
+    X_Lims: tuple[float, float]
+        The limits of the plot's x-axis in the form [min, max]. Ignored if both are 1.
+
+    Returns
+    -------
+    fd_result: PlotResult | ValueResult
+        The fractal dimension result object.
+    """
+
+    if Method == "Box Count":
+        from porespy.metrics import boxcount
+
+        results = boxcount(imarray != 0, Box_Count_Bins)
+        size: np.ndarray = results.size  # type: ignore
+        count: np.ndarray = results.count  # type: ignore
+
+    else:
+        size = np.array([])
+        count = np.array([])
+
+    from pydoug_core.analyze.plot_util import scatter_ax
+
+    fig: Figure = Figure()
+    ax: Axes = fig.add_subplot()
+    ax = scatter_ax(
+        size,
+        count,
+        ax,
+        None if Y_Lims[0] == Y_Lims[1] == 1 else Y_Lims,
+        None if X_Lims[0] == X_Lims[1] == 1 else X_Lims,
+        "Size",
+        "Counts",
+        "blue",
+        True,
+    )
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    fig.set_layout_engine("constrained")
+
+    return PlotResult(fig, {}, ("Size",), {"fractal_dimension": {}})

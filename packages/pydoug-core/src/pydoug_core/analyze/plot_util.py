@@ -11,7 +11,15 @@ from matplotlib.contour import ContourSet
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 
-__all__ = ["line_ax", "multi_line", "hist_ax", "hmap_ax", "add_cbar", "stats_ax"]
+__all__ = [
+    "line_ax",
+    "scatter_ax",
+    "multi_line",
+    "hist_ax",
+    "hmap_ax",
+    "add_cbar",
+    "stats_ax",
+]
 
 matplotlib.rcParams["font.family"] = "sans-serif"
 matplotlib.rcParams["font.sans-serif"] = ["Arial", "Liberation Sans", "DejaVu Sans"]
@@ -24,7 +32,7 @@ def line_ax(
     y_lims: tuple | None,
     x_label: str,
     y_label: str,
-    color="red",
+    color: str = "red",
 ) -> Axes:
     """
     Add a single line plot for any line data to an input Axes. Convenience wrapper
@@ -56,6 +64,79 @@ def line_ax(
 
     ax.plot(x_vals, y_vals, color=color, linewidth=2)
     ax.set_xlim(0, np.max(x_vals))
+    ax.set_ylim((min(y_lims), max(y_lims)) if y_lims else None)
+    ax.set_xlabel(x_label, fontsize=15)
+    ax.set_ylabel(y_label, fontsize=15)
+    ax.tick_params("both", labelsize=13)
+
+    return ax
+
+
+def scatter_ax(
+    x_vals,
+    y_vals,
+    ax: Axes,
+    y_lims: tuple | None,
+    x_lims: tuple | None,
+    x_label: str,
+    y_label: str,
+    color: str = "red",
+    hollow: bool = False,
+    trendline: bool = False,
+    logx: bool = False,
+    logy: bool = False,
+) -> Axes:
+    """
+    Add a single scatter plot to an input Axes. Convenience wrapper around matplotlib's
+    scatter:
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.scatter.html
+
+    Parameters
+    ----------
+    x_vals
+        Any iterable format of values for the x-axis.
+    y_vals
+        Any iterable format of values for the y-axis.
+    ax: Axes
+        The input axes.
+    y_lims: tuple | None
+        (Optional) The limits for the y-axis.
+    x_lims: tuple | None
+        (Optional) The limits for the x-axis.
+    x_label: str
+        The label for the x-axis.
+    y_label: str
+        The label for the y-axis.
+    color: str
+        The color for the markers. Default is "red".
+    hollow: bool
+        Whether to make the markers hollow (True) or solid (False). Default is False.
+    trendline: bool
+        Whether to plot a trendline (True) or not (False). Default is False.
+    logx: bool
+        Whether to make the x-axis scale logarithmic (True) or not (False).
+    logy: bool
+        Whether to make the y-axis scale logarithmic (True) or not (False).
+
+    Returns
+    -------
+    scatter_axes:
+        The input axes with the scatter plot added.
+    """
+
+    from matplotlib.markers import MarkerStyle
+
+    if hollow:
+        ax.scatter(
+            x_vals,
+            y_vals,
+            s=10,
+            c=color,
+            marker=MarkerStyle(marker="o", fillstyle="none"),
+        )
+    else:
+        ax.scatter(x_vals, y_vals, s=10, c=color)
+    ax.set_xlim((min(x_lims), max(x_lims)) if x_lims else None)
     ax.set_ylim((min(y_lims), max(y_lims)) if y_lims else None)
     ax.set_xlabel(x_label, fontsize=15)
     ax.set_ylabel(y_label, fontsize=15)
