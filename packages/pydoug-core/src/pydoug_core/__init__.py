@@ -13,7 +13,12 @@ if getattr(sys, "frozen", False):  # pragma: no cover
 else:
     import pkgutil
 
+    _NOT_OPERATIONS: set[str] = {"pydoug_core.testing"}
+
     for _, module_name, _ in pkgutil.walk_packages(__path__, prefix=f"{__name__}."):
-        if module_name.rsplit(".", 1)[-1].startswith("_"):
+        if (
+            module_name.rsplit(".", 1)[-1].startswith("_")
+            or module_name in _NOT_OPERATIONS
+        ):
             continue
         importlib.import_module(module_name)
