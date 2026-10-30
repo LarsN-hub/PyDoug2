@@ -72,79 +72,6 @@ def line_ax(
     return ax
 
 
-def scatter_ax(
-    x_vals,
-    y_vals,
-    ax: Axes,
-    y_lims: tuple | None,
-    x_lims: tuple | None,
-    x_label: str,
-    y_label: str,
-    color: str = "red",
-    hollow: bool = False,
-    trendline: bool = False,
-    logx: bool = False,
-    logy: bool = False,
-) -> Axes:
-    """
-    Add a single scatter plot to an input Axes. Convenience wrapper around matplotlib's
-    scatter:
-    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.scatter.html
-
-    Parameters
-    ----------
-    x_vals
-        Any iterable format of values for the x-axis.
-    y_vals
-        Any iterable format of values for the y-axis.
-    ax: Axes
-        The input axes.
-    y_lims: tuple | None
-        (Optional) The limits for the y-axis.
-    x_lims: tuple | None
-        (Optional) The limits for the x-axis.
-    x_label: str
-        The label for the x-axis.
-    y_label: str
-        The label for the y-axis.
-    color: str
-        The color for the markers. Default is "red".
-    hollow: bool
-        Whether to make the markers hollow (True) or solid (False). Default is False.
-    trendline: bool
-        Whether to plot a trendline (True) or not (False). Default is False.
-    logx: bool
-        Whether to make the x-axis scale logarithmic (True) or not (False).
-    logy: bool
-        Whether to make the y-axis scale logarithmic (True) or not (False).
-
-    Returns
-    -------
-    scatter_axes:
-        The input axes with the scatter plot added.
-    """
-
-    from matplotlib.markers import MarkerStyle
-
-    if hollow:
-        ax.scatter(
-            x_vals,
-            y_vals,
-            s=10,
-            c=color,
-            marker=MarkerStyle(marker="o", fillstyle="none"),
-        )
-    else:
-        ax.scatter(x_vals, y_vals, s=10, c=color)
-    ax.set_xlim((min(x_lims), max(x_lims)) if x_lims else None)
-    ax.set_ylim((min(y_lims), max(y_lims)) if y_lims else None)
-    ax.set_xlabel(x_label, fontsize=15)
-    ax.set_ylabel(y_label, fontsize=15)
-    ax.tick_params("both", labelsize=13)
-
-    return ax
-
-
 def multi_line(
     x_vals: np.ndarray,
     y_vals: list[np.ndarray],
@@ -229,6 +156,117 @@ def multi_line(
     ax.tick_params("both", labelsize=13)
     if add_legend and len(y_vals) > 1:
         ax.legend(fontsize=12, frameon=False)  # type: ignore
+    return ax
+
+
+def scatter_ax(
+    x_vals,
+    y_vals,
+    ax: Axes,
+    x_label: str,
+    y_label: str,
+    y_lims: tuple | None = None,
+    x_lims: tuple | None = None,
+    color: str = "red",
+    hollow: bool = False,
+    tr_slope: float | None = None,
+    tr_intr: float | None = None,
+    tr_cod: float | None = None,
+    logx: bool = False,
+    logy: bool = False,
+) -> Axes:
+    """
+    Add a single scatter plot to an input Axes. Convenience wrapper around matplotlib's
+    scatter, plot, text, and MarkerStyle:
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.scatter.html
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.text.html
+    https://matplotlib.org/stable/api/_as_gen/matplotlib.markers.MarkerStyle.html#matplotlib.markers.MarkerStyle
+
+    Parameters
+    ----------
+    x_vals
+        Any iterable format of values for the x-axis.
+    y_vals
+        Any iterable format of values for the y-axis.
+    ax: Axes
+        The input axes.
+    x_label: str
+        The label for the x-axis.
+    y_label: str
+        The label for the y-axis.
+    y_lims: tuple | None
+        (Optional) The limits for the y-axis.
+    x_lims: tuple | None
+        (Optional) The limits for the x-axis.
+    color: str
+        The color for the markers. Default is "red".
+    hollow: bool
+        Whether to make the markers hollow (True) or solid (False). Default is False.
+    tr_slope: float | None
+        The trendline slope. Not plotted if None.
+    tr_intr: float | None
+        The trendline intercept. Not plotted if None.
+    tr_cod: float | None
+        The trendline coefficient of determination (R^2). Not included if None.
+    logx: bool
+        Whether to make the x-axis scale logarithmic (True) or not (False).
+    logy: bool
+        Whether to make the y-axis scale logarithmic (True) or not (False).
+
+    Returns
+    -------
+    scatter_axes:
+        The input axes with the scatter plot added.
+    """
+
+    from matplotlib.markers import MarkerStyle
+
+    if hollow:
+        ax.scatter(
+            x_vals,
+            y_vals,
+            s=60,
+            c=color,
+            marker=MarkerStyle(marker="o", fillstyle="none"),
+        )
+    else:
+        ax.scatter(x_vals, y_vals, s=60, c=color)
+    if tr_slope and tr_intr:
+        tr_xvals: np.ndarray = np.array([np.min(x_vals), np.max(x_vals)])
+        if logx and not logy:
+            tr_yvals: np.ndarray = (np.log10(tr_xvals) * tr_slope) + tr_intr
+            eqn: str = rf"$\mathrm{{y = {tr_slope:0.3f}\log{{x}} + {tr_intr:0.3f}}}$"
+        elif logy and not logx:
+            tr_yvals = 10 ** ((tr_xvals * tr_slope) + tr_intr)
+            eqn = rf"$\mathrm{{\log{{y}} = {tr_slope:0.3f}x + {tr_intr:0.3f}}}$"
+        elif logx and logy:
+            tr_yvals = 10 ** ((np.log10(tr_xvals) * tr_slope) + tr_intr)
+            eqn = rf"$\mathrm{{\log{{y}} = {tr_slope:0.3f}\log{{x}} + {tr_intr:0.3f}}}$"
+        else:
+            tr_yvals = (tr_xvals * tr_slope) + tr_intr
+            eqn = rf"$\mathrm{{y = {tr_slope:0.3f}x + {tr_intr:0.3f}}}$"
+        if tr_cod:
+            eqn += rf" $\mathrm{{(R^{{2}}: {tr_cod:0.3f})}}$"
+        ax.plot(
+            tr_xvals,
+            tr_yvals,
+            color=color,
+            linewidth=2,
+            linestyle="--",
+            alpha=0.75,
+        )
+        ax.set_title(eqn)
+    if logx:
+        ax.set_xscale("log")
+    if logy:
+        ax.set_yscale("log")
+    ax.set_xlim((min(x_lims), max(x_lims)) if x_lims else None)
+    ax.set_ylim((min(y_lims), max(y_lims)) if y_lims else None)
+    ax.set_xlabel(x_label, fontsize=15)
+    ax.set_ylabel(y_label, fontsize=15)
+    ax.tick_params("both", labelsize=13)
+
     return ax
 
 
