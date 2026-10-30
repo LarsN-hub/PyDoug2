@@ -83,7 +83,7 @@ The original image layer is still there, just hidden behind the new top-most ima
 
 ![Toggled Image Layer](/assets/images/Toggled_Layer.png)
 
-Not all operations produce a new image layer. Some, like the statistics calculation widget in the "Measurements" tab produce a numerical result (in this case, several statistics about the grayscale values of the image layer). When these operations are performed, their results are recorded in the results log in the bottom right like so:
+Not all operations produce a new image layer. Some, like the statistics calculation widget in the "Measurements" tab produce a numerical result (in this case, several statistics about the grayscale values of the image layer). When these operations are performed, their results are recorded in the results log (recently moved to be tabbed with the layer controls menu):
 
 ![Stats Calculation](/assets/images/Stats_Calculation.png)
 
@@ -162,7 +162,9 @@ The docstring at the top of the widget is what populates the tooltips automatica
 
 If there is some functionality that you want to include in the widget but are not sure how to specify this, simply look at the source code for other PyDoug widgets that use this functionality as examples. Use this sample widget as a template to get started.
 
-### Full List of `@register_operation` Options:
+### Full List of `@register_operation` Options
+
+The vast majority of widgets will only need two parameters in the decorator: `category` and `display_name`, which just tell the program what tab to put the widget in and what name to give it. In case your widget requires additional functionality (e.g., non-image input layer, mutliple input layers, non-image output (plot or calculation), etc.).
 
 ```
 category: str
