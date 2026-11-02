@@ -17,7 +17,7 @@ keywords = [
     "image segmentation",
     "microscopy",
     "tomography",
-    "scientific imaging",
+    "scientific imaging"
 ]
 dependencies = [
     "pydoug-core~=0.1.0",
