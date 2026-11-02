@@ -14,7 +14,14 @@ from pydoug_core import util
 from pydoug_core.registry import register_operation
 from pydoug_core.results import PlotResult, ValueResult
 
-__all__ = ["bulk", "surf", "heat_map", "label_count", "mesh_surface_area"]
+__all__ = [
+    "bulk",
+    "surf",
+    "heat_map",
+    "label_count",
+    "mesh_surface_area",
+    "fractal_dim",
+]
 
 
 @register_operation(
@@ -1016,3 +1023,119 @@ def mesh_surface_area(
     from skimage.measure import mesh_surface_area
 
     return mesh_surface_area(surface[0], surface[1]) * (Pixel_Size**2)
+
+
+@register_operation(
+    category="measure",
+    display_name="Fractal Dimension",
+    output_kind="plot",
+    recordable_toggle=True,
+)
+def fractal_dim(
+    imarray: np.ndarray,
+    Bin_Count: Annotated[int, {"min": 1}] = 10,
+    Y_Lims: tuple[
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+    ] = (1, 1),
+    X_Lims: tuple[
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+        Annotated[float, {"min": 0.0001, "max": 1000000000000000, "step": 0.0001}],
+    ] = (1, 1),
+) -> PlotResult:
+    """
+    Calculate the fractal dimension of a binary segmented image with the box counting
+    method. The fractal dimension is the negative of the resulting trendline slope. It
+    is typically >= 1 for 2D images and >= 2 for 3D images, where 1 or 2 indicate an
+    extremely smooth surface with a regular geometry (e.g., a square or cube).
+    Non-binary images are first converted (all non-zero pixels are treated as the
+    segmented phase). Image must not be RGB. Convenience wrapper around porespy's
+    metrics.boxcount and scipy's stats.linregress:
+    https://porespy.org/autoapi/porespy/metrics/boxcount.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The segmented image.
+    Bin_Count: int
+        The number of bins to use for box counting. Default is 10.
+    Y_Lims: tuple[float, float]
+        The limits of the plot's y-axis in the form [min, max]. Ignored if both are 1.
+    X_Lims: tuple[float, float]
+        The limits of the plot's x-axis in the form [min, max]. Ignored if both are 1.
+
+    Returns
+    -------
+    fd_result: PlotResult
+        The fractal dimension result object.
+    """
+
+    if util.isrgb(imarray):
+        raise ValueError("Image cannot be RGB!")
+
+    from porespy.metrics import boxcount
+    from scipy.stats import linregress
+
+    def _frac(imslice) -> dict[str, np.ndarray | float]:
+
+        if not np.any(imslice):
+            return {
+                "Size": np.array([1]),
+                "Count": np.array([1]),
+                "Slope": 1,
+                "Intercept": 0,
+                "R^2": 0,
+            }
+
+        results = boxcount(imslice != 0, Bin_Count)
+        size: np.ndarray = results.size  # type: ignore
+        count: np.ndarray = results.count  # type: ignore
+        reg = linregress(np.log10(size), np.log10(count))
+        slope: float = reg.slope  # type: ignore
+        intercept: float = reg.intercept  # type: ignore
+        cod: float = reg.rvalue**2  # type: ignore
+
+        return {
+            "Size": size,
+            "Count": count,
+            "Slope": slope,
+            "Intercept": intercept,
+            "R^2": cod,
+        }
+
+    frac_dict: dict[str, np.ndarray | float] = _frac(imarray)
+
+    from pydoug_core.analyze.plot_util import scatter_ax
+
+    fig: Figure = Figure()
+    ax: Axes = fig.add_subplot()
+    ax = scatter_ax(
+        frac_dict["Size"],
+        frac_dict["Count"],
+        ax,
+        "Size",
+        "Count",
+        None if Y_Lims[0] == Y_Lims[1] == 1 else Y_Lims,
+        None if X_Lims[0] == X_Lims[1] == 1 else X_Lims,
+        "blue",
+        True,
+        frac_dict["Slope"],  # type: ignore
+        frac_dict["Intercept"],  # type: ignore
+        frac_dict["R^2"],  # type: ignore
+        True,
+        True,
+    )
+    fig.set_layout_engine("constrained")
+
+    return PlotResult(
+        fig,
+        {"Size": frac_dict["Size"], "Count": frac_dict["Count"]},  # type: ignore
+        ("Size",),
+        {
+            "regression": {
+                "Slope": frac_dict["Slope"],
+                "Intercept": frac_dict["Intercept"],
+                "R^2": frac_dict["R^2"],
+            }
+        },
+    )

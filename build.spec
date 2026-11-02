@@ -18,9 +18,11 @@ datas, binaries, hiddenimports = [], [], []
 for pkg in (
     "app_model",
     "algotom",
+    "astropy",
     "cmasher",
     "edt",
     "h5py",
+    "imagecodecs",
     "imageio",
     "magicgui",
     "magicclass",
@@ -37,10 +39,12 @@ for pkg in (
     "openpnm",
     "porespy",
     "psygnal",
+    "PyOpenGL-accelerate",
     "pypardiso",
     "qtpy",
     "scikit-image",
     "scipy",
+    "simpleitk",
     "superqt",
     "urllib3",
     "vispy",
@@ -50,6 +54,10 @@ for pkg in (
         datas += d
         binaries += b
         hiddenimports += h
+        try:
+            datas += copy_metadata(pkg)
+        except Exception as e:
+            print(f"No metadata found for {pkg}!")
 
 for pkg in ("pydoug_core", "pydoug_napari", "pydoug_standalone"):
     cur_datas, cur_binaries, cur_hiddenimports = collect_all(pkg)
