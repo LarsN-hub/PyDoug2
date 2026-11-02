@@ -66,6 +66,47 @@ def test_multi_line() -> None:
     assert isinstance(ax10, Axes)
 
 
+def test_scatter_ax() -> None:
+
+    x_vals: np.ndarray = np.array([1, 2, 3, 4, 5])
+    y_vals: np.ndarray = np.array([2, 4, 6, 8, 10])
+    _, ax01 = plt.subplots(layout="constrained")
+    _, ax02 = plt.subplots(layout="constrained")
+    _, ax03 = plt.subplots(layout="constrained")
+    _, ax04 = plt.subplots(layout="constrained")
+    _, ax05 = plt.subplots(layout="constrained")
+    _, ax06 = plt.subplots(layout="constrained")
+    ax01 = plot_util.scatter_ax(x_vals, y_vals, ax01, "X", "Y")
+    ax02 = plot_util.scatter_ax(x_vals, y_vals, ax01, "X", "Y", hollow=True)
+    ax03 = plot_util.scatter_ax(
+        x_vals, y_vals, ax01, "X", "Y", tr_slope=2, tr_intr=0.01, tr_cod=1
+    )
+    ax04 = plot_util.scatter_ax(
+        x_vals, y_vals, ax01, "X", "Y", tr_slope=2, tr_intr=0.01, tr_cod=1, logx=True
+    )
+    ax05 = plot_util.scatter_ax(
+        x_vals, y_vals, ax01, "X", "Y", tr_slope=2, tr_intr=0.01, tr_cod=1, logy=True
+    )
+    ax06 = plot_util.scatter_ax(
+        x_vals,
+        y_vals,
+        ax01,
+        "X",
+        "Y",
+        tr_slope=2,
+        tr_intr=0.01,
+        tr_cod=1,
+        logx=True,
+        logy=True,
+    )
+    assert isinstance(ax01, Axes)
+    assert isinstance(ax02, Axes)
+    assert isinstance(ax03, Axes)
+    assert isinstance(ax04, Axes)
+    assert isinstance(ax05, Axes)
+    assert isinstance(ax06, Axes)
+
+
 def test_hist_ax(sample_3dgray_array) -> None:
 
     from pydoug_core.analyze.plot_distrib import hist_distrib
