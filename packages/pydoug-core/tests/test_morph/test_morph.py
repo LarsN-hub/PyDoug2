@@ -6,6 +6,7 @@ import numpy as np
 from skimage.measure import label
 
 from pydoug_core.morph import morph
+from pydoug_core.results import VisualResult
 
 
 def test_dilation(sample_arrays) -> None:
@@ -138,21 +139,23 @@ def test_remove_labeled_objects(sample_masks) -> None:
 
     test_2d: np.ndarray = label(sample_masks["2dgray"])  # type: ignore
     test_3d: np.ndarray = label(sample_masks["3dgray"])  # type: ignore
-    result0: np.ndarray = morph.remove_labeled_objects(test_2d, Size=0)
-    result0_2: np.ndarray = morph.remove_labeled_objects(
+    result0: VisualResult = morph.remove_labeled_objects(test_2d, Size=0)
+    result0_2: VisualResult = morph.remove_labeled_objects(
         test_2d, "Distance", Distance=0
     )
-    result1: np.ndarray = morph.remove_labeled_objects(test_2d)
-    result2: np.ndarray = morph.remove_labeled_objects(test_3d)
-    result3: np.ndarray = morph.remove_labeled_objects(test_2d, "Distance")
-    result4: np.ndarray = morph.remove_labeled_objects(test_3d, Remove_Above_Size=True)
+    result1: VisualResult = morph.remove_labeled_objects(test_2d)
+    result2: VisualResult = morph.remove_labeled_objects(test_3d)
+    result3: VisualResult = morph.remove_labeled_objects(test_2d, "Distance")
+    result4: VisualResult = morph.remove_labeled_objects(
+        test_3d, Remove_Above_Size=True
+    )
 
-    assert np.all(result0 == test_2d)
-    assert np.all(result0_2 == test_2d)
-    assert result1.dtype == test_2d.dtype
-    assert result2.dtype == test_3d.dtype
-    assert result3.dtype == test_2d.dtype
-    assert result4.dtype == test_3d.dtype
+    assert np.all(result0.imarray == test_2d)
+    assert np.all(result0_2.imarray == test_2d)
+    assert result1.imarray.dtype == test_2d.dtype
+    assert result2.imarray.dtype == test_3d.dtype
+    assert result3.imarray.dtype == test_2d.dtype
+    assert result4.imarray.dtype == test_3d.dtype
 
 
 def test_remove_holes(sample_masks) -> None:

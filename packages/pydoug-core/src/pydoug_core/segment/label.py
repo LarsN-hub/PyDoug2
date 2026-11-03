@@ -155,7 +155,11 @@ def watershed(
         if User_Defined_Markers:
             if Use_Negative_Image:
                 return ws(
-                    -imarray,
+                    (
+                        -imarray
+                        if imarray.dtype != np.dtype(np.bool)
+                        else -(imarray.astype(np.uint8))
+                    ),
                     Markers,
                     Connectivity,
                     mask=imarray.astype(np.bool),
