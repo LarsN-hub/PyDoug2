@@ -1,3 +1,9 @@
+## 0.1.3
+
+### Updates
+* Expanded CI tests matrix to cover python 3.12 and lower dependency versions.
+* Updated third party licenses to cover 0.1.1 additions.
+
 ## 0.1.2
 
 ### Additions

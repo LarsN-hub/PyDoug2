@@ -42,8 +42,8 @@ dependencies = [
 testing = [
     "napari[testing]>=0.9.0",
     "pytest>=9.1.0",
-    "pytest-cov",
-    "pytest-qt",
+    "pytest-cov>=7.1.0",
+    "pytest-qt>=4.5.0",
     "PySide6>=6.11.2"
 ]
 

@@ -47,4 +47,6 @@ packages/pydoug-napari/tests/test_widgets/__pycache__
 packages/pydoug-standalone/src/pydoug_standalone/__pycache__/
 packages/pydoug-standalone/src/pydoug_standalone/hooks/__pycache__/
 
+requirements.txt
+
 scripts/__pycache__/
