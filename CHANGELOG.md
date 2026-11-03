@@ -4,8 +4,11 @@
 * Added image to labels and labels to image widgets in "Visualize" tab.
 
 ### Updates
+* Fixed bug where boolean input images would crash watershed labeling if "Use Negative Image" was selected.
 * Expanded CI tests matrix to cover python 3.12 and lower dependency versions.
 * Updated third party licenses to cover 0.1.1 additions.
+* Increased maximum input range for size/distance of remove objects and remove holes widgets.
+* Added image vs. labels return type selection for remove objects widget.
 
 ## 0.1.2
 
