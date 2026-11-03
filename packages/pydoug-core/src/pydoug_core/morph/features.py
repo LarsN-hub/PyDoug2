@@ -71,7 +71,7 @@ def euclidian_dt(
 def mis(
     imarray: np.ndarray,
     Method: Literal[
-        "Brute Force", "Convolution", "Distance Transform", "ImageJ"
+        "Brute Force", "Convolution", "Distance Transform"
     ] = "Distance Transform",
     Pixel_Size: Annotated[float, {"min": 0, "step": 0.0001}] = 1,
     Smooth: bool = True,
@@ -92,7 +92,6 @@ def mis(
         The method for finding the inscribed spheres. Default is "Distance Transform".
         - "Brute Force": Brute force algorithm.
         - "Distance Transform": Uses distance transforms to dilate/erode each radius.
-        - "ImageJ": Uses ImageJ's algorithm (faster "Brute Force", less accurate).
         - "Convolution": FFT-based convolution to dilate/erode each radius.
     Pixel_Size: float
         The edge length of pixels in real-world units.
@@ -124,15 +123,13 @@ def mis(
             method: str = "bf"
         elif Method == "Distance Transform":
             method = "dt"
-        elif Method == "ImageJ":
-            method = "imj"
         else:
             method = "conv"
 
         rad_array: np.ndarray = (
             local_thickness(imarray.astype(np.bool), method=method, smooth=Smooth)
             * Pixel_Size
-        )
+        )  # type: ignore
 
         if Return_Diameters:
             return rad_array * 2

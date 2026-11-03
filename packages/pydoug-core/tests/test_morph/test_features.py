@@ -41,14 +41,6 @@ def test_mis(sample_masks, sample_2drgb_array) -> None:
     result8: np.ndarray = features.mis(
         sample_masks["3dgray"], "Brute Force", Perform_Slicewise=True
     )
-    result9: np.ndarray = features.mis(sample_masks["2dgray"], "ImageJ")
-    result10: np.ndarray = features.mis(sample_masks["3dgray"], "ImageJ")
-    result11: np.ndarray = features.mis(
-        sample_masks["2dgray"], "ImageJ", Perform_Slicewise=True
-    )
-    result12: np.ndarray = features.mis(
-        sample_masks["3dgray"], "ImageJ", Perform_Slicewise=True
-    )
     result13: np.ndarray = features.mis(sample_masks["2dgray"], "Convolution")
     result14: np.ndarray = features.mis(sample_masks["3dgray"], "Convolution")
     result15: np.ndarray = features.mis(
@@ -61,7 +53,6 @@ def test_mis(sample_masks, sample_2drgb_array) -> None:
 
     assert np.all(result1 == result3)
     assert np.all(result5 == result7)
-    assert np.all(result9 == result11)
     assert np.all(result13 == result15)
     assert np.all(result1 * 2 == result17)
     assert result1.dtype == np.float64
@@ -72,10 +63,6 @@ def test_mis(sample_masks, sample_2drgb_array) -> None:
     assert result6.dtype == np.float64
     assert result7.dtype == np.float64
     assert result8.dtype == np.float64
-    assert result9.dtype == np.float64
-    assert result10.dtype == np.float64
-    assert result11.dtype == np.float64
-    assert result12.dtype == np.float64
     assert result13.dtype == np.float64
     assert result14.dtype == np.float64
     assert result15.dtype == np.float64
