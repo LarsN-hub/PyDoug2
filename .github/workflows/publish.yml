@@ -1,0 +1,47 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Check package versions match the release tag
+        run: python scripts/check_versions.py "${{ github.ref_name }}"
+      - name: Build distributions
+        run: |
+          python -m pip install build
+          python -m build packages/pydoug-core --outdir dist/core
+          python -m build packages/pydoug-napari --outdir dist/napari
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+      - name: Publish pydoug-core
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/core/
+          skip-existing: true
+      - name: Publish pydoug-napari
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/napari/
+          skip-existing: true
