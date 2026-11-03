@@ -45,11 +45,15 @@ Note, currently only available on Windows, Linux coming soon!
 
 **`pip` Install**
 
-1. Create a fresh virtual environment.
-2. Activate the environment.
-3. Install your preferred Qt backend: `pip install pyside6` or `pip install pyqt6`.
-4. Use `pip install pydoug-core pydoug-napari` to install PyDoug.
-5. Launch napari with `napari` and then activate the PyDoug plugin in the plugins menu.
+1. Ensure that you have python 3.13 installed on your machine. Open up a terminal and use `python` to ensure it launches.
+2. Open your terminal and navigate to the folder where you keep python virtual environments.
+3. Create a fresh virtual environment (on Windows: `python -m venv PyDoug`).
+4. Activate the environment (on Windows: `PyDoug\Scripts\activate`).
+5. Install your preferred Qt backend: `pip install pyside6` or `pip install pyqt6`.
+6. Use `pip install pydoug-core pydoug-napari` to install PyDoug.
+7. Launch napari with `napari` and then activate the PyDoug plugin in the plugins menu.
+8. For subsequent launches, just activate the vritual environment and use `napari` as above.
+9. To update, use `pip install --upgrade pydoug-core pydoug-napari`.
 
 **Developers**:
 

@@ -40,7 +40,6 @@ for pkg in (
     "porespy",
     "psygnal",
     "PyOpenGL-accelerate",
-    "pypardiso",
     "qtpy",
     "scikit-image",
     "scipy",
