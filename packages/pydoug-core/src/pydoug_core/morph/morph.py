@@ -9,6 +9,7 @@ from skimage.morphology import dilation as ski_dilation
 from skimage.morphology import erosion as ski_erosion
 
 from pydoug_core.registry import register_operation
+from pydoug_core.results import VisualResult
 from pydoug_core.util import is3d, isrgb
 
 __all__ = [
@@ -422,15 +423,16 @@ def white_tophat(
     category="morphology",
     display_name="Remove Objects",
     layer_type="labels",
-    output_kind="labels",
+    output_kind="visual",
 )
 def remove_labeled_objects(
     imarray: np.ndarray,
     Method: Literal["Distance", "Size"] = "Size",
-    Size: Annotated[int, {"min": 0}] = 10,
+    Size: Annotated[int, {"min": 0, "max": 1000000000000000}] = 10,
     Remove_Above_Size: bool = False,
-    Distance: Annotated[float, {"min": 0}] = 10,
-) -> np.ndarray:
+    Distance: Annotated[float, {"min": 0, "max": 1000000000000000}] = 10,
+    Return_Type: Literal["Image", "Labels"] = "Image",
+) -> VisualResult:
     """
     Remove objects in a labeled image. Slower than closing/opening/top hat operations
     but more precise. Convenience wrapper around scikit-image's removal functions in the
@@ -454,35 +456,45 @@ def remove_labeled_objects(
     Distance: float
         if "Method" is "Distance", the minimum distance between objects required to keep
         both of them.
+    Return_Type: Literal
+        Whether to return an image layer or labels layer. Default is "Image".
 
     Returns
     -------
-    rem_array: np.ndarray
-        The image after object removal.
+    rem_result: VisualResult
+        The VisualResult object containing the image after object removal.
     """
 
     from skimage.morphology import remove_objects_by_distance, remove_small_objects
 
     if Method == "Distance":
         if Distance == 0:
-            return imarray
+            return VisualResult(imarray, Return_Type.lower(), {})  # type: ignore
 
-        return remove_objects_by_distance(imarray, Distance)
+        return VisualResult(
+            remove_objects_by_distance(imarray, Distance),
+            Return_Type.lower(),  # type: ignore
+            {},
+        )
 
     if Size == 0 and not Remove_Above_Size:
-        return imarray
+        return VisualResult(imarray, Return_Type.lower(), {})  # type: ignore
 
     if Remove_Above_Size:
         rem_array: np.ndarray = remove_small_objects(imarray, max_size=Size)
-        return imarray - rem_array
+        return VisualResult(imarray - rem_array, Return_Type.lower(), {})  # type: ignore
 
-    return remove_small_objects(imarray, max_size=Size)
+    return VisualResult(
+        remove_small_objects(imarray, max_size=Size),
+        Return_Type.lower(),  # type: ignore
+        {},
+    )
 
 
 @register_operation(category="morphology", display_name="Remove Holes")
 def remove_holes(
     imarray: np.ndarray,
-    Size: Annotated[int, {"min": 0}] = 10,
+    Size: Annotated[int, {"min": 0, "max": 1000000000000000}] = 10,
     Perform_Slicewise: bool = False,
 ) -> np.ndarray:
     """

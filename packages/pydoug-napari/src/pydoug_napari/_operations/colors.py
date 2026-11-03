@@ -1,5 +1,5 @@
 """
-Create labels layers with controlled colors.
+Create layers with controlled colors.
 """
 
 from typing import Annotated, Literal

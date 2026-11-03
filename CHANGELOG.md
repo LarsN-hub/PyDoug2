@@ -1,5 +1,8 @@
 ## 0.1.3
 
+### Additions
+* Added image to labels and labels to image widgets in "Visualize" tab.
+
 ### Updates
 * Expanded CI tests matrix to cover python 3.12 and lower dependency versions.
 * Updated third party licenses to cover 0.1.1 additions.
