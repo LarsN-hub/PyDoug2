@@ -71,9 +71,9 @@ def test_size_distrib(sample_masks) -> None:
     assert isinstance(result05, PlotResult)
     assert isinstance(result06, PlotResult)
     assert np.all(
-        result00.values["Equivalent Diameter"]
-        == result00.values["Counts"]
-        == np.array([0])  # type: ignore
+        result00.values["Equivalent Diameter"]  # type: ignore
+        == result00.values["Counts"]  # type: ignore
+        == np.array([0])
     )
     assert np.all(
         result01.data["Equivalent Diameter"] == result03.data["Equivalent Radius"] * 2  # type: ignore

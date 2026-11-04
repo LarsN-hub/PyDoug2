@@ -1,3 +1,9 @@
+## 0.1.4
+
+### Updates
+* Updated README to reflect recent changes.
+* Fixed size distribution widget counting background as a label.
+
 ## 0.1.3
 
 ### Additions
