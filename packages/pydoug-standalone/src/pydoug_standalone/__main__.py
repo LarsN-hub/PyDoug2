@@ -24,7 +24,6 @@ def main() -> None:
     viewer.window.add_dock_widget(
         MainWidget(viewer), name="PyDoug Image Processing Toolbox", area="right"
     )
-
     napari.run()
 
 
