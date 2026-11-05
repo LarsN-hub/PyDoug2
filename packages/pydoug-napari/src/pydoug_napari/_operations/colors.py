@@ -1,5 +1,5 @@
 """
-Create layers with controlled colors.
+Create labels layers with controlled colors.
 """
 
 from typing import Annotated, Literal
@@ -19,7 +19,6 @@ def get_cmap(
     imarray: np.ndarray,
     color_map: str = "inferno",
     c_lims: tuple[int, int] = (0, 0),
-    return_type: Literal["Image", "Labels"] = "Image",
 ) -> dict:
     """
     Return a napari-readable colormap from matplotlib and cmasher colormaps for the
@@ -39,9 +38,6 @@ def get_cmap(
         The colormap string.
     c_lims: tuple
         The intensity/label limits for the color map beyond which values are clipped.
-    return_type: Literal
-        Whether to return an image layer colormap ("Image) or a labels layer colormap
-        ("Labels). Default is "Image".
 
     Returns
     -------
@@ -50,41 +46,35 @@ def get_cmap(
     """
 
     if np.issubdtype(imarray.dtype, np.floating):
-        raise ValueError("Image has floating dtype, value gradient not assigned!")
+        raise ValueError("Image has floating dtype, colormap not created!")
 
-    min_val: int = np.iinfo(imarray.dtype).min if imarray.dtype != np.bool else 0
-    max_val: int = np.iinfo(imarray.dtype).max if imarray.dtype != np.bool else 1
-    gray_count: int = max_val - min_val + 1
+    min_val: int = int(np.min(imarray[imarray != 0]))
+    max_val: int = int(np.max(imarray))
     if c_lims[0] == c_lims[1] == 0:
+        gray_count: int = max_val - min_val + 1
         carray: np.ndarray = colormaps[color_map](np.linspace(0, 1, gray_count))
     else:
-        r_start: int = (
-            (round(min(c_lims)) + abs(min_val)) if min_val != 0 else round(min(c_lims))
+        gray_count: int = c_lims[1] - c_lims[0] + 1
+        if gray_count <= 0:
+            raise ValueError("Upper color limit must be >= Lower limit + 1!")
+        carray = colormaps[color_map](np.linspace(0, 1, gray_count))
+        carray = np.append(
+            np.repeat(carray[0:1], (c_lims[0] - min_val), axis=0), carray, axis=0
         )
-        r_end: int = (
-            (round(max(c_lims)) + abs(min_val)) if min_val != 0 else round(max(c_lims))
-        )
-        carray: np.ndarray = np.empty((gray_count, 4))
-        carray[r_start : (r_end + 1), :] = colormaps[color_map](
-            np.linspace(0, 1, r_end - r_start + 1)
-        )
-        carray[0:r_start, :] = np.repeat(carray[r_start : (r_start + 1), :], r_start, 0)
-        carray[r_end:, :] = np.repeat(
-            carray[r_end : (r_end + 1), :],
-            gray_count - r_end,
-            0,
+        carray = np.append(
+            carray, np.repeat(carray[-1:], (max_val - c_lims[1]), axis=0), axis=0
         )
 
-    if return_type == "Labels":
-        keys: np.ndarray = np.round(
-            np.linspace(0, np.max(imarray), np.max(imarray))
-        ).astype(np.int32)
-        cdict: dict[int | None, np.ndarray] = {k: v for k, v in zip(keys, carray)}
-        cdict[None] = np.array([0, 0, 0, 0])
+    keys: np.ndarray = np.arange(min_val, max_val + 1)
+    cdict: dict[int | None, np.ndarray] = {k: v for k, v in zip(keys, carray)}
+    cdict[None] = np.array([0, 0, 0, 0])
+    cdict[0] = np.array([0, 0, 0, 0])
+    for val in np.unique(imarray):
+        if val not in cdict.keys():
+            print(cdict[342])
+            raise ValueError(f"{val} not in labels!")
 
-        return cdict
-
-    return {"colors": carray, "name": f"{color_map}_custom"}
+    return cdict
 
 
 @register_operation(
@@ -100,7 +90,6 @@ def value_gradient(
         Annotated[int, {"min": -32768, "max": 65535}],
         Annotated[int, {"min": -32768, "max": 65535}],
     ] = (0, 0),
-    Return_Type: Literal["Image", "Labels"] = "Image",
 ) -> VisualResult:
     """
     Gradiate colors in an image based on the grayscale intensity value. Image must have
@@ -118,9 +107,8 @@ def value_gradient(
         The color map to use.
     C_Lims: tuple[int, int]
         The intensity limits for the bounds of the color map in the form [min, max].
-        Ignored if both are 0 and uses the max and min of the image's dtype.
-    Return_Type: Literal
-        Whether to return an image layer or labels layer. Default is "Image".
+        Ignored if both are 0 and uses the max and min of the image's values
+        (disregarding 0).
 
     Returns
     -------
@@ -130,9 +118,9 @@ def value_gradient(
 
     return VisualResult(
         imarray,
-        Return_Type.lower(),  # type: ignore
+        "labels",
         {
-            "colormap": get_cmap(imarray, Color_Map, C_Lims, Return_Type),
+            "colormap": get_cmap(imarray, Color_Map, C_Lims),
             "metadata": {"custom colormap": True},
             "opacity": 1,
         },
@@ -153,7 +141,6 @@ def axial_gradient(
         Annotated[int, {"min": -32768, "max": 65535}],
         Annotated[int, {"min": -32768, "max": 65535}],
     ] = (0, 0),
-    Return_Type: Literal["Image", "Labels"] = "Image",
 ) -> VisualResult:
     """
     Gradiate colors in a segmented image based on the axial position of each segmented
@@ -177,8 +164,6 @@ def axial_gradient(
     C_Lims: tuple[int, int]
         The intensity limits for the bounds of the color map in the form [min, max].
         Ignored if both are 0 and uses the bounds of the specified axis.
-    Return_Type: Literal
-        Whether to return an image layer or labels layer. Default is "Image".
 
     Returns
     -------
@@ -189,38 +174,21 @@ def axial_gradient(
     if Axis == "Z" and not is3d(imarray):
         raise ValueError("Specified 'Z' axis but image is not 3D!")
 
-    mult_array: np.ndarray = np.arange(1, imarray.shape[axstr2int(imarray, Axis)] + 1)
-    if C_Lims[0] != 0 and C_Lims[1] != 0:
-        C_Lims = (0, C_Lims[1]) if C_Lims[0] < 0 else C_Lims
-        C_Lims = (
-            (C_Lims[0], imarray.shape[axstr2int(imarray, Axis)])
-            if C_Lims[1] > imarray.shape[axstr2int(imarray, Axis)]
-            else C_Lims
-        )
-        mult_array: np.ndarray = np.ones(imarray.shape[axstr2int(imarray, Axis)])
-        mult_array[min(C_Lims) : max(C_Lims) + 1] = np.arange(
-            1, max(C_Lims) - min(C_Lims) + 2
-        )
-        mult_array[max(C_Lims) + 1 :] = mult_array[max(C_Lims)]
-    else:
-        mult_array = np.arange(1, imarray.shape[axstr2int(imarray, Axis)] + 1)
+    mult_array = np.arange(0, imarray.shape[axstr2int(imarray, Axis)]) + 1
+    mult_array = mult_array.astype(min_int_dtype(mult_array))
     expanded_axes: list[int] = []
     eval_axes: tuple = (0, 1, 2) if is3d(imarray) else (0, 1)
     for ax in eval_axes:
         if ax != axstr2int(imarray, Axis):
             expanded_axes.append(ax)
     mult_array = np.expand_dims(mult_array, tuple(expanded_axes))
-    grad_array: np.ndarray = (mult_array * (imarray != 0)).astype(
-        min_int_dtype(mult_array * (imarray != 0))
-    )
+    grad_array: np.ndarray = (mult_array * (imarray != 0)).astype(mult_array.dtype)
 
     return VisualResult(
         grad_array,
-        Return_Type.lower(),  # type: ignore
+        "labels",
         {
-            "colormap": get_cmap(
-                grad_array, Color_Map, (0, np.max(grad_array)), Return_Type
-            ),
+            "colormap": get_cmap(grad_array, Color_Map, C_Lims),
             "metadata": {"custom colormap": True},
             "opacity": 1,
         },

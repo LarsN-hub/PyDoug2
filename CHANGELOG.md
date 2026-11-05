@@ -3,6 +3,8 @@
 ### Updates
 * Updated README to reflect recent changes.
 * Fixed size distribution widget counting background as a label.
+* Fixed missing imports in standalone build.spec file.
+* Fixed bug in axial and value gradient color widgets and removed image layer output option.
 
 ## 0.1.3
 
