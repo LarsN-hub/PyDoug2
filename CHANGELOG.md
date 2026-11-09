@@ -1,5 +1,8 @@
 ## 0.1.4
 
+### Additions
+* Added round widget in "Math" tab to round values to nearest integer and return integer dtype.
+
 ### Updates
 * Updated README to reflect recent changes.
 * Fixed size distribution widget counting background as a label.

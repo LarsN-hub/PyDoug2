@@ -8,7 +8,7 @@ import numpy as np
 
 from pydoug_core.registry import register_operation
 
-__all__ = ["arithmetic"]
+__all__ = ["arithmetic", "im_round"]
 
 
 @register_operation(
@@ -102,3 +102,31 @@ def arithmetic(
         return math_array.astype(imarray.dtype)
 
     return math_array
+
+
+@register_operation(category="math", display_name="Round")
+def im_round(imarray: np.ndarray) -> np.ndarray:
+    """
+    Round image values to the nearest integer and convert the image to the minimum-bit
+    integer dtype possible. Returns the input image if the dtype is not floating.
+    Convenience wrapper around numpy's round and astype:
+    https://numpy.org/doc/stable//reference/generated/numpy.round.html
+    https://numpy.org/doc/stable/reference/generated/numpy.ndarray.astype.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to be rounded.
+
+    Returns
+    -------
+    round_array: np.ndarray
+        The rounded image.
+    """
+
+    if not np.issubdtype(imarray.dtype, np.floating):
+        return imarray
+
+    from pydoug_core.util import min_int_dtype
+
+    return np.round(imarray).astype(min_int_dtype(np.round(imarray)))

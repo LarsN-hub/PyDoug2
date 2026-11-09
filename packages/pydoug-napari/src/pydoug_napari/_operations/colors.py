@@ -52,27 +52,28 @@ def get_cmap(
     max_val: int = int(np.max(imarray))
     if c_lims[0] == c_lims[1] == 0:
         gray_count: int = max_val - min_val + 1
+        keys: np.ndarray = np.arange(min_val, max_val + 1)
         carray: np.ndarray = colormaps[color_map](np.linspace(0, 1, gray_count))
     else:
         gray_count: int = c_lims[1] - c_lims[0] + 1
         if gray_count <= 0:
             raise ValueError("Upper color limit must be >= Lower limit + 1!")
+        keys: np.ndarray = np.arange(
+            min(min_val, c_lims[0]), max(max_val, c_lims[1]) + 1
+        )
         carray = colormaps[color_map](np.linspace(0, 1, gray_count))
-        carray = np.append(
-            np.repeat(carray[0:1], (c_lims[0] - min_val), axis=0), carray, axis=0
-        )
-        carray = np.append(
-            carray, np.repeat(carray[-1:], (max_val - c_lims[1]), axis=0), axis=0
-        )
+        if c_lims[0] - min_val >= 0:
+            carray = np.append(
+                np.repeat(carray[0:1], (c_lims[0] - min_val), axis=0), carray, axis=0
+            )
+        if max_val - c_lims[1] >= 0:
+            carray = np.append(
+                carray, np.repeat(carray[-1:], (max_val - c_lims[1]), axis=0), axis=0
+            )
 
-    keys: np.ndarray = np.arange(min_val, max_val + 1)
     cdict: dict[int | None, np.ndarray] = {k: v for k, v in zip(keys, carray)}
     cdict[None] = np.array([0, 0, 0, 0])
     cdict[0] = np.array([0, 0, 0, 0])
-    for val in np.unique(imarray):
-        if val not in cdict.keys():
-            print(cdict[342])
-            raise ValueError(f"{val} not in labels!")
 
     return cdict
 
@@ -121,8 +122,10 @@ def value_gradient(
         "labels",
         {
             "colormap": get_cmap(imarray, Color_Map, C_Lims),
+            "iso_gradient_mode": "smooth",
             "metadata": {"custom colormap": True},
             "opacity": 1,
+            "rendering": "iso_categorical",
         },
     )
 
@@ -189,7 +192,9 @@ def axial_gradient(
         "labels",
         {
             "colormap": get_cmap(grad_array, Color_Map, C_Lims),
+            "iso_gradient_mode": "smooth",
             "metadata": {"custom colormap": True},
             "opacity": 1,
+            "rendering": "iso_categorical",
         },
     )
