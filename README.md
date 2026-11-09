@@ -57,50 +57,78 @@ Note, currently only available on Windows, Linux coming soon!
 
 **Developers**:
 
-Clone the github repository to your computer and create a virtual python environment (`python -m venv PyDoug_Dev` on Windows). After activating the environment and navigating to the repository's directory, run the dev-setup.sh script (Windows users can do so using the git bash application) to install all required dependencies and to install PyDoug's packages in editable mode. Launch napari with `napari` in the terminal in the activated python environment and then activate the PyDoug plugin from napari's "Plugins" menu on the top left. If there are any problems, try re-installing PyDoug's packages in editable mode (`pip install -e packages/pydoug-core --force-reinstall --no-deps` and `pip install -e packages/pydoug-napari[testing] --force-reinstall --no-deps`) as this is sometimes not accomplished properly from the setup script.
+1. Create a virtual python environment (`python -m venv PyDoug_Dev` on Windows).
+2. Clone the github repository to your computer: `git clone https://github.com/LarsN-hub/PyDoug2.git`
+3. After activating the environment and navigating to the repository's top directory (PyDoug2), run the dev-setup.sh script (Windows users can do so using `& "C:\Program Files\Git\bin\bash.exe" dev-setup.sh` if Git is installed) to install all required dependencies and to install PyDoug's packages in editable mode.
+4. Launch napari with `napari` in the terminal in the activated python environment and then activate the PyDoug plugin from napari's "Plugins" menu on the top left.
+5. If there are any problems, try re-installing PyDoug's packages in editable mode (`pip install -e packages/pydoug-core --force-reinstall --no-deps` and `pip install -e packages/pydoug-napari[testing] --force-reinstall --no-deps`) as this is sometimes not accomplished properly from the setup script.
 
 ### Using PyDoug
 
 This section will cover some basic napari usage (more can be read on [napari's website]((https://napari.org/stable/usage.html))) as well as basic PyDoug widget usage.
 
-When PyDoug is launched (either through the executable file or by selecting the PyDoug plugin if launching from napari as a developer) the following screen will appear. Several tabs containing PyDoug's widgets appear on the right with two logs on the bottom, one for the workflow (records every step you perform) and one for any numerical results (displays any calculations you perform).
+When PyDoug is launched (either through the executable file or by selecting the PyDoug plugin if launching from napari if PyDoug was `pip` installed) the startup screen below will appear. In the center of the screen is napari's image canvas where images will appear as they are loaded in. Once an image is loaded in, it will appear in the layer list on the bottom left, and when selected its viewing settings will populate in the layer controls section above. The layer controls section is tabbed with the results log, which displays any numerical results output by widgets.
 
+Several tabs containing PyDoug's widgets appear on the right with the widget space below the tabs. By clicking on a tab, the widget space will change to show the widgets that belong to that tab's category. The default starting tab is the "Batch" tab for saving workflows and running batch processes. On the bottom of the screen is the workflow log that records every step you perform and displays its name and parameters used. Operations recorded in the workflow log can be exported as a batch processing workflow and used later to process many images automatically.
+
+#### Startup Screen
 ![Startup Screen](/assets/images/Startup_Screen.png)
 
-If you add an image to the napari canvas (this can be done through the file menu in the top left or just by dragging and dropping an image file onto the canvas) it will be rendered (in 2D by default) in the canvas as seen below. This will add the image to the layer list on the bottom left. Clicking on the layer in the layer list will bring up controls for this layer in the controls tab above the layer list (here things like the contrast limits can be changed for ease of viewing). The image can be removed by clicking the garbage can icon above the layer list with the layer selected. The visibility of the layer can be toggled with the eyeball button on the layer in the layer list.
+If you add an image to the napari canvas (this can be done through the file menu in the top left or by dragging and dropping an image file onto the canvas) it will be rendered (in 2D by default) in the canvas as seen in the loaded image layer below. This will add the image to the layer list on the bottom left. Clicking on the layer in the layer list will highlight the layer list entry in blue and bring up controls for this layer in the controls tab above the layer list (here things like the contrast limits can be changed for ease of viewing).
 
+The image can be removed by clicking the garbage can icon above the layer list with the layer selected. The visibility of the layer can be toggled with the eyeball button on the layer in the layer list. If the image is 3D (like the one in the example image), only a single slice of the image is shown and a slider will appear for the 3D axis below the image to pan through the different slices.
+
+#### Loaded Image Layer
 ![Loaded Image Layer](/assets/images/Loaded_Image.png)
 
-The image we have loaded here for examples is a 3D image and can be viewed in 3D by clicking the 2D/3D toggle button on the bottom left below the layer list as seen below. Whether in 2D or 3D, the image layer can be moved around the screen by clicking and dragging and can be zoomed in on with the mouse wheel. Holding down shift before dragging in 3D will move the layer in 3D space instead of rotating it about the center as occurs when drag clicking without the shift key.
+The image we have loaded here for examples is a 3D image and can be viewed in 3D by clicking the 2D/3D toggle button on the bottom left below the layer list as seen in the 3D image viewing example below. Whether in 2D or 3D, the image layer can be moved around the screen by clicking and dragging and can be zoomed in on with the mouse wheel. Holding down shift before dragging in 3D will move the layer in 3D space instead of rotating it about the center as occurs when drag clicking without the shift key.
 
+#### 3D Image Viewing
 ![3D Image Layer](/assets/images/3D_Layer.png)
 
-Let's perform an operation on the image layer. Below is a zoomed in image of one of the widgets from the "Transformations" tab in the widgets panel on the right, the "Rotate" widget. This allows us to rotate the image about its center. Almost all widgets will have a "Layer" drop-down selection on top to select which layer the operation is being performed on. Then follows the options for the operation. For the rotate widget, we have the angle to rotate the image by, a checkbox signaling whether or not to rotate clockwise or counter-clockwise, a checkbox to toggle resizing the image to fully fit the new rotated image, and a checkbox to preserve the original [data type](https://scikit-image.org/docs/stable/user_guide/data_types.html) of the image (integer values are converted to floating point values for some operations, but can be converted back using this option). We will rotate the image by 45 degrees counter-clockwise without resizing but preserving the original data type.
+Let's perform an operation on the image layer. Below is a zoomed in image of the "Rotate" widget from the "Transform" tab in the widgets panel on the right. This allows us to rotate the image about its center. Almost all widgets will have a "Layer" drop-down selection on top to select which layer the operation is being performed on. Then follows the options for the operation.
 
+For the rotate widget, we have the angle to rotate the image by, a checkbox signaling whether or not to rotate clockwise or counter-clockwise, a checkbox to toggle resizing the image to fully fit the new rotated image (vs. preserving the original dimensions and clipping any region that extends outside of these during rotation), and a checkbox to preserve the original [data type](https://scikit-image.org/docs/stable/user_guide/data_types.html) of the image (integer values are converted to floating point values for some operations, but can be converted back using this option). We will rotate the image by 45 degrees counter-clockwise without resizing but preserving the original data type.
+
+#### Rotate Widget
 ![Rotate Widget](/assets/images/Rotate_Widget.png)
 
-Below is the new image layer created after our rotation operation. This operation created a new image layer that was added to the top of the layer list on the left and recorded the parameters used in the operation in the workflow log on the bottom. If we decide we don't like the operation we performed, we can delete the image layer and its log in the workflow will be automatically removed as well.
+Below is the results after our rotation operation. This operation created a new image layer that was added to the top of the layer list on the left and recorded the parameters used in the operation in the workflow log on the bottom. If we decide we don't like the operation we performed, we can delete the image layer and its log in the workflow will be automatically removed as well.
 
+#### Rotated Image
 ![Rotated Image](/assets/images/Rotated_Image_Layer.png)
 
-The original image layer is still there, just hidden behind the new top-most image layer. We can view it again by toggling the visibility of the new image layer as shown below. Because it all image layers remain present, workflows can be dynamically designed and tested by performing operations and then removing their corresponding image layer (acting as an "undo") before settling on a final workflow for batch processing.
+The original image layer is still there, just hidden behind the new top-most image layer. We can view it again by toggling the visibility of the new image layer as shown below or by reducing the opacity of the layer in the layer controls. Because all image layers remain present, workflows can be dynamically designed and tested by performing operations and then removing their corresponding image layer (acting as an "undo") before settling on a final workflow for batch processing.
 
+#### Toggled Image Visibility
 ![Toggled Image Layer](/assets/images/Toggled_Layer.png)
 
-Not all operations produce a new image layer. Some, like the statistics calculation widget in the "Measurements" tab produce a numerical result (in this case, several statistics about the grayscale values of the image layer). When these operations are performed, their results are recorded in the results log (recently moved to be tabbed with the layer controls menu):
+Not all operations produce a new image layer. Some, like the "Stats" calculation widget in the "Info" tab produce a numerical result (in this case, several statistics about the grayscale values of the image layer). When these operations are performed, their results are recorded in the results log on the left (click the tab beneath the layer controls window to switch).
 
+All numerical and plot result widgets have a "Record in Workflow" checkbox at the bottom (we checked it for this operation) that specifies whether this operation should be recorded in the workflow or not. If you are just using the operation to get some information and do not wish for it to be recorded in the workflow, leave the box unchecked; the results will still appear but will not be saved for batch processing if the current workflow is exported. Any results in the results log can be exported by clicking on the result in the results log and then clicking the "Export Selected" button at the bottom of the results log (or "Export All" to export all currently recorded results). Results can be deleted from the log by selecting them and clicking "Delete Selected". If a result is recorded in the workflow log and then deleted from the results log, its entry in the workflow log will also be removed.
+
+#### Stats Calculation in Results Log
 ![Stats Calculation](/assets/images/Stats_Calculation.png)
 
-The workflow log and the results log begin quite small by default so as to stay out of the way of the canvas, but they can be expanded by dragging the top area of them upwards or even undocked from their original location for display on another monitor. In fact, all widgets on the canvas can be undocked and moved around or re-docked in a new location by simply clicking them and dragging them away as shown below. Now we can see the full list of results gathered from our statistics calculation.
+The workflow log and the results log begin quite small by default so as to stay out of the way of the canvas, but they can be expanded by dragging the area around them outwards and can even be undocked from their original location for display on another monitor. In fact, all widgets on the canvas can be undocked and moved around or re-docked in a new location by simply clicking them and dragging them away as shown below.
 
+#### Undocked Widgets
 ![Undocked Widgets](/assets/images/Undocked_Widgets.png)
 
-Once you have processed an image and gotten it to a final state that you like, you can save your workflow and apply it automatically to any other images you wish to process in the "Batch" tab. The top widget in the batch tab is for saving a workflow to a file on your device (be sure to delete any unused steps remaining in your layers list to avoid unnecessary steps in your workflow). Simply choose a folder and give it a name, then click "Save Workflow" to record your workflow for future use. If you have already made a workflow and want to make a nother but some steps remain in the workflow log (e.g., a calculations step without an image layer to delete), click "Clear Worklow" to remove all steps from the workflow log and start over.
+Widgets that create plots, like the "Plot Histogram" widget in the "Histogram" tab, will create the plot in a pop-up window as shown below. Note that here we have selected the original, unrotated image in the layer drop-down selection of the plot widget to avoid a plot with excessive zero counts in the rotated image.
+
+A plot can be saved from the pop-up window using the save button or can be saved by selecting the plot in the results log and saving it. This will also save the data used to create the plot (so that you can re-plot it however you like in other software) as well as any additional results output from the operation (like the statistics for the histogram below the plot in the results log). Plot results from batch processing are automatically saved alongside their data and additional results.
+
+#### Histogram Plot
+![Plot Result](/assets/images/Plot_Result.png)
+
+Once you have processed an image to a final state that you like, you can save your workflow and apply it automatically to any other images you wish to process in the "Batch" tab. The top widget in the batch tab is for saving a workflow (be sure to delete any unused steps remaining in your layers list to avoid unnecessary steps in your workflow). Simply choose a folder and give it a name, then click "Save Workflow" to record your workflow for future use. If you have already made a workflow and want to make another but some steps remain in the workflow log, click "Clear Worklow" to remove all steps from the workflow log and start over.
 
 Below the "Save Workflow" and "Clear Workflow" widgets is the batch processing widget. The four buttons on top let you select image files (either as single files or as sequences in folders if required) to add to the batch list as well as removing any that were mistakenly added. Selected files will populate the central lighter gray area in a list for you to double check before batch processing. Below that, select a Workflow folder and an Output folder (the Workflow folder is the path to a saved workflow and the output folder is the path to where the processed images should be saved). Beneath these options are checkboxes to toggle saving every step (vs. just the final step) and whether to save images at all (in the case of only performing calculations or plots with no processing of images in the workflow).
 
-Click "Run Batch" to process all files in the list with the provided workflow and save their outputs (images, calculations, and plots) in the Ouput folder.
+Click "Run Batch" to process all files in the list with the provided workflow and save their outputs (images, calculations, and plots) in the Ouput folder. The bar on the very bottom of the tab is a progress bar that will update as each subsequent image is finished processing.
 
+#### Batch Tab
 ![Batch Tab](/assets/images/Batch_Tab.png)
 
 If you don't know what a widget does, simply hover over its label and any of the options within it to see a tooltip popup of what the widget does and what each parameter does. Each widget also typically provides a link to the source package's functionality so that you can learn more about what it does and how it operates should you have more questions after reading the tooltips.
@@ -152,13 +180,14 @@ def sample_function(
     return thresh_array
 ```
 
-The widget appears in napari once PyDoug's plugin is launched like so (the tooltip popup over threshold is accessed by holding the mouse over the "Thresholds" label):
+The widget appears in napari once PyDoug's plugin is launched like so (the tooltip popup over threshold is accessed by holding the mouse over the "Thresholds" label).
 
+#### Sample User Widget
 ![The sample user widget](/assets/images/Sample_Widget.png)
 
-The `@register_operation` decorator above the function is what tells PyDoug to add this function as a widget in napari. It specifies what tab to use, what the name of the widget should be, and can specify many other things such as how to handle masks, whether or not the operation should automatically be recorded in the workflow log, how to handle non-image array outputs (like plots and calculations), and more (see the **Full List of `@register_operation` Options** section below). Without this decorator, your function will not be added as a widget. Using this decorator automatically adds your function as a recordable operation that can be used in batch processing workflows without any additional code required.
+The `@register_operation` decorator above the function is what tells PyDoug to add this function as a widget in napari. It specifies what tab to use, what the name of the widget should be, and can specify many other things such as how to handle masks, whether or not the operation should automatically be recorded in the workflow log, how to handle non-image array outputs (like plots and calculations), and more (see the **Full List of `@register_operation` Options** section below). Without this decorator, your function will not be added as a widget. Using this decorator automatically adds your function as a widget and a recordable operation that can be used in batch processing workflows without any additional code required.
 
-In general, your function just needs to accept a numpy array (imarray) as the first parameter and return either a numpy array, numerical results (can be a single value or a dictionary of values, both are handled by PyDoug's results display widget), or a matplotlib plot (specifically must return a matplotlib.figure.Figure object, do not use pyplot and do not show the figure in the function).
+In general, your function just needs to accept a numpy array as the first parameter and return either a numpy array, numerical results (can be a single value or a dictionary of values, both are handled by PyDoug's results display widget), or a matplotlib plot (specifically must return a matplotlib.figure.Figure object, do not use pyplot and do not show the figure in the function).
 
 The type annotations for the input parameters are what tell magicgui what type of widget input should be created (e.g., the image array creates a layer drop-down selector while the tuple creates two inputs where each is formatted using `Annotated` to only allow values in the range [0, 65535] and has default values of 50 and 200). There are many types of inputs that can be created, including toggleable checkboxes, single value floating point or integer inputs, string inputs, drop-down input selectors, slider bars, and more (see [magicgui](https://pyapp-kit.github.io/magicgui/type_map/) documentation for a comprehensive list).
 
