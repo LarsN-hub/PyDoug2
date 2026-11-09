@@ -96,8 +96,9 @@ def size_distrib(
     Mask: np.ndarray | None = None,
 ) -> PlotResult | ValueResult:
     """
-    Plot a frequency-weighted histogram of labeled object sizes. Convenience wrapper
-    around scikit-image's exposure.histogram and matplotlib's hist:
+    Plot a frequency-weighted histogram of labeled object sizes. Ignores the background
+    (assumed 0). Convenience wrapper around scikit-image's exposure.histogram and
+    matplotlib's hist:
     https://scikit-image.org/docs/stable/api/skimage.exposure.html#skimage.exposure.histogram
     https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 
@@ -150,7 +151,7 @@ def size_distrib(
             }
         )
 
-    hist_vals, _, _ = hist_distrib(values, source_range="values")
+    hist_vals, _, _ = hist_distrib(values[values != 0], source_range="values")
     hist_vals = hist_vals.astype(np.float64)
     display_units: str = r"\mu m" if Units == "um" else Units
     units: dict = {"Probability Density": None} if Normalize else {"Counts": None}
@@ -282,7 +283,7 @@ def dimless_morph_distrib(
         )
 
     labels: np.ndarray = np.unique(values)
-    labels = labels[1:] if labels[0] == 0 else labels
+    labels = labels[labels != 0]
     dimless_values: np.ndarray = np.empty(labels.size)
 
     if Measurement == "Aspect Ratio":

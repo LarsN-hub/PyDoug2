@@ -19,6 +19,7 @@ __all__ = [
     "surf",
     "heat_map",
     "label_count",
+    "tortuosity",
     "mesh_surface_area",
     "fractal_dim",
 ]

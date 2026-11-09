@@ -106,3 +106,13 @@ def test_im_arithmetic(sample_3dgray_array) -> None:
     assert result16.dtype != sample_3dgray_array.dtype
     assert result17.dtype == bool_array.dtype
     assert result18.dtype == float_array.dtype
+
+
+def test_im_round(sample_2dgray_array) -> None:
+
+    result00: np.ndarray = arithmetic.im_round(sample_2dgray_array)
+    result01: np.ndarray = arithmetic.im_round(sample_2dgray_array.astype(np.float64))
+    assert result00.dtype == np.uint8
+    assert result01.dtype == np.uint8
+    assert np.all(result00 == sample_2dgray_array)
+    assert np.all(result01 == sample_2dgray_array)
