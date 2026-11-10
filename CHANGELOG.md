@@ -1,3 +1,11 @@
+## 0.1.5
+
+### Additions
+* Began work on registration widget.
+
+### Updates
+* Allowed negative bounds in saturation widget.
+
 ## 0.1.4
 
 ### Additions

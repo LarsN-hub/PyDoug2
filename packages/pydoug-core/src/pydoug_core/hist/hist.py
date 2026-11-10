@@ -223,7 +223,14 @@ def normalize(
 def saturate(
     imarray: np.ndarray,
     Bounds: tuple[
-        Annotated[float, {"step": 0.0001}], Annotated[float, {"step": 0.0001}]
+        Annotated[
+            float,
+            {"step": 0.0001, "min": -1000000000000000, "max": 1000000000000000},
+        ],
+        Annotated[
+            float,
+            {"step": 0.0001, "min": -1000000000000000, "max": 1000000000000000},
+        ],
     ] = (0, 0),
     Normalize_to_Dtype: bool = True,
 ) -> np.ndarray:
