@@ -5,6 +5,8 @@
 
 ### Updates
 * Allowed negative bounds in saturation widget.
+* Changed normalization widget to use [0, 1] for floating point dtype (previously [-1, 1]) to prevent incorrect saturation upon integer format dtype conversion.
+* Removed leftover debugging print statement in _tables module.
 
 ## 0.1.4
 

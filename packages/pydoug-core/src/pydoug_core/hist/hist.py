@@ -214,7 +214,11 @@ def normalize(
     if Output_Range == "Manual":
         output: str | tuple[float, float] = Manual_Output
     else:
-        output = Output_Range.lower()
+        output = (
+            (0, 1)
+            if np.issubdtype(imarray.dtype, np.floating)
+            else Output_Range.lower()
+        )
 
     return rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
 
