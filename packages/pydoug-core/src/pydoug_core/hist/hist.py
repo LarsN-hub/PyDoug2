@@ -13,9 +13,9 @@ from pydoug_core.results import PlotResult
 
 __all__ = [
     "plot_histogram",
-    "invert",
-    "normalize",
     "saturate",
+    "normalize",
+    "invert",
     "equalize",
     "adjust",
     "local_contrast",
@@ -136,26 +136,54 @@ def plot_histogram(
     )
 
 
-@register_operation(category="histogram", display_name="Invert")
-def invert(imarray: np.ndarray) -> np.ndarray:
+@register_operation(category="histogram", display_name="Saturate")
+def saturate(
+    imarray: np.ndarray,
+    Bounds: tuple[
+        Annotated[
+            float,
+            {"step": 0.0001, "min": -1000000000000000, "max": 1000000000000000},
+        ],
+        Annotated[
+            float,
+            {"step": 0.0001, "min": -1000000000000000, "max": 1000000000000000},
+        ],
+    ] = (0, 0),
+    Normalize_to_Dtype: bool = True,
+) -> np.ndarray:
     """
-    Invert an image's histogram. Convenience wrapper around scikit-image's util.invert:
-    https://scikit-image.org/docs/stable/api/skimage.util.html#skimage.util.invert
+    Saturate an image by setting values outside the given range to the range's bounds.
+    Normalizing after saturation enhances the contrast of an image.
+    Convenience wrapper around numpy's clip:
+    https://numpy.org/doc/stable/reference/generated/numpy.clip.html#numpy.clip
 
     Parameters
     ----------
     imarray: np.ndarray
-        The image array to be inverted.
+        The image array to be saturated.
+    Bounds: tuple[float, float]
+        The intensity bounds to use for saturation. Percentiles are not supported, but
+        can be calculated in "Measurements" to use here.
+    Normalize_to_Dtype: bool
+        Whether or not to stretch the final histgoram to the dtype's max range after
+        saturation. Default is True.
 
     Returns
     -------
-    invarray: np.ndarray
-        The ivnerted image array.
+    satarray: np.ndarray
+        The saturated image array.
     """
 
-    from skimage.util import invert as skinvert
+    if imarray.dtype == np.bool:
+        return imarray
 
-    return skinvert(imarray)
+    satarray: np.ndarray = np.clip(imarray, min(Bounds), max(Bounds)).astype(
+        imarray.dtype
+    )
+    if Normalize_to_Dtype:
+        satarray = normalize(satarray)
+
+    return satarray
 
 
 @register_operation(category="histogram", display_name="Normalize")
@@ -214,50 +242,35 @@ def normalize(
     if Output_Range == "Manual":
         output: str | tuple[float, float] = Manual_Output
     else:
-        output = Output_Range.lower()
+        output = (
+            (0, 1)
+            if np.issubdtype(imarray.dtype, np.floating)
+            else Output_Range.lower()
+        )
 
     return rescale_intensity(imarray, input, output).astype(imarray.dtype)  # type: ignore
 
 
-@register_operation(category="histogram", display_name="Saturate")
-def saturate(
-    imarray: np.ndarray,
-    Bounds: tuple[
-        Annotated[float, {"step": 0.0001}], Annotated[float, {"step": 0.0001}]
-    ] = (0, 0),
-    Normalize_to_Dtype: bool = True,
-) -> np.ndarray:
+@register_operation(category="histogram", display_name="Invert")
+def invert(imarray: np.ndarray) -> np.ndarray:
     """
-    Saturate an image by setting values outside the given range to the range's bounds.
-    Normalizing after saturation enhances the contrast of an image.
-    Convenience wrapper around numpy's clip:
-    https://numpy.org/doc/stable/reference/generated/numpy.clip.html#numpy.clip
+    Invert an image's histogram. Convenience wrapper around scikit-image's util.invert:
+    https://scikit-image.org/docs/stable/api/skimage.util.html#skimage.util.invert
 
     Parameters
     ----------
     imarray: np.ndarray
-        The image array to be saturated.
-    Bounds: tuple[float, float]
-        The intensity bounds to use for saturation. Percentiles are not supported, but
-        can be calculated in "Measurements" to use here.
-    Normalize_to_Dtype: bool
-        Whether or not to stretch the final histgoram to the dtype's max range after
-        saturation. Default is True.
+        The image array to be inverted.
 
     Returns
     -------
-    satarray: np.ndarray
-        The saturated image array.
+    invarray: np.ndarray
+        The ivnerted image array.
     """
 
-    if imarray.dtype == np.bool:
-        return imarray
+    from skimage.util import invert as skinvert
 
-    satarray: np.ndarray = np.clip(imarray, min(Bounds), max(Bounds))
-    if Normalize_to_Dtype:
-        satarray = normalize(satarray)
-
-    return satarray
+    return skinvert(imarray)
 
 
 @register_operation(

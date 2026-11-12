@@ -172,7 +172,7 @@ def rescale(
     Scale: float
         The factor to rescale the image by.
     Order: Literal[0, 1, 2, 3, 4, 5] = 1
-        The order (0-5) to use for interpolation. If Segmented Data is False,
+        The order (0-5) to use for interpolation. If Segmented Data is "True",
         order will be forced to 0. Default is the bilinear (1).
     Segmented_Data: bool
         Whether the input data is segmented (True) or continuous (False). If true,
