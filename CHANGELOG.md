@@ -2,6 +2,7 @@
 
 ### Additions
 * Began work on registration widget.
+* Added noise estimation widget in "Info" tab.
 
 ### Updates
 * Allowed negative bounds in saturation widget.

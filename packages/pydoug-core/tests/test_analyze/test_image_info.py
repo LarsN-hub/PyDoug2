@@ -224,6 +224,28 @@ def test_thresholds(sample_3dgray_array, sample_masks) -> None:
     assert result10 == 0
 
 
+def test_noise(sample_arrays, sample_masks) -> None:
+
+    assert isinstance(image_info.est_noise(sample_arrays["2dgray"]), float)
+    assert isinstance(image_info.est_noise(sample_arrays["3dgray"]), float)
+    assert isinstance(image_info.est_noise(sample_arrays["2drgb"]), float)
+    assert isinstance(image_info.est_noise(sample_arrays["3drgb"]), float)
+    assert isinstance(
+        image_info.est_noise(sample_arrays["2dgray"], True, sample_masks["2dgray"]),
+        float,
+    )
+    assert isinstance(
+        image_info.est_noise(sample_arrays["3dgray"], True, sample_masks["3dgray"]),
+        float,
+    )
+    assert isinstance(
+        image_info.est_noise(sample_arrays["2drgb"], True, sample_masks["2drgb"]), float
+    )
+    assert isinstance(
+        image_info.est_noise(sample_arrays["3drgb"], True, sample_masks["3drgb"]), float
+    )
+
+
 def test_euler_num(sample_masks, sample_arrays) -> None:
 
     test_array: np.ndarray = np.zeros((10, 10), np.bool)

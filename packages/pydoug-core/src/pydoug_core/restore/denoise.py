@@ -16,7 +16,7 @@ __all__ = ["bilateral", "nl_means", "tv_bregman", "tv_chambolle", "wavelet"]
 @register_operation(category="restore", display_name="Bilateral Filter")
 def bilateral(
     imarray: np.ndarray,
-    Window_Size: Annotated[int, {"min": 0}] = 0,
+    Window_Size: Annotated[int, {"min": 0}] = 3,
     Sigma_Color: Annotated[float, {"min": 0}] = 0,
     Sigma_Spatial: Annotated[float, {"min": 0}] = 1,
     Bin_Count: Annotated[int, {"min": 1}] = 10000,
@@ -64,7 +64,7 @@ def bilateral(
         except "Window Size" and "Rank Thresholds" if True. Image must be grayscale.
         Default is False.
     Rank_Interval: tuple
-        The lower and upper interval around the pixel's intensity that can be average.
+        The lower and upper interval around the pixel's intensity that can be averaged.
         Only applies if "Rank" is checked.
     Preserve_Dtype: bool
         Whether or not to return the same data type that was input. "Rank" automatically
@@ -396,13 +396,13 @@ def tv_chambolle(
 @register_operation(
     category="restore",
     display_name="Wavelet Filter",
-    widget_options={"Wavelet": {"choices": pywt.wavelist()}},  # type: ignore
+    widget_options={"Wavelet": {"choices": pywt.wavelist(kind="discrete")}},  # type: ignore
 )
 def wavelet(
     imarray: np.ndarray,
-    Wavelet: str = "db9",
-    Sigma: Annotated[float, {"min": 0}] = 0,
-    Wavelet_Levels: Annotated[int, {"min": 0}] = 0,
+    Wavelet: str = "db1",
+    Sigma: Annotated[float, {"min": 0}] = 10,
+    Wavelet_Levels: Annotated[int, {"min": 0}] = 5,
     Mode: Literal["Soft", "Hard"] = "Soft",
     Method: Literal["BayesShrink", "VisuShrink"] = "BayesShrink",
     Rescale_Sigma: bool = True,
@@ -412,18 +412,20 @@ def wavelet(
     """
     Denoise an image with a Wavelet filter. Can denoise RGB images, but 3D RGB images
     are processed slicewise on along the Z axis. Convenience wrapper around
-    scikit-image's restoration.denoise_wavelet:
+    scikit-image's restoration.denoise_wavelet and pywt's wavelets:
     https://scikit-image.org/docs/stable/api/skimage.restoration.html#skimage.restoration.denoise_wavelet
+    https://pywavelets.readthedocs.io/en/latest/index.html
 
     Parameters
     ----------
     imarray: np.ndarray
         The image to denoise.
     Wavelet: str
-        The wavelet to use for denoising. Default is "db9".
+        The wavelet to use for denoising. Default is "db1".
     Sigma: float
         The standard deviation to use when finding the wavelet detail coefficient
         thresholds. If 0 is provided, this is calculated automatically.
+        Higher = more smoothing.
     Wavelet_Levels: int
         The number of wavelet decomposition levels to use. Automatically calcualted if
         0 is provided.
