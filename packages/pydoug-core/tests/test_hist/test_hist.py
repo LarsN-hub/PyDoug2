@@ -81,7 +81,7 @@ def test_normalize(sample_2dgray_array) -> None:
 
 def test_saturate(sample_3dgray_array) -> None:
 
-    test_bool = sample_3dgray_array.astype(np.bool)
+    test_bool: np.ndarray = sample_3dgray_array.astype(np.bool)
     result0: np.ndarray = hist.saturate(test_bool)
     assert np.all(test_bool == result0)
     result1: np.ndarray = hist.saturate(sample_3dgray_array, (50, 200))

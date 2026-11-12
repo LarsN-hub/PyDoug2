@@ -264,7 +264,9 @@ def saturate(
     if imarray.dtype == np.bool:
         return imarray
 
-    satarray: np.ndarray = np.clip(imarray, min(Bounds), max(Bounds))
+    satarray: np.ndarray = np.clip(imarray, min(Bounds), max(Bounds)).astype(
+        imarray.dtype
+    )
     if Normalize_to_Dtype:
         satarray = normalize(satarray)
 

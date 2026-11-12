@@ -261,7 +261,7 @@ def tv_bregman(
     imarray: np.ndarray
         The image to denoise.
     Weight: float
-        The strength of the denoising. Smaller = more smoothing.
+        The strength of the denoising. Higher = more smoothing.
     Epsilon: float
         The tolerance for the stop criterion. Smaller = tighter restriction.
     Maximum_Iterations: int
@@ -338,7 +338,7 @@ def tv_chambolle(
     imarray: np.ndarray
         The image to denoise.
     Weight: float
-        The strength of the denoising. Smaller = more smoothing.
+        The strength of the denoising. Higher = more smoothing.
     Epsilon: float
         The tolerance for the stop criterion. Smaller = tighter restriction.
     Maximum_Iterations: int
