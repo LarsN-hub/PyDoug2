@@ -31,7 +31,8 @@ dependencies = [
     "porespy>=3.2.0",
     "psygnal>=0.15.0",
     "scikit-image>=0.26.0",
-    "scipy>=1.18.0"
+    "scipy>=1.18.0",
+    "simpleitk>=2.5.7"
 ]
 
 [project.optional-dependencies]
