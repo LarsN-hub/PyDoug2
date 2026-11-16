@@ -152,6 +152,49 @@ def rotate(
         )
 
 
+@register_operation(category="transform", display_name="Translate")
+def translate(
+    imarray: np.ndarray,
+    Translation: tuple[
+        Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
+        Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
+        Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
+    ] = (0, 0, 0),
+    Preserve_Dtype: bool = True,
+) -> np.ndarray:
+    """
+    Translate an image along each axis. Convenience wrapper around scikit-image's
+    transform.EuclideanTransform:
+    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.EuclideanTransform
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to translate.
+    Translation: tuple[int, int, int]
+        The translation amount along each axis in the form (x, y, z). Z-axis is ignored
+        if the image is not 3D. Leave a value as 0 to avoid translation along that axis.
+    Preserve_Dtype: bool
+        Whether or not to return the same data type that was input.
+        Default is True (converts np.float64 translation results to original data type).
+
+    Returns
+    -------
+    trans_array: np.ndarray
+        The translated image.
+    """
+
+    if Translation[0] == Translation[1] == Translation[2] == 0:
+        return imarray
+
+    from skimage.transform import EuclideanTransform, warp
+
+    outdtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
+    trans: EuclideanTransform = EuclideanTransform(translation=Translation)
+
+    return warp(imarray, trans.inverse).astype(outdtype, copy=False)
+
+
 @register_operation(category="transform", display_name="Rescale")
 def rescale(
     imarray: np.ndarray,
