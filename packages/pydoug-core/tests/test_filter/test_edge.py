@@ -394,6 +394,30 @@ def test_gradient_local(sample_arrays) -> None:
     assert result16.shape == sample_arrays["3drgb"].shape
 
 
+def test_gradient_struct_tensor_eigs(sample_arrays):
+
+    result01: np.ndarray = edge.gradient(
+        sample_arrays["2dgray"], "Structure Tensor Eigenvalues"
+    )
+    result02: np.ndarray = edge.gradient(
+        sample_arrays["3dgray"], "Structure Tensor Eigenvalues"
+    )
+    result03: np.ndarray = edge.gradient(
+        sample_arrays["2drgb"], "Structure Tensor Eigenvalues"
+    )
+    result04: np.ndarray = edge.gradient(
+        sample_arrays["3drgb"], "Structure Tensor Eigenvalues"
+    )
+    assert result01.dtype == np.float64
+    assert result02.dtype == np.float64
+    assert result03.dtype == np.float64
+    assert result04.dtype == np.float64
+    assert result01.shape == sample_arrays["2dgray"].shape
+    assert result02.shape == sample_arrays["3dgray"].shape
+    assert result03.shape == sample_arrays["2drgb"].shape
+    assert result04.shape == sample_arrays["3drgb"].shape
+
+
 def test_ridge(sample_arrays) -> None:
 
     result1: np.ndarray = edge.ridge(sample_arrays["2dgray"], "Frangi")

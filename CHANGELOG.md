@@ -3,6 +3,7 @@
 ### Additions
 * Began work on registration widget.
 * Added noise estimation widget in "Info" tab.
+* Added structure tensor eigenvalues method to gradient widget in "Filter" tab.
 
 ### Updates
 * Allowed negative bounds in saturation widget.
