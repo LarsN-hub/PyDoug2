@@ -9,6 +9,9 @@
 * Changed normalization widget to use [0, 1] for floating point dtype (previously [-1, 1]) to prevent incorrect saturation upon integer format dtype conversion.
 * Fixed accidental floating point conversion from input integer data types in saturation widget.
 * Removed leftover debugging print statement in _tables module.
+* Removed case sensitivity of category specification in register_operation decorator.
+* Reorganized "Filter" tab by moving ridges up and swapping add noise to "Math" tab.
+* Changed Gabor filter widget theta to accept degrees instead of radians.
 
 ## 0.1.4
 

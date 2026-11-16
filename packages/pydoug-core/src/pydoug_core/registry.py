@@ -248,7 +248,7 @@ def register_operation(
         _REGISTRY[func.__name__] = OperationSpec(
             name=func.__name__,
             func=func,
-            category=category,
+            category=category.lower(),
             display_name=display_name or func.__name__.replace("_", " ").title(),
             widget_options=widget_options or {},
             native_options=native_options or {},
