@@ -14,6 +14,7 @@ __all__ = [
     "stats",
     "percentiles",
     "thresholds",
+    "est_noise",
     "euler_num",
     "blur_effect",
     "shannon_entropy",
@@ -464,6 +465,52 @@ def thresholds(
 
     return calc_thresholds(
         eval_array, Method, Otsu_Classes, Bin_Count, Max_Iteration_Count
+    )
+
+
+@register_operation(
+    category="info",
+    display_name="Estimate Noise",
+    array_params=("Mask",),
+    array_param_flags={"Mask": "Apply_Mask"},
+    output_kind="value",
+    recordable_toggle=True,
+)
+def est_noise(
+    imarray: np.ndarray,
+    Apply_Mask: bool = False,
+    Mask: np.ndarray | None = None,
+) -> Any:
+    """
+    Estimate the noise of an image. Higher = noisier. Accepts 2D/3D grayscale/RGB.
+    Convenience wrapper around scikit-image's restoration.estimate_sigma:
+    https://scikit-image.org/docs/stable/api/skimage.restoration.html#skimage.restoration.estimate_sigma
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to estimate noise for.
+    Apply_Mask: bool
+        Whether or not to apply a mask. Default is False.
+    Mask: np.ndarray | None
+        (Optional) If Apply Mask is True, only values within the provided mask array
+        will be included in the histogram.
+
+    Returns
+    -------
+    noise: float
+        The estimated noise.
+    """
+
+    from skimage.restoration import estimate_sigma
+
+    if Apply_Mask and Mask is not None:
+        return estimate_sigma(imarray[util.prep_mask(imarray, Mask)], True)
+
+    return estimate_sigma(
+        imarray,
+        True,
+        channel_axis=util.chan_axis(imarray),
     )
 
 

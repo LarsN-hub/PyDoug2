@@ -281,7 +281,6 @@ class BatchTables:
             result = result.values
         if isinstance(result, PlotResult):
             plot_units = result.units if result.units is not None else units
-            print(plot_units)
             self._add_plot(folder, dataset, result, plot_units)
         else:
             self._add_table(folder, "values", dataset, result, units)

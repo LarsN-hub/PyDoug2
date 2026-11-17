@@ -34,8 +34,7 @@ def butter(
     imarray: np.ndarray
         The image to filter.
     Cutoff_Frequency_Ratio: float
-        The cutoff ratio if "Method" is "Butterworth" in the range [0, 0.5]. Ignored
-        for other methods.
+        The cutoff ratio in the range [0, 0.5].
     Order: float
         Affects the slope near the cutoff frequency in the frequency domain. Higher =
         steeper slope.
@@ -154,10 +153,10 @@ def dog(
 def gab(
     imarray: np.ndarray,
     Frequency: Annotated[float, {"min": 0}] = 0.1,
-    Theta: Annotated[float, {"min": 0, "max": 6.28}] = 0,
+    Theta: Annotated[float, {"min": 0, "max": 360}] = 0,
     Bandwidth: Annotated[int, {"min": 0}] = 1,
     Sigma_Count: Annotated[int, {"min": 1}] = 3,
-    Offset: Annotated[float, {"min": 0, "max": 6.28}] = 0,
+    Offset: Annotated[float, {"min": 0, "max": 360}] = 0,
     Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"] = "Nearest",
     Constant_Value: Annotated[int, {"min": -32768, "max": 65535}] = 0,
 ) -> np.ndarray:
@@ -175,13 +174,13 @@ def gab(
         The spatial frequency (in pixels) of the function. Higher = more sensitive to
         finer details.
     Theta: float
-        The orientation of the 1D filter in radians [0, 2*pi].
+        The orientation of the 1D filter in degrees [0, 360].
     Bandwidth: float
         Bandwidth captured by frequency.
     Sigma_Count: int
         The linear size of the kernel.
     Offset: float
-        The phase offset of the function in radians [0, 2*pi].
+        The phase offset of the function in degrees [0, 360].
     Edge_Mode: Literal["Constant", "Mirror", "Nearest", "Reflect", "Wrap"]
         How the algorithm should handle image borders. Default is "Nearest".
         - "Constant": The border is extended with a value defined in "Constant Value".
@@ -208,10 +207,10 @@ def gab(
                     bparray[index, :, :, cindex], _ = gabor(
                         imarray[index, :, :, cindex],
                         Frequency,
-                        Theta,  # type: ignore
+                        Theta * (np.pi / 180),  # type: ignore
                         Bandwidth,
                         n_stds=Sigma_Count,
-                        offset=Offset,  # type: ignore
+                        offset=Offset * (np.pi / 180),  # type: ignore
                         mode=Edge_Mode.lower(),
                         cval=Constant_Value,
                     )
@@ -220,10 +219,10 @@ def gab(
                 bparray[..., cindex], _ = gabor(
                     imarray[..., cindex],
                     Frequency,
-                    Theta,  # type: ignore
+                    Theta * (np.pi / 180),  # type: ignore
                     Bandwidth,
                     n_stds=Sigma_Count,
-                    offset=Offset,  # type: ignore
+                    offset=Offset * (np.pi / 180),  # type: ignore
                     mode=Edge_Mode.lower(),
                     cval=Constant_Value,
                 )
@@ -236,10 +235,10 @@ def gab(
             bparray[index], _ = gabor(
                 imarray[index],
                 Frequency,
-                Theta,  # type: ignore
+                Theta * (np.pi / 180),  # type: ignore
                 Bandwidth,
                 n_stds=Sigma_Count,
-                offset=Offset,  # type: ignore
+                offset=Offset * (np.pi / 180),  # type: ignore
                 mode=Edge_Mode.lower(),
                 cval=Constant_Value,
             )
@@ -249,10 +248,10 @@ def gab(
     bparray, _ = gabor(
         imarray,
         Frequency,
-        Theta,  # type: ignore
+        Theta * (np.pi / 180),  # type: ignore
         Bandwidth,
         n_stds=Sigma_Count,
-        offset=Offset,  # type: ignore
+        offset=Offset * (np.pi / 180),  # type: ignore
         mode=Edge_Mode.lower(),
         cval=Constant_Value,
     )

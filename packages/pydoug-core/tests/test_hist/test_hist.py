@@ -34,10 +34,19 @@ def test_plot_histogram(sample_3dgray_array, sample_masks) -> None:
     assert isinstance(result4, PlotResult)
 
 
-def test_invert(sample_3dgray_array) -> None:
+def test_saturate(sample_3dgray_array) -> None:
 
-    result1: np.ndarray = hist.invert(sample_3dgray_array)
-    assert np.all(result1 == 255 - sample_3dgray_array)
+    test_bool: np.ndarray = sample_3dgray_array.astype(np.bool)
+    result0: np.ndarray = hist.saturate(test_bool)
+    assert np.all(test_bool == result0)
+    result1: np.ndarray = hist.saturate(sample_3dgray_array, (50, 200))
+    result2: np.ndarray = hist.saturate(sample_3dgray_array, (50, 200), False)
+    assert result1.dtype == sample_3dgray_array.dtype
+    assert result2.dtype == sample_3dgray_array.dtype
+    assert not np.all(result1 == result2)
+    result3: np.ndarray = hist.saturate(sample_3dgray_array, (0, 255), False)
+    assert result3.dtype == sample_3dgray_array.dtype
+    assert np.all(result3 == sample_3dgray_array)
 
 
 def test_normalize(sample_2dgray_array) -> None:
@@ -79,19 +88,10 @@ def test_normalize(sample_2dgray_array) -> None:
     assert np.all(result5 == result7)
 
 
-def test_saturate(sample_3dgray_array) -> None:
+def test_invert(sample_3dgray_array) -> None:
 
-    test_bool = sample_3dgray_array.astype(np.bool)
-    result0: np.ndarray = hist.saturate(test_bool)
-    assert np.all(test_bool == result0)
-    result1: np.ndarray = hist.saturate(sample_3dgray_array, (50, 200))
-    result2: np.ndarray = hist.saturate(sample_3dgray_array, (50, 200), False)
-    assert result1.dtype == sample_3dgray_array.dtype
-    assert result2.dtype == sample_3dgray_array.dtype
-    assert not np.all(result1 == result2)
-    result3: np.ndarray = hist.saturate(sample_3dgray_array, (0, 255), False)
-    assert result3.dtype == sample_3dgray_array.dtype
-    assert np.all(result3 == sample_3dgray_array)
+    result1: np.ndarray = hist.invert(sample_3dgray_array)
+    assert np.all(result1 == 255 - sample_3dgray_array)
 
 
 def test_equalize(sample_3dgray_array, sample_2dgray_array, sample_masks) -> None:

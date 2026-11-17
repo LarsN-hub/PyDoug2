@@ -8,7 +8,7 @@ import numpy as np
 
 from pydoug_core.registry import register_operation
 
-__all__ = ["arithmetic", "im_round"]
+__all__ = ["arithmetic", "im_round", "noise"]
 
 
 @register_operation(
@@ -130,3 +130,52 @@ def im_round(imarray: np.ndarray) -> np.ndarray:
     from pydoug_core.util import min_int_dtype
 
     return np.round(imarray).astype(min_int_dtype(np.round(imarray)))
+
+
+@register_operation(category="math", display_name="Add Noise")
+def noise(
+    imarray: np.ndarray,
+    Method: Literal[
+        "Gaussian", "Poisson", "Salt", "Pepper", "S&P", "Speckle"
+    ] = "Gaussian",
+    Preserve_Dtype: bool = True,
+) -> np.ndarray:
+    """
+    Add random noise to an image. Convenience wrapper around scikit-image's
+    util.random_noise:
+    https://scikit-image.org/docs/stable/api/skimage.util.html#skimage.util.random_noise
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to add noise to.
+    Method: Literal
+        The method to use for adding noise to the image. Default is "Gaussian".
+        - "Gaussian": Adds Gaussian-distributed additive noise.
+        - "Poisson": Adds Poisson-distributed noise generated from the image's values.
+        - "Salt": Replaces random pixels with the brightest value in the dtype.
+        - "Pepper": Replaces random pixels with the darkest value in the dtype.
+        - "S&P": Combines "Salt" and "Pepper" methods.
+        - "Speckle": Multiplicative Gaussian-distributed noise.
+    Preserve_Dtype: bool
+        Whether to preserve the image's dtype (True) or not (False). Default is True.
+
+    Returns
+    -------
+    noise_array: np.ndarray
+        The image with noise added.
+    """
+
+    from skimage.util import random_noise
+
+    from pydoug_core.util import convert_dtype, dtype_2_str
+
+    method = Method.lower()
+    if Method == "S&P":
+        method = "s&p"
+    noise_array: np.ndarray = random_noise(imarray, method)
+
+    if Preserve_Dtype:
+        return convert_dtype(noise_array, dtype_2_str(imarray.dtype))  # type: ignore
+
+    return noise_array
