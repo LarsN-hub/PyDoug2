@@ -160,12 +160,11 @@ def translate(
         Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
         Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
     ] = (0, 0, 0),
-    Preserve_Dtype: bool = True,
 ) -> np.ndarray:
     """
-    Translate an image along each axis. Convenience wrapper around scikit-image's
-    transform.EuclideanTransform:
-    https://scikit-image.org/docs/stable/api/skimage.transform.html#skimage.transform.EuclideanTransform
+    Translate an image along its axes. Dtype is preserved. Convenience wrapper around
+    scipy's ndimage.shift:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.shift.html
 
     Parameters
     ----------
@@ -174,9 +173,6 @@ def translate(
     Translation: tuple[int, int, int]
         The translation amount along each axis in the form (x, y, z). Z-axis is ignored
         if the image is not 3D. Leave a value as 0 to avoid translation along that axis.
-    Preserve_Dtype: bool
-        Whether or not to return the same data type that was input.
-        Default is True (converts np.float64 translation results to original data type).
 
     Returns
     -------
@@ -184,15 +180,23 @@ def translate(
         The translated image.
     """
 
-    if Translation[0] == Translation[1] == Translation[2] == 0:
-        return imarray
+    if Translation[0] == Translation[1] == 0:
+        if not util.is3d(imarray):
+            return imarray
+        elif util.is3d(imarray) and Translation[2] == 0:
+            return imarray
 
-    from skimage.transform import EuclideanTransform, warp
+    translation: list[int] = (
+        [Translation[1], Translation[0]]
+        if not util.is3d(imarray)
+        else [Translation[2], Translation[1], Translation[0]]
+    )
+    if util.isrgb(imarray):
+        translation.append(0)
 
-    outdtype: np.dtype = util.output_dtype(imarray, preserve_dtype=Preserve_Dtype)
-    trans: EuclideanTransform = EuclideanTransform(translation=Translation)
+    from scipy.ndimage import shift
 
-    return warp(imarray, trans.inverse).astype(outdtype, copy=False)
+    return shift(imarray, shift=translation, order=0)
 
 
 @register_operation(category="transform", display_name="Rescale")

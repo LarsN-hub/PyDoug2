@@ -193,6 +193,9 @@ class MainWidget(QTabWidget):
         if "transform" in categories:
             sorted_categories.append("transform")
             categories.remove("transform")
+        if "register" in categories:
+            sorted_categories.append("register")
+            categories.remove("register")
         if "math" in categories:
             sorted_categories.append("math")
             categories.remove("math")

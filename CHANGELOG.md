@@ -1,7 +1,7 @@
 ## 0.1.5
 
 ### Additions
-* Added registration widgets in "Transform" tab.
+* Added registration widgets in "Register" tab.
 * Added noise estimation widget in "Info" tab.
 * Added structure tensor eigenvalues method to gradient widget in "Filter" tab.
 * Added translation widget in "Transform" tab.
