@@ -100,6 +100,23 @@ def test_rotate_returns(sample_arrays) -> None:
     assert result6.shape[0] == sample_arrays["3drgb"].shape[0]
 
 
+def test_translate(sample_arrays) -> None:
+
+    result00: np.ndarray = geom.translate(sample_arrays["2dgray"])
+    result01: np.ndarray = geom.translate(sample_arrays["3dgray"])
+    result02: np.ndarray = geom.translate(sample_arrays["2dgray"], (1, 2, 0))
+    result03: np.ndarray = geom.translate(sample_arrays["3dgray"], (1, 2, 1))
+    result04: np.ndarray = geom.translate(sample_arrays["2drgb"], (1, 2, 0))
+    result05: np.ndarray = geom.translate(sample_arrays["3drgb"], (1, 2, 1))
+
+    assert np.all(result00 == sample_arrays["2dgray"])
+    assert np.all(result01 == sample_arrays["3dgray"])
+    assert result02.shape == sample_arrays["2dgray"].shape
+    assert result03.shape == sample_arrays["3dgray"].shape
+    assert result04.shape == sample_arrays["2drgb"].shape
+    assert result05.shape == sample_arrays["3drgb"].shape
+
+
 def test_rescale_returns(sample_arrays) -> None:
 
     result1: np.ndarray = geom.rescale(sample_arrays["2dgray"])

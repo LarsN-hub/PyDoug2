@@ -116,3 +116,18 @@ def test_im_round(sample_2dgray_array) -> None:
     assert result01.dtype == np.uint8
     assert np.all(result00 == sample_2dgray_array)
     assert np.all(result01 == sample_2dgray_array)
+
+
+def test_noise(sample_arrays) -> None:
+
+    result1: np.ndarray = arithmetic.noise(sample_arrays["2dgray"])
+    result2: np.ndarray = arithmetic.noise(sample_arrays["3dgray"])
+    result3: np.ndarray = arithmetic.noise(sample_arrays["2drgb"])
+    result4: np.ndarray = arithmetic.noise(sample_arrays["3drgb"])
+    result5: np.ndarray = arithmetic.noise(sample_arrays["2dgray"], "S&P", False)
+
+    assert result1.dtype == sample_arrays["2dgray"].dtype
+    assert result2.dtype == sample_arrays["3dgray"].dtype
+    assert result3.dtype == sample_arrays["2drgb"].dtype
+    assert result4.dtype == sample_arrays["3drgb"].dtype
+    assert result5.dtype == np.float64

@@ -184,13 +184,6 @@ def register_operation(
             The function to be registered as an operation.
         """
 
-        if recordable_toggle and output_kind == "image":
-            raise ValueError(  # pragma: no cover
-                f"{func.__name__}: recordable_toggle only makes sense for 'value'/"
-                "'plot' operations: skipping the recording of an image step would leave"
-                " later steps referencing its layer with a dangling input reference."
-            )
-
         sig: inspect.Signature = inspect.signature(func)
         if allow_in_place and "In_Place" not in sig.parameters:
             raise ValueError(  # pragma: no cover
@@ -248,7 +241,7 @@ def register_operation(
         _REGISTRY[func.__name__] = OperationSpec(
             name=func.__name__,
             func=func,
-            category=category,
+            category=category.lower(),
             display_name=display_name or func.__name__.replace("_", " ").title(),
             widget_options=widget_options or {},
             native_options=native_options or {},

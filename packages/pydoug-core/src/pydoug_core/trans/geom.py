@@ -152,6 +152,53 @@ def rotate(
         )
 
 
+@register_operation(category="transform", display_name="Translate")
+def translate(
+    imarray: np.ndarray,
+    Translation: tuple[
+        Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
+        Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
+        Annotated[int, {"min": -10000000000000, "max": 10000000000000}],
+    ] = (0, 0, 0),
+) -> np.ndarray:
+    """
+    Translate an image along its axes. Dtype is preserved. Convenience wrapper around
+    scipy's ndimage.shift:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.shift.html
+
+    Parameters
+    ----------
+    imarray: np.ndarray
+        The image to translate.
+    Translation: tuple[int, int, int]
+        The translation amount along each axis in the form (x, y, z). Z-axis is ignored
+        if the image is not 3D. Leave a value as 0 to avoid translation along that axis.
+
+    Returns
+    -------
+    trans_array: np.ndarray
+        The translated image.
+    """
+
+    if Translation[0] == Translation[1] == 0:
+        if not util.is3d(imarray):
+            return imarray
+        elif util.is3d(imarray) and Translation[2] == 0:
+            return imarray
+
+    translation: list[int] = (
+        [Translation[1], Translation[0]]
+        if not util.is3d(imarray)
+        else [Translation[2], Translation[1], Translation[0]]
+    )
+    if util.isrgb(imarray):
+        translation.append(0)
+
+    from scipy.ndimage import shift
+
+    return shift(imarray, shift=translation, order=0)
+
+
 @register_operation(category="transform", display_name="Rescale")
 def rescale(
     imarray: np.ndarray,
@@ -172,7 +219,7 @@ def rescale(
     Scale: float
         The factor to rescale the image by.
     Order: Literal[0, 1, 2, 3, 4, 5] = 1
-        The order (0-5) to use for interpolation. If Segmented Data is False,
+        The order (0-5) to use for interpolation. If Segmented Data is "True",
         order will be forced to 0. Default is the bilinear (1).
     Segmented_Data: bool
         Whether the input data is segmented (True) or continuous (False). If true,

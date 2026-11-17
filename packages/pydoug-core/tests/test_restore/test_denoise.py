@@ -9,6 +9,7 @@ from pydoug_core.restore import denoise
 
 def test_bilateral(sample_arrays) -> None:
 
+    result0: np.ndarray = denoise.bilateral(sample_arrays["2dgray"], 0)
     result1: np.ndarray = denoise.bilateral(sample_arrays["2dgray"])
     result2: np.ndarray = denoise.bilateral(sample_arrays["3dgray"])
     result3: np.ndarray = denoise.bilateral(sample_arrays["2drgb"])
@@ -41,6 +42,10 @@ def test_bilateral(sample_arrays) -> None:
     result16: np.ndarray = denoise.bilateral(
         sample_arrays["3drgb"], Rank=True, Preserve_Dtype=False
     )
+    result17: np.ndarray = denoise.bilateral(
+        sample_arrays["2dgray"], Window_Size=0, Rank=True, Preserve_Dtype=False
+    )
+    assert result0.dtype == np.uint8
     assert result1.dtype == np.uint8
     assert result2.dtype == np.uint8
     assert result3.dtype == np.uint8
@@ -57,6 +62,7 @@ def test_bilateral(sample_arrays) -> None:
     assert result14.dtype == np.uint8
     assert result15.dtype == np.uint8
     assert result16.dtype == np.uint8
+    assert result17.dtype == np.uint8
     assert result1.shape == sample_arrays["2dgray"].shape
     assert result2.shape == sample_arrays["3dgray"].shape
     assert result3.shape == sample_arrays["2drgb"].shape
