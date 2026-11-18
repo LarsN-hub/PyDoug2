@@ -1,3 +1,10 @@
+## 0.1.6
+
+### Additions
+* Added darkonlight theme to use dark mode UI with a white canvas if desired.
+
+### Updates
+
 ## 0.1.5
 
 ### Additions
