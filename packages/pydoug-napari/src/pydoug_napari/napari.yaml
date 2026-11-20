@@ -42,3 +42,10 @@ contributions:
   widgets:
   - command: pydoug-napari.make_main_widget
     display_name: PyDoug Toolbox
+
+  themes:
+  - id: darkonlight
+    label: DarkonLight
+    type: dark
+    colors:
+      canvas: white

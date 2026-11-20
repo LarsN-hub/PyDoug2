@@ -2,7 +2,7 @@
 Add your own functions to PyDoug using the template herein.
 """
 
-# Imports
+# # Imports
 
 # from typing import Annotated
 
@@ -11,7 +11,7 @@ Add your own functions to PyDoug using the template herein.
 # from pydoug_core.registry import register_operation
 
 
-# Functions
+# # Functions
 
 # @register_operation(
 #     category="user",
@@ -29,20 +29,20 @@ Add your own functions to PyDoug using the template herein.
 #     using inclusive upper and lower bounds and returns a binary image array where all
 #     pixels within the threshold range are white and all pixels outside the range are
 #     black.
-#
+
 #     Parameters
 #     ----------
 #     imarray: np.ndarray
 #         The image array to be thresholded.
 #     Thresholds: tuple[int, int]
 #         The intensity values to use for the threshold range.
-#
+
 #     Returns
 #     -------
 #     thresh_array: np.ndarray
 #         The thresholded image array.
 #     """
-#
+
 #     thresh_array: np.ndarray = np.zeros(imarray.shape, np.uint8)
 #     thresh_array[(imarray <= max(Thresholds)) & (imarray >= min(Thresholds))] = 255
 #     return thresh_array

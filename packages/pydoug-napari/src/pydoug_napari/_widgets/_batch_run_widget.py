@@ -58,8 +58,8 @@ def build_run_batch_widget() -> QWidget:
     btn_row: QHBoxLayout = QHBoxLayout()
     buttons: dict[str, QPushButton] = {}
     for label, handler in [
-        ("Add File(s)...", _select_files),
-        ("Add Folder (sequence)...", _select_folders),
+        ("Add File(s)", _select_files),
+        ("Add Folder (sequence)", _select_folders),
         ("Remove Selected", _remove_selected),
         ("Clear List", _clear_list),
     ]:
@@ -81,7 +81,7 @@ def build_run_batch_widget() -> QWidget:
         layout.addWidget(QLabel(label_text))
         row: QHBoxLayout = QHBoxLayout()
         row.addWidget(edit)
-        pick_btn: QPushButton = QPushButton("Browse...")
+        pick_btn: QPushButton = QPushButton("Browse")
         pick_btn.clicked.connect(
             lambda _, e=edit, t=dialog_title: e.setText(
                 QFileDialog.getExistingDirectory(container, t) or e.text()
@@ -166,8 +166,8 @@ def build_run_batch_widget() -> QWidget:
 
     run_btn.clicked.connect(_run_clicked)
     container.setLayout(layout)
-    container.add_files_btn = buttons["Add File(s)..."]  # type: ignore
-    container.select_folders_btn = buttons["Add Folder (sequence)..."]  # type: ignore
+    container.add_files_btn = buttons["Add File(s)"]  # type: ignore
+    container.select_folders_btn = buttons["Add Folder (sequence)"]  # type: ignore
     container.remove_selected_btn = buttons["Remove Selected"]  # type: ignore
     container.clear_list_btn = buttons["Clear List"]  # type: ignore
     container.workflow_pick_btn = dir_buttons["Workflow folder:"]  # type: ignore
