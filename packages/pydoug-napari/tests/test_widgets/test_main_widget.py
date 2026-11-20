@@ -76,11 +76,26 @@ def test_make_main_widget(
     mainwidget.results_panel.log_widget.setCurrentRow(0)
     assert mainwidget.results_panel.log_widget.currentRow() == 0
     cur_len: int = mainwidget.results_panel.log_widget.count()
+    assert mainwidget.results_panel.delete_button is not None
     qtbot.mouseClick(mainwidget.results_panel.delete_button, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(
         lambda: mainwidget.results_panel.log_widget.count() == cur_len - 1, timeout=5000
     )
     assert mainwidget.results_panel.log_widget.count() == cur_len - 1
+    cur_recorded_steps: int = len(mainwidget.recorder.steps)
+    qtbot.mouseClick(subwidget2.call_button.native, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(
+        lambda: len(mainwidget.recorder.steps) == cur_recorded_steps + 1, timeout=5000
+    )
+    assert len(mainwidget.recorder.steps) == cur_recorded_steps + 1
+    assert mainwidget.results_panel.delete_all_button is not None
+    qtbot.mouseClick(
+        mainwidget.results_panel.delete_all_button, Qt.MouseButton.LeftButton
+    )
+    qtbot.waitUntil(
+        lambda: mainwidget.results_panel.log_widget.count() == 0, timeout=5000
+    )
+    assert mainwidget.results_panel.log_widget.count() == 0
 
 
 def test_cascade_delete_removes_dependent_steps(

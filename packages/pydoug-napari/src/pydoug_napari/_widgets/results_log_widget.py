@@ -194,19 +194,24 @@ class ResultsPanel(QWidget):
         self.results_log: ResultsLog = results_log
         self.log_widget: ResultsLogWidget = log_widget
         self.recorder: Recorder = recorder
-        self.export_selected_button: QPushButton = QPushButton("Export Selected...")
-        self.export_all_button: QPushButton = QPushButton("Export All...")
+        self.export_selected_button: QPushButton = QPushButton("Export Selected")
+        self.export_all_button: QPushButton = QPushButton("Export All")
         self.delete_button = QPushButton("Delete Selected")
+        self.delete_all_button = QPushButton("Delete All")
         self.export_selected_button.clicked.connect(self._export_selected)
         self.export_all_button.clicked.connect(self._export_all)
         self.delete_button.clicked.connect(self._delete_selected)
-        buttons: QHBoxLayout = QHBoxLayout()
-        buttons.addWidget(self.export_selected_button)
-        buttons.addWidget(self.export_all_button)
-        buttons.addWidget(self.delete_button)
+        self.delete_all_button.clicked.connect(self._delete_all)
+        buttons1: QHBoxLayout = QHBoxLayout()
+        buttons2: QHBoxLayout = QHBoxLayout()
+        buttons1.addWidget(self.export_selected_button)
+        buttons1.addWidget(self.export_all_button)
+        buttons2.addWidget(self.delete_button)
+        buttons2.addWidget(self.delete_all_button)
         layout: QVBoxLayout = QVBoxLayout(self)
         layout.addWidget(self.log_widget)
-        layout.addLayout(buttons)
+        layout.addLayout(buttons1)
+        layout.addLayout(buttons2)
 
     def _selected_entries(self) -> list[LogEntry]:
         """
@@ -284,3 +289,13 @@ class ResultsPanel(QWidget):
         for step_id in step_ids:
             self.recorder.remove_step(step_id)
         self.results_log.remove(doomed)
+
+    def _delete_all(self) -> None:
+        """
+        Delete all entries from the log.
+        """
+
+        for entry in self.results_log.entries:
+            if entry.step_id is not None:
+                self.recorder.remove_step(entry.step_id)
+        self.results_log.remove(self.results_log.entries)
